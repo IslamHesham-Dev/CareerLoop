@@ -21,7 +21,7 @@ For a no-code sanity check against a real account, run:
 """
 
 from ._skills import extract_skills
-from .client import API_URL, GithubConnector
+from .client import API_URL, GithubConnector, select_manifest_matches
 from .models import GithubProfile, Repository, RepositoryDetail, SkillEvidence
 from .prompt import SKILL_EXTRACTION_GUIDANCE
 
@@ -32,6 +32,7 @@ __all__ = [
     "RepositoryDetail",
     "SkillEvidence",
     "extract_skills",
+    "select_manifest_matches",
     "SKILL_EXTRACTION_GUIDANCE",
     "API_URL",
 ]

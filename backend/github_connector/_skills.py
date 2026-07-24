@@ -139,16 +139,18 @@ def _parse_build_gradle(text: str) -> list[str]:
     ]
 
 
+# Keyed by lowercased filename, since `RepositoryDetail.manifests` is keyed by
+# full path (a repo can have a manifest of the same name at several depths).
 _MANIFEST_PARSERS = {
     "package.json": _parse_package_json,
     "requirements.txt": _parse_requirements_txt,
     "pyproject.toml": _parse_pyproject_toml,
-    "Pipfile": _parse_requirements_txt,  # close enough: also `name = "..."` per line
+    "pipfile": _parse_requirements_txt,  # close enough: also `name = "..."` per line
     "go.mod": _parse_go_mod,
-    "Cargo.toml": _parse_cargo_toml,
+    "cargo.toml": _parse_cargo_toml,
     "pom.xml": _parse_pom_xml,
     "build.gradle": _parse_build_gradle,
-    "Gemfile": _parse_gemfile,
+    "gemfile": _parse_gemfile,
     "composer.json": _parse_composer_json,
 }
 
@@ -206,15 +208,22 @@ SKILL_SIGNATURES: dict[str, tuple[str, str]] = {
 
 
 def _repo_manifest_skills(detail: RepositoryDetail) -> list[tuple[str, str]]:
-    """(skill, category) pairs evidenced by one repo's manifest files, deduped."""
+    """(skill, category) pairs evidenced by one repo's manifest files, deduped.
+
+    `detail.manifests` is keyed by full path (e.g. `backend/pyproject.toml`),
+    so every lookup here matches on the path's basename rather than the path
+    itself — that's what makes a manifest found anywhere in the tree work the
+    same as one found at the repo root.
+    """
     found: dict[str, str] = {}
-    for filename, content in detail.manifests.items():
-        if filename in ("Dockerfile", "docker-compose.yml"):
-            signature = SKILL_SIGNATURES.get(filename.lower())
+    for path, content in detail.manifests.items():
+        basename = path.rsplit("/", 1)[-1].lower()
+        if basename in ("dockerfile", "docker-compose.yml"):
+            signature = SKILL_SIGNATURES.get(basename)
             if signature:
                 found[signature[0]] = signature[1]
             continue
-        parser = _MANIFEST_PARSERS.get(filename)
+        parser = _MANIFEST_PARSERS.get(basename)
         if not parser:
             continue
         for raw_name in parser(content):

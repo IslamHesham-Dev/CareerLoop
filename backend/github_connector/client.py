@@ -34,6 +34,34 @@ API_URL = "https://api.github.com"  # GitHub.com only; no GHES site profile yet
 API_VERSION = "2022-11-28"
 
 
+def select_manifest_matches(
+    file_paths: list[str],
+    manifest_files: tuple[str, ...],
+    *,
+    max_matches_per_name: int = 2,
+) -> dict[str, list[str]]:
+    """Which tree paths count as which known manifest, shallowest first.
+
+    Pure and network-free on purpose: this is the "did we find the manifest"
+    decision, and it deserves a direct unit test (see
+    tests/test_github_client.py) without mocking an HTTP call to exercise it.
+
+    Returns {lowercased manifest name -> matching full paths}, each list
+    capped at `max_matches_per_name` and sorted so a shallower match (more
+    likely the project's own manifest than a vendored/example copy) wins.
+    """
+    wanted = {name.lower() for name in manifest_files}
+    matches_by_name: dict[str, list[str]] = {}
+    for path in file_paths:
+        basename = path.rsplit("/", 1)[-1]
+        if basename.lower() in wanted:
+            matches_by_name.setdefault(basename.lower(), []).append(path)
+    return {
+        name: sorted(paths, key=lambda p: p.count("/"))[:max_matches_per_name]
+        for name, paths in matches_by_name.items()
+    }
+
+
 class GithubConnector:
     """A token-authenticated connection to a student's GitHub account."""
 
@@ -142,6 +170,7 @@ class GithubConnector:
                         is_fork=item.get("fork", False),
                         is_archived=item.get("archived", False),
                         pushed_at=item.get("pushed_at"),
+                        default_branch=item.get("default_branch") or "main",
                     )
                 )
             if len(data) < 100:
@@ -185,28 +214,69 @@ class GithubConnector:
             return None
         return base64.b64decode(data["content"]).decode("utf-8", errors="replace")
 
+    def list_file_paths(self, repo: Repository, *, max_entries: int = 5000) -> list[str]:
+        """Every file path in the repo's default branch, in one call.
+
+        This is what makes manifest discovery monorepo-safe: a `pyproject.toml`
+        under `backend/` or a `package.json` under `mobile/` shows up exactly
+        the same way a root-level one would, instead of only being found by
+        guessing root paths. An empty/unborn repo (no commits yet) has no tree
+        to fetch; that 404s and is treated as "no files" by the caller.
+
+        GitHub truncates very large trees (repos over ~100k entries or a 7MB
+        response) rather than erroring; `max_entries` just bounds how many
+        paths we look at afterwards in that rare case.
+        """
+        data = self._get(
+            f"/repos/{self._repo_key(repo)}/git/trees/{repo.default_branch}",
+            recursive="1",
+        ).json()
+        return [
+            entry["path"]
+            for entry in data.get("tree", [])
+            if entry.get("type") == "blob"
+        ][:max_entries]
+
     def get_repository_detail(
         self,
         repo: Repository,
         *,
         include_readme: bool = True,
         manifest_files: tuple[str, ...] = KNOWN_MANIFEST_FILES,
+        max_matches_per_manifest: int = 2,
     ) -> RepositoryDetail:
         """Everything `_skills.extract_skills` needs for one repo.
 
-        Tries every filename in `manifest_files` and keeps whichever exist; a
-        404 for most of them on any given repo is the expected case, not an
-        error. This is the expensive call (one request per candidate manifest
-        plus languages/README) — call it per-repo, not for a student's whole
-        account at once, unless you mean to.
+        Walks the repo's file tree once (`list_file_paths`) and reads whatever
+        matches a name in `manifest_files`, at any depth — a monorepo's
+        `backend/pyproject.toml` is found the same way a root one would be.
+        When a name matches more than once (e.g. a `package.json` for both a
+        frontend and a backend), the shallowest `max_matches_per_manifest`
+        matches are read, on the assumption that deeply nested duplicates are
+        more likely vendored/example code than the project's own manifests.
+
+        This is the expensive call per repo (one tree listing, plus one
+        request per manifest match, plus languages/README) — call it per-repo,
+        not for a student's whole account at once, unless you mean to.
         """
         languages = self.get_languages(repo)
         readme_excerpt = self.get_readme(repo) if include_readme else None
+
+        try:
+            file_paths = self.list_file_paths(repo)
+        except requests.HTTPError:
+            file_paths = []  # e.g. an empty repo with no tree yet
+
+        selected = select_manifest_matches(
+            file_paths, manifest_files, max_matches_per_name=max_matches_per_manifest
+        )
         manifests: dict[str, str] = {}
-        for filename in manifest_files:
-            content = self.get_file(repo, filename)
-            if content is not None:
-                manifests[filename] = content
+        for paths in selected.values():
+            for path in paths:
+                content = self.get_file(repo, path)
+                if content is not None:
+                    manifests[path] = content
+
         return RepositoryDetail(
             repository=repo,
             languages=languages,

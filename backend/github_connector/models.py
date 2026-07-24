@@ -38,6 +38,7 @@ class Repository:
     is_fork: bool
     is_archived: bool
     pushed_at: str | None  # ISO 8601 timestamp of the last push; a recency signal
+    default_branch: str  # needed to walk the repo's file tree for manifests
 
 
 @dataclass
@@ -47,7 +48,7 @@ class RepositoryDetail:
     repository: Repository
     languages: dict[str, int]  # language -> bytes written, from GitHub's linguist
     readme_excerpt: str | None  # first N chars of the decoded README
-    manifests: dict[str, str]  # filename -> raw contents, for dependency scanning
+    manifests: dict[str, str]  # full file path -> raw contents, for dependency scanning
 
 
 @dataclass

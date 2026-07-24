@@ -22,6 +22,7 @@ def _repo(name: str, topics: list[str] | None = None) -> Repository:
         is_fork=False,
         is_archived=False,
         pushed_at="2026-01-01T00:00:00Z",
+        default_branch="main",
     )
 
 
@@ -107,6 +108,25 @@ def test_extract_repository_skills_combines_languages_manifests_and_topics() -> 
     assert "requests" not in by_skill
     # the topic "fastapi" duplicates the manifest hit and must not double-count
     assert evidence.count(by_skill["FastAPI"]) == 1
+
+
+def test_extract_repository_skills_finds_manifests_nested_in_a_subdirectory() -> None:
+    # This is the monorepo case that was previously missed: a manifest that
+    # lives under a subfolder (e.g. this project's backend/pyproject.toml)
+    # rather than at the repo root.
+    detail = RepositoryDetail(
+        repository=_repo("careerloop"),
+        languages={"Python": 100, "Dart": 100},
+        readme_excerpt=None,
+        manifests={
+            "backend/pyproject.toml": 'dependencies = ["fastapi>=0.115", "langchain>=1.0"]',
+        },
+    )
+
+    by_skill = {item.skill: item for item in extract_repository_skills(detail)}
+
+    assert by_skill["FastAPI"].category == "backend framework"
+    assert by_skill["LangChain"].category == "data/ml"
 
 
 def test_extract_skills_ranks_languages_by_bytes_and_frameworks_by_repo_count() -> None:
