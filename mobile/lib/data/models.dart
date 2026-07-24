@@ -4,6 +4,7 @@ class SessionInfo {
   final int enrollmentYear;
   final List<String> transcriptYears;
   final int expiresInSeconds;
+  final bool cmsConnected;
 
   const SessionInfo({
     required this.currentSeason,
@@ -11,6 +12,7 @@ class SessionInfo {
     required this.enrollmentYear,
     required this.transcriptYears,
     required this.expiresInSeconds,
+    required this.cmsConnected,
   });
 
   factory SessionInfo.fromJson(Map<String, dynamic> json) => SessionInfo(
@@ -20,6 +22,7 @@ class SessionInfo {
         transcriptYears:
             List<String>.from(json['transcript_years'] as List? ?? const []),
         expiresInSeconds: json['expires_in_seconds'] as int? ?? 0,
+        cmsConnected: json['cms_connected'] as bool? ?? false,
       );
 }
 

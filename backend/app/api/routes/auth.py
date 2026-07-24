@@ -55,7 +55,46 @@ async def login(payload: LoginRequest) -> LoginResponse:
             detail="Could not establish a GIU portal session.",
         ) from None
 
+    # One university sign-in establishes both authenticated services. Validate
+    # CMS now so the app never creates a portal-only session that fails later
+    # when the student opens Courses.
     cms = CmsService(GiuCmsClient(username, password))
+    try:
+        await run_in_threadpool(
+            lambda: cms.client.list_courses(force=True)
+        )
+    except requests.HTTPError as exc:
+        cms.close()
+        portal.session.auth = None
+        portal.session.close()
+        response = exc.response
+        if response is not None and response.status_code in {401, 403}:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=(
+                    "The portal accepted this account, but GIU CMS did not. "
+                    "Use the same university username and password you use "
+                    "when opening CMS in your browser."
+                ),
+            ) from None
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "The portal signed in, but GIU CMS is temporarily "
+                "unavailable. No partial session was created."
+            ),
+        ) from None
+    except Exception:
+        cms.close()
+        portal.session.auth = None
+        portal.session.close()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "The university account was accepted, but the CMS course "
+                "workspace could not be initialized."
+            ),
+        ) from None
     try:
         token, student = session_store.create(
             portal,
@@ -82,6 +121,7 @@ async def login(payload: LoginRequest) -> LoginResponse:
         advisory_year=student.academic.advisory_year,
         enrollment_year=student.academic.enrollment_year,
         transcript_years=student.academic.transcript_window_years,
+        cms_connected=True,
     )
 
 
@@ -96,6 +136,7 @@ def session_status(
         advisory_year=student.academic.advisory_year,
         enrollment_year=student.academic.enrollment_year,
         transcript_years=student.academic.transcript_window_years,
+        cms_connected=True,
     )
 
 

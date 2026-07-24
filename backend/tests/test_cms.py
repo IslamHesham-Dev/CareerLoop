@@ -90,6 +90,28 @@ def test_live_catalog_is_complete_and_videos_are_only_supplemental() -> None:
 
 def test_live_cms_html_parsers_cover_course_links_and_resources() -> None:
     client = GiuCmsClient("student", "secret")
+    table_html = """
+    <table>
+      <tr>
+        <th></th><th>Name</th><th>Active</th><th>Season</th>
+        <th>ID</th><th>SeasonId</th>
+      </tr>
+      <tr>
+        <td></td>
+        <td>(|CSEN301|) Data Structures and Algorithms (436)</td>
+        <td>Active</td><td>Winter 2024</td><td>436</td><td>64</td>
+      </tr>
+    </table>
+    """
+    table_courses = client._parse_course_table(table_html)
+    assert len(table_courses) == 1
+    assert table_courses[0]["code"] == "CSEN301"
+    assert (
+        client._course_urls[table_courses[0]["id"]]
+        == "https://cms.giu-uni.de/apps/student/"
+        "CourseViewStn.aspx?id=436&sid=64"
+    )
+
     list_html = """
     <html><body>
       <a href="/apps/student/Course/Details?id=42">

@@ -17,6 +17,7 @@ class LoginResponse(BaseModel):
     advisory_year: str
     enrollment_year: int
     transcript_years: list[str]
+    cms_connected: bool
 
 
 class SessionResponse(BaseModel):
@@ -26,6 +27,7 @@ class SessionResponse(BaseModel):
     advisory_year: str
     enrollment_year: int
     transcript_years: list[str]
+    cms_connected: bool
 
 
 class MessageResponse(BaseModel):

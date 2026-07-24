@@ -67,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const _SettingRow(
                       icon: Icons.visibility_outlined,
                       title: 'Academic data source',
-                      value: 'GIU Portal + CareerLoop CMS',
+                      value: 'GIU Portal + GIU CMS',
                     ),
                   ],
                 ),

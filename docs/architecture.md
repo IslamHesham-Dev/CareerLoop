@@ -32,6 +32,10 @@ Every successful login creates a separate `StudentSession` containing:
 - one agent conversation
 - a short expiry and revocable random token
 
+The login is atomic: the backend validates both the portal and the concrete GIU
+CMS student home page with the same submitted credentials before issuing the
+CareerLoop token. It does not create a partial portal-only session.
+
 Only a SHA-256 digest of the opaque token is stored in the server lookup table.
 Sessions are serialized per chat, and portal access is locked because the
 underlying `requests.Session` is stateful.

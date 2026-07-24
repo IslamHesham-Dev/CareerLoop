@@ -14,6 +14,8 @@ from requests_ntlm import HttpNtlmAuth
 
 CMS_BASE_URL = "https://cms.giu-uni.de"
 CMS_STUDENT_PATH = "/apps/student/"
+CMS_COURSE_LIST_PATH = "/apps/student/HomePageStn.aspx"
+CMS_COURSE_VIEW_PATH = "/apps/student/CourseViewStn.aspx"
 COURSE_CODE = re.compile(r"\b[A-Z]{2,8}\s*-?\s*\d{2,4}[A-Z]?\b", re.I)
 
 
@@ -201,6 +203,70 @@ class GiuCmsClient:
             self._course_urls[course_id] = url
         return courses
 
+    def _parse_course_table(self, html: str) -> list[dict[str, Any]]:
+        """Parse GIU's HomePageStn course table.
+
+        GIU includes hidden ID and SeasonId columns. Those two values are what
+        CourseViewStn expects when a student opens a course.
+        """
+        soup = BeautifulSoup(html, "lxml")
+        courses: list[dict[str, Any]] = []
+        for table in soup.find_all("table"):
+            rows = table.find_all("tr")
+            if not rows:
+                continue
+            headers = [
+                _clean(cell.get_text(" ", strip=True))
+                for cell in rows[0].find_all(["th", "td"])
+            ]
+            folded = [header.casefold() for header in headers]
+            if "id" not in folded or "seasonid" not in folded:
+                continue
+            name_index = folded.index("name") if "name" in folded else 1
+            id_index = folded.index("id")
+            season_index = folded.index("seasonid")
+            active_index = (
+                folded.index("active") if "active" in folded else None
+            )
+            for row in rows[1:]:
+                cells = [
+                    _clean(cell.get_text(" ", strip=True))
+                    for cell in row.find_all(["th", "td"])
+                ]
+                if len(cells) <= max(name_index, id_index, season_index):
+                    continue
+                course_number = cells[id_index]
+                season_number = cells[season_index]
+                if not (
+                    course_number.lstrip("-").isdigit()
+                    and season_number.lstrip("-").isdigit()
+                ):
+                    continue
+                label = cells[name_index]
+                code = _course_code(label)
+                url = self._safe_url(
+                    f"{CMS_COURSE_VIEW_PATH}?id={course_number}"
+                    f"&sid={season_number}"
+                )
+                course_id = _stable_id("course", url)
+                courses.append(
+                    {
+                        "id": course_id,
+                        "code": code or "CMS",
+                        "title": _course_title(label, code),
+                        "cms_label": label,
+                        "resource_count": None,
+                        "active": (
+                            cells[active_index].casefold() == "active"
+                            if active_index is not None
+                            and active_index < len(cells)
+                            else None
+                        ),
+                    }
+                )
+                self._course_urls[course_id] = url
+        return courses
+
     def _navigation_candidates(self, html: str, page_url: str) -> list[str]:
         soup = BeautifulSoup(html, "lxml")
         candidates: list[str] = []
@@ -227,9 +293,17 @@ class GiuCmsClient:
             if self._courses_cache is not None and not force:
                 return [dict(course) for course in self._courses_cache]
 
-            landing = self._get(CMS_STUDENT_PATH)
+            # Request the concrete student home page. IIS rejects the bare
+            # /apps/student/ directory on GIU even when these same credentials
+            # are valid for HomePageStn.aspx.
+            landing = self._get(CMS_COURSE_LIST_PATH)
             html = landing.text
-            courses = self._parse_course_links(html, page_url=landing.url)
+            courses = self._parse_course_table(html)
+            if not courses:
+                courses = self._parse_course_links(
+                    html,
+                    page_url=landing.url,
+                )
 
             # Some CMS versions place the course grid one navigation step away
             # from the student landing page. Discover it from same-host links
@@ -309,7 +383,9 @@ class GiuCmsClient:
         seen: set[str] = set()
         week_indexes: dict[int, int] = {}
 
-        for anchor in soup.select("a#download, a[id$='download']"):
+        for anchor in soup.select(
+            "a#download, a[id$='download'], a[href^='/Uploads/']"
+        ):
             href = str(anchor.get("href") or "")
             if not href:
                 continue

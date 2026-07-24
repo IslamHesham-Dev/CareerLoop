@@ -13,6 +13,9 @@ Authorization: Bearer <opaque-session-token>
 - `GET /v1/auth/session`
 - `POST /v1/auth/logout`
 
+Login validates the GIU portal and GIU CMS as one atomic university sign-in.
+Successful login/session responses include `cms_connected: true`.
+
 ## Academic data
 
 - `GET /v1/academic/context`
