@@ -366,6 +366,125 @@ class Transcript {
   }
 }
 
+class CmsSourceFolder {
+  final String label;
+  final String kind;
+  final String url;
+
+  const CmsSourceFolder({
+    required this.label,
+    required this.kind,
+    required this.url,
+  });
+
+  factory CmsSourceFolder.fromJson(Map<String, dynamic> json) =>
+      CmsSourceFolder(
+        label: json['label'] as String? ?? '',
+        kind: json['kind'] as String? ?? '',
+        url: json['url'] as String? ?? '',
+      );
+}
+
+class CmsCourse {
+  final String slug;
+  final String catalogCode;
+  final String title;
+  final String description;
+  final List<String> aliases;
+  final List<CmsSourceFolder> sourceFolders;
+  final Map<String, int> contentCounts;
+  final int videoCount;
+  final int transcribedCount;
+
+  const CmsCourse({
+    required this.slug,
+    required this.catalogCode,
+    required this.title,
+    required this.description,
+    required this.aliases,
+    required this.sourceFolders,
+    required this.contentCounts,
+    required this.videoCount,
+    required this.transcribedCount,
+  });
+
+  factory CmsCourse.fromJson(Map<String, dynamic> json) => CmsCourse(
+        slug: json['slug'] as String? ?? '',
+        catalogCode: json['catalog_code'] as String? ?? 'CMS',
+        title: json['title'] as String? ?? '',
+        description: json['description'] as String? ?? '',
+        aliases: List<String>.from(json['aliases'] as List? ?? const []),
+        sourceFolders: (json['source_folders'] as List? ?? const [])
+            .map((item) => CmsSourceFolder.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ))
+            .toList(),
+        contentCounts: Map<String, int>.from(
+          (json['content_counts'] as Map? ?? const {}).map(
+            (key, value) => MapEntry('$key', (value as num).toInt()),
+          ),
+        ),
+        videoCount: json['video_count'] as int? ?? 0,
+        transcribedCount: json['transcribed_count'] as int? ?? 0,
+      );
+}
+
+class CmsContentItem {
+  final String id;
+  final String title;
+  final String contentType;
+  final String driveUrl;
+  final String collection;
+  final String transcriptStatus;
+  final int? sizeBytes;
+
+  const CmsContentItem({
+    required this.id,
+    required this.title,
+    required this.contentType,
+    required this.driveUrl,
+    required this.collection,
+    required this.transcriptStatus,
+    required this.sizeBytes,
+  });
+
+  factory CmsContentItem.fromJson(Map<String, dynamic> json) => CmsContentItem(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? '',
+        contentType: json['content_type'] as String? ?? 'video',
+        driveUrl: json['drive_url'] as String? ?? '',
+        collection: json['collection'] as String? ?? '',
+        transcriptStatus: json['transcript_status'] as String? ?? 'pending',
+        sizeBytes: (json['size_bytes'] as num?)?.toInt(),
+      );
+
+  String get sizeLabel {
+    final bytes = sizeBytes;
+    if (bytes == null || bytes <= 0) return '';
+    final megabytes = bytes / (1024 * 1024);
+    return '${megabytes.toStringAsFixed(megabytes >= 100 ? 0 : 1)} MB';
+  }
+}
+
+class CmsCourseContent {
+  final CmsCourse course;
+  final List<CmsContentItem> items;
+
+  const CmsCourseContent({required this.course, required this.items});
+
+  factory CmsCourseContent.fromJson(Map<String, dynamic> json) =>
+      CmsCourseContent(
+        course: CmsCourse.fromJson(
+          Map<String, dynamic>.from(json['course'] as Map),
+        ),
+        items: (json['items'] as List? ?? const [])
+            .map((item) => CmsContentItem.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ))
+            .toList(),
+      );
+}
+
 class ToolActivity {
   final String name;
   final String status;

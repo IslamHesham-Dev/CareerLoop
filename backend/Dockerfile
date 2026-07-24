@@ -13,6 +13,7 @@ RUN uv sync --frozen --no-dev || uv sync --no-dev
 
 COPY app ./app
 COPY guc_portal ./guc_portal
+COPY content ./content
 
 EXPOSE 8000
 

@@ -8,6 +8,7 @@ import '../ui/advisor/advisor_screen.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/core/app_shell.dart';
 import '../ui/courses/course_details_screen.dart';
+import '../ui/courses/cms_course_screen.dart';
 import '../ui/courses/courses_screen.dart';
 import '../ui/overview/overview_screen.dart';
 import '../ui/settings/settings_screen.dart';
@@ -60,6 +61,26 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
                   path: '/courses',
                   builder: (context, state) => const CoursesScreen(),
                   routes: [
+                    GoRoute(
+                      path: 'cms/:slug',
+                      builder: (context, state) {
+                        final extra = state.extra;
+                        final course = extra is CmsCourse
+                            ? extra
+                            : CmsCourse(
+                                slug: state.pathParameters['slug'] ?? '',
+                                catalogCode: 'CMS',
+                                title: 'CMS course',
+                                description: 'CareerLoop learning content',
+                                aliases: const [],
+                                sourceFolders: const [],
+                                contentCounts: const {},
+                                videoCount: 0,
+                                transcribedCount: 0,
+                              );
+                        return CmsCourseScreen(course: course);
+                      },
+                    ),
                     GoRoute(
                       path: ':code',
                       builder: (context, state) {

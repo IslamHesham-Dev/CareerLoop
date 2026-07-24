@@ -34,3 +34,22 @@ Authorization: Bearer <opaque-session-token>
 
 Chat responses include the answer, completed tool names, and human-readable
 source labels so the mobile interface can distinguish portal facts from advice.
+
+## CMS learning content
+
+- `GET /v1/cms/courses`
+- `GET /v1/cms/courses/{course}/content?content_type=lecture`
+- `GET /v1/cms/search?query=trees&course=DSA`
+- `GET /v1/cms/items/{drive_file_id}/transcript`
+
+The initial catalog is a deployment-safe snapshot of the supplied Google Drive
+folders. Video transcripts return `pending` until a matching
+`backend/content/transcripts/{drive_file_id}.md` file is added.
+
+Completed Markdown intake files can be imported with:
+
+```powershell
+cd backend
+uv run python scripts/import_transcript_intake.py `
+  content/transcript_intake_template.md
+```

@@ -7,6 +7,7 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
 
+from app.cms import cms_service
 from app.config import Settings
 from app.sessions.models import StudentSession
 
@@ -78,6 +79,35 @@ def build_agent(student: StudentSession, settings: Settings):
         """Find course rows in one transcript year by a name or code fragment."""
         return _safe(lambda: academic.find_transcript_course(course, year))
 
+    @tool
+    def list_cms_courses() -> dict:
+        """List courses and video counts in the CareerLoop CMS library."""
+        return cms_service.list_courses()
+
+    @tool
+    def get_cms_course_content(
+        course: str,
+        content_type: str = "all",
+    ) -> dict:
+        """List Drive learning videos for one CMS course. content_type can be
+        all, lecture, tutorial, revision, or other."""
+        return _safe(
+            lambda: cms_service.course_content(course, content_type)
+        )
+
+    @tool
+    def search_cms_content(query: str, course: str = "") -> dict:
+        """Search CMS video titles, optionally inside one course."""
+        return _safe(
+            lambda: cms_service.search(query, course=course or None)
+        )
+
+    @tool
+    def get_cms_video_transcript(video_id: str) -> dict:
+        """Read the supplied transcript for one CMS video by Drive file ID.
+        A pending result means no transcript has been added yet."""
+        return _safe(lambda: cms_service.video_transcript(video_id))
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -98,6 +128,10 @@ def build_agent(student: StudentSession, settings: Settings):
         get_course_grades,
         get_transcript,
         find_transcript_course,
+        list_cms_courses,
+        get_cms_course_content,
+        search_cms_content,
+        get_cms_video_transcript,
     ]
     prompt = (
         "You are CareerLoop, a read-only academic advisor and study-planning "
@@ -121,7 +155,13 @@ def build_agent(student: StudentSession, settings: Settings):
         "(4.00-4.99), and 0-49.9 F (5.00-6.00). A band does not justify "
         "inventing an exact GPA. "
         "Summarize strengths, weak assessments, and practical study priorities. "
-        "CMS tools are not configured in this build. You do not know course content, "
+        "The CareerLoop CMS tools contain a catalog of Drive lecture and tutorial "
+        "videos. Use them to identify available learning resources and links. "
+        "A video title is metadata, not evidence of everything taught in the video. "
+        "Only summarize or answer from a video's substance when "
+        "get_cms_video_transcript returns status=available; when it is pending, "
+        "say the transcript has not been supplied yet. You do not otherwise know "
+        "course content, "
         "deadlines, attendance, prerequisites, schedules, or graduation rules "
         "unless the student supplies them. Separate portal facts from recommendations "
         "and never present advice as official university policy. The portal is slow, "
@@ -158,6 +198,10 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
         "get_course_grades": "GIU detailed grades",
         "get_transcript": "GIU transcript",
         "find_transcript_course": "GIU transcript",
+        "list_cms_courses": "CareerLoop CMS",
+        "get_cms_course_content": "CareerLoop CMS + Google Drive",
+        "search_cms_content": "CareerLoop CMS + Google Drive",
+        "get_cms_video_transcript": "CMS video transcript",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:

@@ -115,8 +115,9 @@ class AcademicService:
             "data_sources": [
                 "GIU portal detailed grades",
                 "GIU transcript",
+                "CareerLoop CMS content catalog",
             ],
-            "excluded_sources": ["CMS", "live current-course page"],
+            "excluded_sources": ["live current-course page"],
         }
 
     def list_grade_seasons(self) -> list[str]:

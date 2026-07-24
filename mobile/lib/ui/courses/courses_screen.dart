@@ -22,6 +22,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AcademicRepository>().loadDashboard();
+      context.read<CmsRepository>().loadCourses();
     });
   }
 
@@ -34,6 +35,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
+    final cms = context.watch<CmsRepository>();
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final needle = _search.text.trim().toLowerCase();
     final visible = academic.courses
@@ -41,6 +43,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
             needle.isEmpty ||
             course.code.toLowerCase().contains(needle) ||
             course.title.toLowerCase().contains(needle))
+        .toList();
+    final visibleCms = cms.courses
+        .where((course) =>
+            needle.isEmpty ||
+            course.catalogCode.toLowerCase().contains(needle) ||
+            course.title.toLowerCase().contains(needle) ||
+            course.aliases.any(
+              (alias) => alias.toLowerCase().contains(needle),
+            ))
         .toList();
     return SafeArea(
       bottom: false,
@@ -51,7 +62,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             eyebrow: academic.context?.currentSeason ?? 'Winter 2024',
             title: 'Course library',
             subtitle:
-                'Explore exact portal records, then bring any course into the advisor.',
+                'Open CMS learning videos, inspect portal grades, and bring either source into the advisor.',
           ),
           const SizedBox(height: 22),
           TextField(
@@ -73,6 +84,58 @@ class _CoursesScreenState extends State<CoursesScreen> {
             ),
           ),
           const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'CMS learning library',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              if (cms.courses.isNotEmpty)
+                Text(
+                  '${cms.courses.fold<int>(0, (sum, course) => sum + course.videoCount)} videos',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          if (cms.loadingCourses && cms.courses.isEmpty)
+            const LensCard(
+              child: LensLoading(label: 'Loading CMS courses...'),
+            )
+          else if (cms.error != null && cms.courses.isEmpty)
+            LensError(
+              message: cms.error!,
+              onRetry: () => cms.loadCourses(force: true),
+            )
+          else if (visibleCms.isEmpty)
+            const LensCard(
+              child: Center(child: Text('No CMS course matches that search.')),
+            )
+          else
+            ...visibleCms.map(
+              (course) => Padding(
+                padding: const EdgeInsets.only(bottom: 11),
+                child: _CmsCourseCard(course: course),
+              ),
+            ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Advisory semester courses',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Text(
+                academic.context?.currentSeason ?? 'Portal',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 11),
           if (academic.loadingDashboard && academic.courses.isEmpty)
             const LensLoading(label: 'Loading semester courses…')
           else if (academic.error != null && academic.courses.isEmpty)
@@ -94,6 +157,66 @@ class _CoursesScreenState extends State<CoursesScreen> {
                     ),
                   ),
                 ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CmsCourseCard extends StatelessWidget {
+  final CmsCourse course;
+
+  const _CmsCourseCard({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    return LensCard(
+      onTap: () => context.push('/courses/cms/${course.slug}', extra: course),
+      padding: const EdgeInsets.all(17),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [LensColors.indigo, LensColors.violet],
+              ),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Text(
+              course.catalogCode,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  course.title,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '${course.videoCount} videos | '
+                  '${course.transcribedCount} AI-ready',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
         ],
       ),
     );

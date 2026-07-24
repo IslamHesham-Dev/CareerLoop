@@ -9,7 +9,8 @@
 - Flutter stores only the opaque session token in platform secure storage.
 - Logout and expiration close the portal connection and clear credential
   material, cached academic data, and conversation state.
-- CMS is intentionally unavailable.
+- CMS video metadata contains only the explicitly supplied shared Drive links.
+- The backend does not proxy or store video bytes; Drive enforces file access.
 
 This is a private prototype, not an official university service. A public
 multi-student release should obtain university approval and ideally use an

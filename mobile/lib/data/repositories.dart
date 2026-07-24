@@ -289,6 +289,75 @@ class AcademicRepository extends ChangeNotifier {
   }
 }
 
+class CmsRepository extends ChangeNotifier {
+  final ApiClient api;
+
+  List<CmsCourse> courses = const [];
+  final Map<String, CmsCourseContent> content = {};
+  bool loadingCourses = false;
+  final Set<String> loadingContent = {};
+  String? error;
+
+  CmsRepository({required this.api});
+
+  Future<void> loadCourses({bool force = false}) async {
+    if (loadingCourses || (!force && courses.isNotEmpty)) return;
+    loadingCourses = true;
+    error = null;
+    notifyListeners();
+    try {
+      final json = await api.get('/v1/cms/courses');
+      courses = (json['courses'] as List? ?? const [])
+          .map((item) => CmsCourse.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ))
+          .toList();
+    } on ApiException catch (exception) {
+      error = exception.message;
+    } catch (_) {
+      error = 'The CMS learning library could not be loaded.';
+    } finally {
+      loadingCourses = false;
+      notifyListeners();
+    }
+  }
+
+  Future<CmsCourseContent?> loadCourseContent(
+    String slug, {
+    bool force = false,
+  }) async {
+    if (!force && content.containsKey(slug)) return content[slug];
+    if (loadingContent.contains(slug)) return null;
+    loadingContent.add(slug);
+    error = null;
+    notifyListeners();
+    try {
+      final result = CmsCourseContent.fromJson(
+        await api.get('/v1/cms/courses/$slug/content'),
+      );
+      content[slug] = result;
+      return result;
+    } on ApiException catch (exception) {
+      error = exception.message;
+      return null;
+    } catch (_) {
+      error = 'The course videos could not be loaded.';
+      return null;
+    } finally {
+      loadingContent.remove(slug);
+      notifyListeners();
+    }
+  }
+
+  void clearLocal() {
+    courses = const [];
+    content.clear();
+    loadingContent.clear();
+    error = null;
+    notifyListeners();
+  }
+}
+
 class AdvisorRepository extends ChangeNotifier {
   final ApiClient api;
 

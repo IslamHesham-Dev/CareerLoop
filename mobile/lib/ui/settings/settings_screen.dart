@@ -67,7 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const _SettingRow(
                       icon: Icons.visibility_outlined,
                       title: 'Academic data source',
-                      value: 'GIU Student Portal',
+                      value: 'GIU Portal + CareerLoop CMS',
                     ),
                   ],
                 ),
@@ -147,8 +147,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onPressed: auth.isBusy
                     ? null
                     : () async {
-                        await context.read<AdvisorRepository>().reset();
+                        final advisor = context.read<AdvisorRepository>();
+                        final cms = context.read<CmsRepository>();
+                        await advisor.reset();
                         academic.clearLocal();
+                        cms.clearLocal();
                         await auth.logout();
                       },
                 icon: const Icon(Icons.logout_rounded),

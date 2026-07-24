@@ -17,6 +17,7 @@ Future<void> main() async {
   );
   final auth = AuthRepository(api: api, storage: storage);
   final academic = AcademicRepository(api: api);
+  final cms = CmsRepository(api: api);
   final advisor = AdvisorRepository(api: api);
 
   await auth.restoreSession();
@@ -26,6 +27,7 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider.value(value: academic),
+        ChangeNotifierProvider.value(value: cms),
         ChangeNotifierProvider.value(value: advisor),
       ],
       child: const CareerLoopApp(),

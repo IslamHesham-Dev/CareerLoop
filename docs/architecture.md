@@ -7,6 +7,7 @@ FastAPI
   -> opaque session token -> isolated StudentSession
   -> CareerLoop agent -> per-session academic tools/cache
   -> GucPortal -> GIU read-only pages
+  -> CmsService -> Drive-backed course/video catalog + transcript files
 ```
 
 ## Mobile
@@ -32,6 +33,10 @@ Every successful login creates a separate `StudentSession` containing:
 Only a SHA-256 digest of the opaque token is stored in the server lookup table.
 Sessions are serialized per chat, and portal access is locked because the
 underlying `requests.Session` is stateful.
+
+The CMS catalog is shared, read-only application data. It contains Drive file
+metadata and links, while transcript text is stored by immutable Drive file ID
+so later title changes do not break agent grounding.
 
 ## Scaling boundary
 
