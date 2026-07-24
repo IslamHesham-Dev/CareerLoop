@@ -38,127 +38,219 @@ class _CoursesScreenState extends State<CoursesScreen> {
     final cms = context.watch<CmsRepository>();
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final needle = _search.text.trim().toLowerCase();
-    final visible = academic.courses
-        .where((course) =>
-            needle.isEmpty ||
-            course.code.toLowerCase().contains(needle) ||
-            course.title.toLowerCase().contains(needle))
+    final cmsCourses = cms.courses
+        .where(
+          (course) =>
+              needle.isEmpty ||
+              course.code.toLowerCase().contains(needle) ||
+              course.title.toLowerCase().contains(needle) ||
+              course.cmsLabel.toLowerCase().contains(needle),
+        )
         .toList();
-    final visibleCms = cms.courses
-        .where((course) =>
-            needle.isEmpty ||
-            course.catalogCode.toLowerCase().contains(needle) ||
-            course.title.toLowerCase().contains(needle) ||
-            course.aliases.any(
-              (alias) => alias.toLowerCase().contains(needle),
-            ))
+    final semesterCourses = academic.courses
+        .where(
+          (course) =>
+              needle.isEmpty ||
+              course.code.toLowerCase().contains(needle) ||
+              course.title.toLowerCase().contains(needle),
+        )
         .toList();
+
     return SafeArea(
       bottom: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
+      child: RefreshIndicator(
+        onRefresh: () async {
+          await Future.wait([
+            cms.loadCourses(force: true),
+            academic.loadDashboard(force: true),
+          ]);
+        },
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
+          children: [
+            const PageHeading(
+              eyebrow: 'LIVE GIU CMS',
+              title: 'Course space',
+              subtitle:
+                  'Your official course files, organized for mobile. Selected courses also include an independent video archive.',
+            ),
+            const SizedBox(height: 18),
+            _CmsStatus(
+              courseCount: cms.courses.length,
+              loading: cms.loadingCourses,
+            ),
+            const SizedBox(height: 18),
+            TextField(
+              controller: _search,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
+              onChanged: (_) => setState(() {}),
+              decoration: InputDecoration(
+                hintText: 'Find a course or code',
+                prefixIcon: const Icon(Icons.search_rounded),
+                suffixIcon: keyboardVisible
+                    ? IconButton(
+                        tooltip: 'Hide keyboard',
+                        onPressed: () =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        icon: const Icon(Icons.keyboard_hide_rounded),
+                      )
+                    : null,
+              ),
+            ),
+            const SizedBox(height: 26),
+            _SectionHeading(
+              title: 'Advisory semester',
+              detail: academic.context?.currentSeason ?? 'Portal',
+            ),
+            const SizedBox(height: 11),
+            if (academic.loadingDashboard && academic.courses.isEmpty)
+              const LensCard(
+                child: LensLoading(label: 'Loading semester courses...'),
+              )
+            else if (semesterCourses.isEmpty)
+              const LensCard(
+                child: Text(
+                  'No advisory-semester course matches this search.',
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              LensCard(
+                padding: const EdgeInsets.all(14),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: semesterCourses
+                      .map(
+                        (course) => ActionChip(
+                          avatar: const Icon(
+                            Icons.analytics_outlined,
+                            size: 17,
+                          ),
+                          label: Text(course.code),
+                          tooltip: course.title,
+                          onPressed: () => context.push(
+                            '/courses/${course.code}',
+                            extra: course,
+                          ),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            const SizedBox(height: 28),
+            _SectionHeading(
+              title: 'All CMS courses',
+              detail: cms.courses.isEmpty
+                  ? null
+                  : '${cms.courses.length} available',
+            ),
+            const SizedBox(height: 11),
+            if (cms.loadingCourses && cms.courses.isEmpty)
+              const LensCard(
+                child: LensLoading(label: 'Connecting to GIU CMS...'),
+              )
+            else if (cms.error != null && cms.courses.isEmpty)
+              LensError(
+                message: cms.error!,
+                onRetry: () => cms.loadCourses(force: true),
+              )
+            else if (cmsCourses.isEmpty)
+              const LensCard(
+                child: Text(
+                  'No CMS course matches this search.',
+                  textAlign: TextAlign.center,
+                ),
+              )
+            else
+              ...cmsCourses.map(
+                (course) => Padding(
+                  padding: const EdgeInsets.only(bottom: 11),
+                  child: _CmsCourseCard(course: course),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CmsStatus extends StatelessWidget {
+  final int courseCount;
+  final bool loading;
+
+  const _CmsStatus({required this.courseCount, required this.loading});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .88),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: LensColors.line),
+      ),
+      child: Row(
         children: [
-          PageHeading(
-            eyebrow: academic.context?.currentSeason ?? 'Winter 2024',
-            title: 'Course library',
-            subtitle:
-                'Open CMS learning videos, inspect portal grades, and bring either source into the advisor.',
-          ),
-          const SizedBox(height: 22),
-          TextField(
-            controller: _search,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-            onChanged: (_) => setState(() {}),
-            decoration: InputDecoration(
-              hintText: 'Search by code or course name',
-              prefixIcon: const Icon(Icons.search_rounded),
-              suffixIcon: keyboardVisible
-                  ? IconButton(
-                      tooltip: 'Hide keyboard',
-                      onPressed: () =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      icon: const Icon(Icons.keyboard_hide_rounded),
-                    )
-                  : null,
+          Container(
+            width: 9,
+            height: 9,
+            decoration: BoxDecoration(
+              color: loading ? LensColors.amber : LensColors.aqua,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: (loading ? LensColors.amber : LensColors.aqua)
+                      .withValues(alpha: .35),
+                  blurRadius: 8,
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'CMS learning library',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              if (cms.courses.isNotEmpty)
-                Text(
-                  '${cms.courses.fold<int>(0, (sum, course) => sum + course.videoCount)} videos',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-            ],
-          ),
-          const SizedBox(height: 11),
-          if (cms.loadingCourses && cms.courses.isEmpty)
-            const LensCard(
-              child: LensLoading(label: 'Loading CMS courses...'),
-            )
-          else if (cms.error != null && cms.courses.isEmpty)
-            LensError(
-              message: cms.error!,
-              onRetry: () => cms.loadCourses(force: true),
-            )
-          else if (visibleCms.isEmpty)
-            const LensCard(
-              child: Center(child: Text('No CMS course matches that search.')),
-            )
-          else
-            ...visibleCms.map(
-              (course) => Padding(
-                padding: const EdgeInsets.only(bottom: 11),
-                child: _CmsCourseCard(course: course),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              loading
+                  ? 'Syncing your CMS workspace'
+                  : 'Connected to your private GIU CMS session',
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
               ),
             ),
-          const SizedBox(height: 18),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Advisory semester courses',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Text(
-                academic.context?.currentSeason ?? 'Portal',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ],
           ),
-          const SizedBox(height: 11),
-          if (academic.loadingDashboard && academic.courses.isEmpty)
-            const LensLoading(label: 'Loading semester courses…')
-          else if (academic.error != null && academic.courses.isEmpty)
-            LensError(
-              message: academic.error!,
-              onRetry: () => academic.loadDashboard(force: true),
-            )
-          else if (visible.isEmpty)
-            const LensCard(
-              child: Center(child: Text('No course matches that search.')),
-            )
-          else
-            ...visible.asMap().entries.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _CourseCard(
-                      course: entry.value,
-                      index: entry.key,
-                    ),
+          if (courseCount > 0)
+            Text(
+              '$courseCount courses',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 11,
                   ),
-                ),
+            ),
         ],
       ),
+    );
+  }
+}
+
+class _SectionHeading extends StatelessWidget {
+  final String title;
+  final String? detail;
+
+  const _SectionHeading({required this.title, this.detail});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+        ),
+        if (detail != null)
+          Text(detail!, style: Theme.of(context).textTheme.bodyMedium),
+      ],
     );
   }
 }
@@ -170,26 +262,31 @@ class _CmsCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resourceLabel = course.resourceCount == null
+        ? 'Open course resources'
+        : '${course.resourceCount} CMS resources';
     return LensCard(
-      onTap: () => context.push('/courses/cms/${course.slug}', extra: course),
+      onTap: () => context.push('/courses/cms/${course.id}', extra: course),
       padding: const EdgeInsets.all(17),
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 52,
+            height: 58,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [LensColors.indigo, LensColors.violet],
-              ),
+              color: LensColors.indigo.withValues(alpha: .09),
               borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: LensColors.indigo.withValues(alpha: .12),
+              ),
             ),
             child: Text(
-              course.catalogCode,
+              course.code,
               textAlign: TextAlign.center,
+              maxLines: 2,
               style: const TextStyle(
-                color: Colors.white,
+                color: LensColors.indigo,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
               ),
@@ -202,20 +299,34 @@ class _CmsCourseCard extends StatelessWidget {
               children: [
                 Text(
                   course.title,
-                  style: const TextStyle(fontWeight: FontWeight.w800),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    height: 1.25,
+                  ),
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  '${course.videoCount} videos | '
-                  '${course.transcribedCount} AI-ready',
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontSize: 11),
+                const SizedBox(height: 7),
+                Wrap(
+                  spacing: 7,
+                  runSpacing: 6,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      resourceLabel,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(fontSize: 11),
+                    ),
+                    if (course.hasSupplementalVideos)
+                      _VideoBadge(count: course.videoCount),
+                  ],
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
         ],
       ),
@@ -223,68 +334,34 @@ class _CmsCourseCard extends StatelessWidget {
   }
 }
 
-class _CourseCard extends StatelessWidget {
-  final CourseSummary course;
-  final int index;
+class _VideoBadge extends StatelessWidget {
+  final int count;
 
-  const _CourseCard({required this.course, required this.index});
+  const _VideoBadge({required this.count});
 
   @override
   Widget build(BuildContext context) {
-    const accents = [
-      LensColors.indigo,
-      LensColors.aqua,
-      LensColors.violet,
-      LensColors.amber,
-    ];
-    final accent = accents[index % accents.length];
-    return LensCard(
-      onTap: () => context.push('/courses/${course.code}', extra: course),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: LensColors.violet.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(999),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 10,
-            height: 72,
-            decoration: BoxDecoration(
-              color: accent,
-              borderRadius: BorderRadius.circular(999),
-            ),
+          const Icon(
+            Icons.play_circle_outline_rounded,
+            size: 13,
+            color: LensColors.violet,
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      course.code,
-                      style: TextStyle(
-                        color: accent,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 12,
-                      ),
-                    ),
-                    const Spacer(),
-                    Icon(Icons.arrow_outward_rounded, size: 18, color: accent),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  course.title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 7),
-                Text(
-                  course.track,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontSize: 11,
-                      ),
-                ),
-              ],
+          const SizedBox(width: 4),
+          Text(
+            '$count videos',
+            style: const TextStyle(
+              color: LensColors.violet,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
         ],

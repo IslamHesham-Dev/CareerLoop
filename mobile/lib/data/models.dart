@@ -366,70 +366,83 @@ class Transcript {
   }
 }
 
-class CmsSourceFolder {
-  final String label;
-  final String kind;
-  final String url;
-
-  const CmsSourceFolder({
-    required this.label,
-    required this.kind,
-    required this.url,
-  });
-
-  factory CmsSourceFolder.fromJson(Map<String, dynamic> json) =>
-      CmsSourceFolder(
-        label: json['label'] as String? ?? '',
-        kind: json['kind'] as String? ?? '',
-        url: json['url'] as String? ?? '',
-      );
-}
-
 class CmsCourse {
-  final String slug;
-  final String catalogCode;
+  final String id;
+  final String code;
   final String title;
-  final String description;
-  final List<String> aliases;
-  final List<CmsSourceFolder> sourceFolders;
-  final Map<String, int> contentCounts;
+  final String cmsLabel;
+  final int? resourceCount;
+  final bool hasSupplementalVideos;
   final int videoCount;
   final int transcribedCount;
 
   const CmsCourse({
-    required this.slug,
-    required this.catalogCode,
+    required this.id,
+    required this.code,
     required this.title,
-    required this.description,
-    required this.aliases,
-    required this.sourceFolders,
-    required this.contentCounts,
+    required this.cmsLabel,
+    required this.resourceCount,
+    required this.hasSupplementalVideos,
     required this.videoCount,
     required this.transcribedCount,
   });
 
   factory CmsCourse.fromJson(Map<String, dynamic> json) => CmsCourse(
-        slug: json['slug'] as String? ?? '',
-        catalogCode: json['catalog_code'] as String? ?? 'CMS',
+        id: json['id'] as String? ?? '',
+        code: json['code'] as String? ?? 'CMS',
         title: json['title'] as String? ?? '',
-        description: json['description'] as String? ?? '',
-        aliases: List<String>.from(json['aliases'] as List? ?? const []),
-        sourceFolders: (json['source_folders'] as List? ?? const [])
-            .map((item) => CmsSourceFolder.fromJson(
-                  Map<String, dynamic>.from(item as Map),
-                ))
-            .toList(),
-        contentCounts: Map<String, int>.from(
-          (json['content_counts'] as Map? ?? const {}).map(
-            (key, value) => MapEntry('$key', (value as num).toInt()),
-          ),
-        ),
-        videoCount: json['video_count'] as int? ?? 0,
-        transcribedCount: json['transcribed_count'] as int? ?? 0,
+        cmsLabel: json['cms_label'] as String? ?? '',
+        resourceCount: (json['resource_count'] as num?)?.toInt(),
+        hasSupplementalVideos:
+            json['has_supplemental_videos'] as bool? ?? false,
+        videoCount: (json['video_count'] as num?)?.toInt() ?? 0,
+        transcribedCount: (json['transcribed_count'] as num?)?.toInt() ?? 0,
       );
 }
 
-class CmsContentItem {
+class CmsResource {
+  final String id;
+  final String title;
+  final String subtitle;
+  final String contentType;
+  final String fileExtension;
+  final int? week;
+  final String? weekLabel;
+  final bool isVod;
+  final String downloadPath;
+
+  const CmsResource({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.contentType,
+    required this.fileExtension,
+    required this.week,
+    required this.weekLabel,
+    required this.isVod,
+    required this.downloadPath,
+  });
+
+  factory CmsResource.fromJson(Map<String, dynamic> json) => CmsResource(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? 'CMS resource',
+        subtitle: json['subtitle'] as String? ?? '',
+        contentType: json['content_type'] as String? ?? 'Resource',
+        fileExtension: json['file_extension'] as String? ?? '',
+        week: (json['week'] as num?)?.toInt(),
+        weekLabel: json['week_label'] as String?,
+        isVod: json['is_vod'] as bool? ?? false,
+        downloadPath: json['download_path'] as String? ?? '',
+      );
+
+  String get filename {
+    final extension =
+        fileExtension.isEmpty ? '' : '.${fileExtension.toLowerCase()}';
+    return '$title$extension';
+  }
+}
+
+class CmsVideo {
   final String id;
   final String title;
   final String contentType;
@@ -438,7 +451,7 @@ class CmsContentItem {
   final String transcriptStatus;
   final int? sizeBytes;
 
-  const CmsContentItem({
+  const CmsVideo({
     required this.id,
     required this.title,
     required this.contentType,
@@ -448,7 +461,7 @@ class CmsContentItem {
     required this.sizeBytes,
   });
 
-  factory CmsContentItem.fromJson(Map<String, dynamic> json) => CmsContentItem(
+  factory CmsVideo.fromJson(Map<String, dynamic> json) => CmsVideo(
         id: json['id'] as String? ?? '',
         title: json['title'] as String? ?? '',
         contentType: json['content_type'] as String? ?? 'video',
@@ -468,17 +481,27 @@ class CmsContentItem {
 
 class CmsCourseContent {
   final CmsCourse course;
-  final List<CmsContentItem> items;
+  final List<CmsResource> cmsResources;
+  final List<CmsVideo> availableVideos;
 
-  const CmsCourseContent({required this.course, required this.items});
+  const CmsCourseContent({
+    required this.course,
+    required this.cmsResources,
+    required this.availableVideos,
+  });
 
   factory CmsCourseContent.fromJson(Map<String, dynamic> json) =>
       CmsCourseContent(
         course: CmsCourse.fromJson(
           Map<String, dynamic>.from(json['course'] as Map),
         ),
-        items: (json['items'] as List? ?? const [])
-            .map((item) => CmsContentItem.fromJson(
+        cmsResources: (json['cms_resources'] as List? ?? const [])
+            .map((item) => CmsResource.fromJson(
+                  Map<String, dynamic>.from(item as Map),
+                ))
+            .toList(),
+        availableVideos: (json['available_videos'] as List? ?? const [])
+            .map((item) => CmsVideo.fromJson(
                   Map<String, dynamic>.from(item as Map),
                 ))
             .toList(),

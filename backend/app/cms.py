@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 from typing import Any
 
+from app.cms_live import GiuCmsClient
 
-class CmsService:
-    """Read-only CareerLoop CMS catalog backed by inventoried Drive videos."""
+
+def _normalized(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
+
+
+class SupplementalVideoCatalog:
+    """The five approved Drive collections, never the CMS course catalog."""
 
     def __init__(self, catalog_path: Path | None = None) -> None:
         backend_root = Path(__file__).resolve().parent.parent
@@ -19,106 +26,61 @@ class CmsService:
         )
 
     @staticmethod
-    def _course_summary(course: dict[str, Any]) -> dict[str, Any]:
-        items = course["items"]
-        counts: dict[str, int] = {}
-        for item in items:
-            kind = item["content_type"]
-            counts[kind] = counts.get(kind, 0) + 1
+    def _summary(course: dict[str, Any]) -> dict[str, Any]:
         return {
             "slug": course["slug"],
             "catalog_code": course["catalog_code"],
-            "official_course_code": course["official_course_code"],
             "title": course["title"],
             "aliases": course["aliases"],
-            "description": course["description"],
             "source_folders": course["source_folders"],
-            "content_counts": counts,
-            "video_count": len(items),
+            "video_count": len(course["items"]),
             "transcribed_count": sum(
-                item["transcript_status"] == "available" for item in items
+                item["transcript_status"] == "available"
+                for item in course["items"]
             ),
         }
 
-    def list_courses(self) -> dict[str, Any]:
-        return {
-            "source": "CareerLoop CMS + Google Drive",
-            "courses": [
-                self._course_summary(course)
-                for course in self._catalog["courses"]
-            ],
-        }
+    @staticmethod
+    def _names(course: dict[str, Any]) -> list[str]:
+        return [
+            course["title"],
+            course["catalog_code"],
+            course.get("official_course_code") or "",
+            *course["aliases"],
+        ]
 
-    def _find_course(self, query: str) -> dict[str, Any]:
-        needle = query.strip().casefold()
-        exact: list[dict[str, Any]] = []
-        partial: list[dict[str, Any]] = []
-        for course in self._catalog["courses"]:
-            names = [
-                course["slug"],
-                course["catalog_code"],
-                course["title"],
-                *course["aliases"],
-            ]
-            folded = [name.casefold() for name in names if name]
-            if needle in folded:
-                exact.append(course)
-            elif any(needle in name for name in folded):
-                partial.append(course)
-        matches = exact or partial
-        if not matches:
-            raise ValueError(f"No CMS course matches {query!r}.")
-        if len(matches) > 1:
-            raise ValueError(
-                f"Ambiguous CMS course {query!r}; matches: "
-                f"{[course['title'] for course in matches]}"
-            )
-        return matches[0]
-
-    def course_content(
+    def match(
         self,
-        course: str,
-        content_type: str | None = None,
-    ) -> dict[str, Any]:
-        match = self._find_course(course)
-        requested_type = (content_type or "").strip().casefold()
-        items = match["items"]
-        if requested_type and requested_type != "all":
-            items = [
-                item
-                for item in items
-                if item["content_type"].casefold() == requested_type
-            ]
-        return {
-            "course": self._course_summary(match),
-            "content_type": requested_type or "all",
-            "items": items,
-        }
-
-    def search(
-        self,
-        query: str,
         *,
-        course: str | None = None,
-        limit: int = 50,
-    ) -> dict[str, Any]:
-        needle = query.strip().casefold()
-        courses = (
-            [self._find_course(course)]
-            if course and course.strip()
-            else self._catalog["courses"]
-        )
-        matches = [
-            {
-                "course_slug": candidate["slug"],
-                "course_title": candidate["title"],
-                **item,
-            }
-            for candidate in courses
-            for item in candidate["items"]
-            if needle in item["title"].casefold()
-        ][:limit]
-        return {"query": query, "matches": matches}
+        code: str = "",
+        title: str = "",
+        label: str = "",
+    ) -> dict[str, Any] | None:
+        haystack = _normalized(" ".join((code, title, label)))
+        if not haystack:
+            return None
+        exact_code = _normalized(code)
+        for course in self._catalog["courses"]:
+            official = _normalized(course.get("official_course_code") or "")
+            if official and exact_code and official == exact_code:
+                return course
+            for name in self._names(course):
+                needle = _normalized(name)
+                if len(needle) >= 4 and needle in haystack:
+                    return course
+        return None
+
+    def videos_for(
+        self,
+        *,
+        code: str = "",
+        title: str = "",
+        label: str = "",
+    ) -> tuple[dict[str, Any] | None, list[dict[str, Any]]]:
+        course = self.match(code=code, title=title, label=label)
+        if course is None:
+            return None, []
+        return self._summary(course), list(course["items"])
 
     def video_transcript(self, video_id: str) -> dict[str, Any]:
         for course in self._catalog["courses"]:
@@ -147,7 +109,129 @@ class CmsService:
                         encoding="utf-8"
                     ),
                 }
-        raise ValueError(f"No CMS video matches ID {video_id!r}.")
+        raise ValueError(f"No supplemental video matches ID {video_id!r}.")
 
 
-cms_service = CmsService()
+class CmsService:
+    """Per-student view of live GIU CMS plus optional Drive videos."""
+
+    def __init__(
+        self,
+        client: GiuCmsClient,
+        supplemental: SupplementalVideoCatalog | None = None,
+    ) -> None:
+        self.client = client
+        self.supplemental = supplemental or supplemental_video_catalog
+
+    def close(self) -> None:
+        self.client.close()
+
+    def _merge_summary(self, course: dict[str, Any]) -> dict[str, Any]:
+        supplement, videos = self.supplemental.videos_for(
+            code=course.get("code", ""),
+            title=course.get("title", ""),
+            label=course.get("cms_label", ""),
+        )
+        return {
+            **course,
+            "has_supplemental_videos": bool(videos),
+            "video_count": len(videos),
+            "transcribed_count": (
+                supplement["transcribed_count"] if supplement else 0
+            ),
+        }
+
+    def list_courses(self, *, force: bool = False) -> dict[str, Any]:
+        courses = [
+            self._merge_summary(course)
+            for course in self.client.list_courses(force=force)
+        ]
+        return {
+            "source": "GIU CMS",
+            "status": "live",
+            "courses": courses,
+        }
+
+    def course_content(self, course_id: str) -> dict[str, Any]:
+        live = self.client.course_content(course_id)
+        supplement, videos = self.supplemental.videos_for(
+            code=live.get("code", ""),
+            title=live.get("title", ""),
+            label=live.get("cms_label", ""),
+        )
+        course = self._merge_summary(live)
+        return {
+            "course": course,
+            "cms_resources": live["resources"],
+            "available_videos": videos,
+            "video_collection": supplement,
+        }
+
+    def search(
+        self,
+        query: str,
+        *,
+        course_id: str | None = None,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        needle = _normalized(query)
+        if not needle:
+            raise ValueError("A CMS search query is required.")
+        courses = self.list_courses()["courses"]
+        if course_id:
+            courses = [
+                course for course in courses if course["id"] == course_id
+            ]
+            if not courses:
+                raise ValueError(f"No CMS course matches ID {course_id!r}.")
+
+        matches: list[dict[str, Any]] = []
+        for course in courses:
+            if needle in _normalized(
+                f"{course['code']} {course['title']} {course['cms_label']}"
+            ):
+                matches.append(
+                    {
+                        "kind": "course",
+                        "course_id": course["id"],
+                        "course_code": course["code"],
+                        "course_title": course["title"],
+                        "title": course["title"],
+                    }
+                )
+            # Resource pages are loaded only for a requested course, avoiding
+            # dozens of CMS requests for a broad search.
+            if course_id:
+                detail = self.course_content(course["id"])
+                for resource in detail["cms_resources"]:
+                    if needle in _normalized(
+                        f"{resource['title']} {resource['subtitle']} "
+                        f"{resource['content_type']}"
+                    ):
+                        matches.append(
+                            {
+                                "kind": "cms_resource",
+                                "course_id": course["id"],
+                                "course_code": course["code"],
+                                "course_title": course["title"],
+                                **resource,
+                            }
+                        )
+                for video in detail["available_videos"]:
+                    if needle in _normalized(video["title"]):
+                        matches.append(
+                            {
+                                "kind": "supplemental_video",
+                                "course_id": course["id"],
+                                "course_code": course["code"],
+                                "course_title": course["title"],
+                                **video,
+                            }
+                        )
+        return {"query": query, "matches": matches[:limit]}
+
+    def video_transcript(self, video_id: str) -> dict[str, Any]:
+        return self.supplemental.video_transcript(video_id)
+
+
+supplemental_video_catalog = SupplementalVideoCatalog()

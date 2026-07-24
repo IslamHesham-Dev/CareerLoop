@@ -306,7 +306,10 @@ class CmsRepository extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final json = await api.get('/v1/cms/courses');
+      final json = await api.get(
+        '/v1/cms/courses',
+        query: force ? {'refresh': 'true'} : null,
+      );
       courses = (json['courses'] as List? ?? const [])
           .map((item) => CmsCourse.fromJson(
                 Map<String, dynamic>.from(item as Map),
@@ -323,30 +326,45 @@ class CmsRepository extends ChangeNotifier {
   }
 
   Future<CmsCourseContent?> loadCourseContent(
-    String slug, {
+    String courseId, {
     bool force = false,
   }) async {
-    if (!force && content.containsKey(slug)) return content[slug];
-    if (loadingContent.contains(slug)) return null;
-    loadingContent.add(slug);
+    if (!force && content.containsKey(courseId)) return content[courseId];
+    if (loadingContent.contains(courseId)) return null;
+    loadingContent.add(courseId);
     error = null;
     notifyListeners();
     try {
       final result = CmsCourseContent.fromJson(
-        await api.get('/v1/cms/courses/$slug/content'),
+        await api.get('/v1/cms/courses/$courseId/content'),
       );
-      content[slug] = result;
+      content[courseId] = result;
+      final index = courses.indexWhere((course) => course.id == courseId);
+      if (index >= 0) {
+        courses = [
+          ...courses.take(index),
+          result.course,
+          ...courses.skip(index + 1),
+        ];
+      }
       return result;
     } on ApiException catch (exception) {
       error = exception.message;
       return null;
     } catch (_) {
-      error = 'The course videos could not be loaded.';
+      error = 'The CMS course resources could not be loaded.';
       return null;
     } finally {
-      loadingContent.remove(slug);
+      loadingContent.remove(courseId);
       notifyListeners();
     }
+  }
+
+  Future<String> downloadResource(CmsResource resource) {
+    return api.download(
+      resource.downloadPath,
+      filename: resource.filename,
+    );
   }
 
   void clearLocal() {

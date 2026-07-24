@@ -10,24 +10,35 @@ class SourceFolderResponse(BaseModel):
 
 
 class CmsCourseResponse(BaseModel):
-    slug: str
-    catalog_code: str
-    official_course_code: str | None
+    id: str
+    code: str
     title: str
-    aliases: list[str]
-    description: str
-    source_folders: list[SourceFolderResponse]
-    content_counts: dict[str, int]
+    cms_label: str
+    resource_count: int | None = None
+    has_supplemental_videos: bool
     video_count: int
     transcribed_count: int
 
 
 class CmsCourseListResponse(BaseModel):
     source: str
+    status: str
     courses: list[CmsCourseResponse]
 
 
-class CmsContentItemResponse(BaseModel):
+class CmsResourceResponse(BaseModel):
+    id: str
+    title: str
+    subtitle: str
+    content_type: str
+    file_extension: str
+    week: int | None
+    week_label: str | None
+    is_vod: bool
+    download_path: str
+
+
+class CmsVideoResponse(BaseModel):
     id: str
     title: str
     content_type: str
@@ -42,20 +53,26 @@ class CmsContentItemResponse(BaseModel):
     sort_index: int
 
 
+class VideoCollectionResponse(BaseModel):
+    slug: str
+    catalog_code: str
+    title: str
+    aliases: list[str]
+    source_folders: list[SourceFolderResponse]
+    video_count: int
+    transcribed_count: int
+
+
 class CmsCourseContentResponse(BaseModel):
     course: CmsCourseResponse
-    content_type: str
-    items: list[CmsContentItemResponse]
-
-
-class CmsSearchItemResponse(CmsContentItemResponse):
-    course_slug: str
-    course_title: str
+    cms_resources: list[CmsResourceResponse]
+    available_videos: list[CmsVideoResponse]
+    video_collection: VideoCollectionResponse | None
 
 
 class CmsSearchResponse(BaseModel):
     query: str
-    matches: list[CmsSearchItemResponse]
+    matches: list[dict]
 
 
 class CmsTranscriptResponse(BaseModel):

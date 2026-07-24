@@ -8,6 +8,7 @@ from typing import Any
 from guc_portal import GucPortal
 
 from app.academic import AcademicService
+from app.cms import CmsService
 
 
 @dataclass
@@ -15,6 +16,7 @@ class StudentSession:
     session_id: str
     portal: GucPortal
     academic: AcademicService
+    cms: CmsService
     created_at: float
     expires_at: float
     conversation: list[Any] = field(default_factory=list)
@@ -29,5 +31,6 @@ class StudentSession:
         self.conversation.clear()
         self.agent = None
         self.academic.clear_cache()
+        self.cms.close()
         self.portal.session.auth = None
         self.portal.session.close()

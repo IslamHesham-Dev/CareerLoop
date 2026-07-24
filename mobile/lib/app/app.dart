@@ -68,13 +68,12 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
                         final course = extra is CmsCourse
                             ? extra
                             : CmsCourse(
-                                slug: state.pathParameters['slug'] ?? '',
-                                catalogCode: 'CMS',
+                                id: state.pathParameters['slug'] ?? '',
+                                code: 'CMS',
                                 title: 'CMS course',
-                                description: 'CareerLoop learning content',
-                                aliases: const [],
-                                sourceFolders: const [],
-                                contentCounts: const {},
+                                cmsLabel: 'CMS course',
+                                resourceCount: null,
+                                hasSupplementalVideos: false,
                                 videoCount: 0,
                                 transcribedCount: 0,
                               );

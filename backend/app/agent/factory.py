@@ -7,7 +7,6 @@ from langchain.agents import create_agent
 from langchain.tools import tool
 from langchain_anthropic import ChatAnthropic
 
-from app.cms import cms_service
 from app.config import Settings
 from app.sessions.models import StudentSession
 
@@ -19,13 +18,14 @@ def _safe(callable_) -> dict[str, Any] | list[str]:
         return {"error": str(exc)}
     except Exception:
         return {
-            "error": "The GIU portal is temporarily unavailable.",
+            "error": "The requested GIU data source is temporarily unavailable.",
             "advice": "Wait about one minute, then try again.",
         }
 
 
 def build_agent(student: StudentSession, settings: Settings):
     academic = student.academic
+    cms = student.cms
 
     @tool
     def get_advisory_context() -> dict:
@@ -81,32 +81,32 @@ def build_agent(student: StudentSession, settings: Settings):
 
     @tool
     def list_cms_courses() -> dict:
-        """List courses and video counts in the CareerLoop CMS library."""
-        return cms_service.list_courses()
+        """List every course available to the student in the live GIU CMS.
+        A course may also report supplemental Drive videos."""
+        return _safe(cms.list_courses)
 
     @tool
     def get_cms_course_content(
-        course: str,
-        content_type: str = "all",
+        course_id: str,
     ) -> dict:
-        """List Drive learning videos for one CMS course. content_type can be
-        all, lecture, tutorial, revision, or other."""
-        return _safe(
-            lambda: cms_service.course_content(course, content_type)
-        )
+        """Get real GIU CMS resources for one course by the opaque course ID
+        returned by list_cms_courses. For five matched courses, the result also
+        includes supplemental Drive videos."""
+        return _safe(lambda: cms.course_content(course_id))
 
     @tool
-    def search_cms_content(query: str, course: str = "") -> dict:
-        """Search CMS video titles, optionally inside one course."""
+    def search_cms_content(query: str, course_id: str = "") -> dict:
+        """Search live CMS course names. Pass a course_id to also search that
+        course's CMS resources and supplemental video titles."""
         return _safe(
-            lambda: cms_service.search(query, course=course or None)
+            lambda: cms.search(query, course_id=course_id or None)
         )
 
     @tool
     def get_cms_video_transcript(video_id: str) -> dict:
         """Read the supplied transcript for one CMS video by Drive file ID.
         A pending result means no transcript has been added yet."""
-        return _safe(lambda: cms_service.video_transcript(video_id))
+        return _safe(lambda: cms.video_transcript(video_id))
 
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
@@ -155,9 +155,11 @@ def build_agent(student: StudentSession, settings: Settings):
         "(4.00-4.99), and 0-49.9 F (5.00-6.00). A band does not justify "
         "inventing an exact GPA. "
         "Summarize strengths, weak assessments, and practical study priorities. "
-        "The CareerLoop CMS tools contain a catalog of Drive lecture and tutorial "
-        "videos. Use them to identify available learning resources and links. "
-        "A video title is metadata, not evidence of everything taught in the video. "
+        "The CMS tools read the student's complete live GIU CMS course catalog "
+        "and official course resources. Five matching courses additionally expose "
+        "supplemental Drive lecture/tutorial videos under available_videos; never "
+        "describe those five collections as the complete CMS. A resource or video "
+        "title is metadata, not evidence of everything taught in it. "
         "Only summarize or answer from a video's substance when "
         "get_cms_video_transcript returns status=available; when it is pending, "
         "say the transcript has not been supplied yet. You do not otherwise know "
@@ -198,10 +200,10 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
         "get_course_grades": "GIU detailed grades",
         "get_transcript": "GIU transcript",
         "find_transcript_course": "GIU transcript",
-        "list_cms_courses": "CareerLoop CMS",
-        "get_cms_course_content": "CareerLoop CMS + Google Drive",
-        "search_cms_content": "CareerLoop CMS + Google Drive",
-        "get_cms_video_transcript": "CMS video transcript",
+        "list_cms_courses": "Live GIU CMS",
+        "get_cms_course_content": "Live GIU CMS resources",
+        "search_cms_content": "Live GIU CMS search",
+        "get_cms_video_transcript": "Supplemental video transcript",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:

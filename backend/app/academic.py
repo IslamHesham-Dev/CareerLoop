@@ -115,7 +115,8 @@ class AcademicService:
             "data_sources": [
                 "GIU portal detailed grades",
                 "GIU transcript",
-                "CareerLoop CMS content catalog",
+                "live GIU CMS course resources",
+                "CareerLoop supplemental Drive videos for matched courses",
             ],
             "excluded_sources": ["live current-course page"],
         }

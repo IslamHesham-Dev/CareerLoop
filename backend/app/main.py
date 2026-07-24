@@ -21,8 +21,8 @@ app = FastAPI(
     title=settings.app_name,
     version="0.1.0",
     description=(
-        "Private, read-only GIU academic advisory API with a CareerLoop CMS "
-        "catalog backed by approved Google Drive learning content."
+        "Private, read-only GIU academic advisory API with live CMS resources "
+        "and approved supplemental Google Drive learning videos."
     ),
     docs_url="/docs" if settings.environment != "production" else None,
     redoc_url=None,

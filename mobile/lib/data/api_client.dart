@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 
 import 'session_storage.dart';
 
@@ -76,6 +78,34 @@ class ApiClient {
         )
         .timeout(const Duration(minutes: 4));
     return _decode(response);
+  }
+
+  Future<String> download(
+    String path, {
+    required String filename,
+  }) async {
+    final request = http.Request('GET', _uri(path));
+    request.headers.addAll(_headers()..remove('Content-Type'));
+    final response =
+        await _client.send(request).timeout(const Duration(minutes: 5));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = await response.stream.bytesToString();
+      var message = 'The CMS file could not be downloaded.';
+      try {
+        final payload = jsonDecode(body);
+        if (payload is Map && payload['detail'] is String) {
+          message = payload['detail'] as String;
+        }
+      } catch (_) {
+        // Keep the safe fallback when the upstream returns HTML.
+      }
+      throw ApiException(message, statusCode: response.statusCode);
+    }
+    final directory = await getTemporaryDirectory();
+    final safeName = filename.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+    final file = File('${directory.path}${Platform.pathSeparator}$safeName');
+    await response.stream.pipe(file.openWrite());
+    return file.path;
   }
 
   Map<String, dynamic> _decode(http.Response response) {

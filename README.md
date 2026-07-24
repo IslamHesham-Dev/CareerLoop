@@ -4,12 +4,13 @@
 
 CareerLoop is a private academic and career advisory prototype. It currently
 combines GIU portal records, a Flutter mobile experience, and a
-FastAPI/LangChain backend. A live CMS connector will be integrated separately.
+FastAPI/LangChain backend. The same short-lived university login now opens a
+read-only GIU CMS session for the student's full course and resource catalog.
 
 ## Repository
 
 ```text
-mobile/       Flutter app for Android, iOS, and web
+mobile/       Flutter app for Android and iOS
 backend/      FastAPI API, agent, session isolation, and GIU portal client
 notebooks/    Verified portal experiments kept as references
 docs/         Architecture, API, and security decisions
@@ -30,9 +31,9 @@ DEGREELENS_ADVISORY_YEAR=2024-2025
 ```
 
 Do not add GIU usernames or passwords to the backend environment. The login
-screen sends credentials over HTTPS to establish a short-lived, isolated portal
-session. Credential material is retained only in that in-memory session and is
-destroyed at logout or expiry.
+screen sends credentials over HTTPS to establish short-lived, isolated portal
+and CMS sessions. Credential material is retained only by their in-memory NTLM
+authentication objects and is destroyed at logout or expiry.
 
 Run locally:
 
@@ -81,9 +82,10 @@ Use one backend worker while sessions are stored in memory. Before horizontal
 scaling, replace `SessionStore` with an encrypted shared store and maintain
 strict per-student cache separation.
 
-## Data limitations
+## CMS and supplemental videos
 
-CareerLoop can interpret portal grades and transcript records. Until the CMS
-connector is configured, it cannot verify course content, attendance, deadlines,
-prerequisites, schedules, degree rules, or official graduation eligibility
-unless the student supplies that information.
+The course list and official resources come from the authenticated GIU CMS at
+runtime. Five approved Drive collections are matched to their corresponding
+courses and shown under a separate **Available videos** section; they are not
+treated as the complete CMS. Video substance is available to the advisor only
+after a transcript is added under `backend/content/transcripts/`.

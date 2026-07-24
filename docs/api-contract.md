@@ -37,13 +37,15 @@ source labels so the mobile interface can distinguish portal facts from advice.
 
 ## CMS learning content
 
-- `GET /v1/cms/courses`
-- `GET /v1/cms/courses/{course}/content?content_type=lecture`
-- `GET /v1/cms/search?query=trees&course=DSA`
+- `GET /v1/cms/courses?refresh=false`
+- `GET /v1/cms/courses/{opaque_course_id}/content`
+- `GET /v1/cms/search?query=trees&course_id={opaque_course_id}`
+- `GET /v1/cms/resources/{opaque_resource_id}/download`
 - `GET /v1/cms/items/{drive_file_id}/transcript`
 
-The initial catalog is a deployment-safe snapshot of the supplied Google Drive
-folders. Video transcripts return `pending` until a matching
+Courses and `cms_resources` are read live from the authenticated GIU CMS.
+`available_videos` is populated only when a live course matches one of the five
+approved Drive collections. Video transcripts return `pending` until a matching
 `backend/content/transcripts/{drive_file_id}.md` file is added.
 
 Completed Markdown intake files can be imported with:

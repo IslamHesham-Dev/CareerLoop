@@ -9,6 +9,7 @@ import uuid
 from guc_portal import GucPortal
 
 from app.academic import AcademicService
+from app.cms import CmsService
 from app.sessions.models import StudentSession
 
 
@@ -35,6 +36,7 @@ class SessionStore:
     def create(
         self,
         portal: GucPortal,
+        cms: CmsService,
         *,
         enrollment_year: int | None = None,
         seasons: list[tuple[str, str]] | None = None,
@@ -44,6 +46,7 @@ class SessionStore:
         session = StudentSession(
             session_id=str(uuid.uuid4()),
             portal=portal,
+            cms=cms,
             academic=AcademicService(
                 portal,
                 current_season=self.current_season,

@@ -6,6 +6,8 @@ from fastapi.concurrency import run_in_threadpool
 
 from guc_portal import GucPortal
 
+from app.cms import CmsService
+from app.cms_live import GiuCmsClient
 from app.dependencies import get_access_token, get_student_session
 from app.schemas.auth import (
     LoginRequest,
@@ -21,9 +23,11 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 
 @router.post("/login", response_model=LoginResponse)
 async def login(payload: LoginRequest) -> LoginResponse:
+    username = payload.username.strip()
+    password = payload.password.get_secret_value()
     portal = GucPortal(
-        username=payload.username.strip(),
-        password=payload.password.get_secret_value(),
+        username=username,
+        password=password,
         site="giu",
     )
     try:
@@ -51,11 +55,19 @@ async def login(payload: LoginRequest) -> LoginResponse:
             detail="Could not establish a GIU portal session.",
         ) from None
 
-    token, student = session_store.create(
-        portal,
-        enrollment_year=payload.enrollment_year,
-        seasons=seasons,
-    )
+    cms = CmsService(GiuCmsClient(username, password))
+    try:
+        token, student = session_store.create(
+            portal,
+            cms,
+            enrollment_year=payload.enrollment_year,
+            seasons=seasons,
+        )
+    except Exception:
+        cms.close()
+        portal.session.auth = None
+        portal.session.close()
+        raise
     # Use the newest non-empty transcript page inside the student's four-year
     # enrollment window to choose the advisory year and semester. If GIU is
     # temporarily flaky, login still succeeds with the configured fallback.
