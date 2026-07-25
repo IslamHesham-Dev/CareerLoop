@@ -13,6 +13,8 @@ import '../ui/courses/courses_screen.dart';
 import '../ui/overview/overview_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/transcript/transcript_screen.dart';
+import '../ui/viewer/drive_video_screen.dart';
+import '../ui/viewer/pdf_viewer_screen.dart';
 import 'theme.dart';
 
 class CareerLoopApp extends StatefulWidget {
@@ -73,6 +75,9 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
                                 title: 'CMS course',
                                 cmsLabel: 'CMS course',
                                 resourceCount: null,
+                                season: '',
+                                seasonId: null,
+                                active: null,
                                 hasSupplementalVideos: false,
                                 videoCount: 0,
                                 transcribedCount: 0,
@@ -117,6 +122,20 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
+        ),
+        GoRoute(
+          path: '/viewer/pdf',
+          builder: (context, state) {
+            final args = state.extra as PdfViewerArgs;
+            return PdfViewerScreen(args: args);
+          },
+        ),
+        GoRoute(
+          path: '/viewer/video',
+          builder: (context, state) {
+            final args = state.extra as DriveVideoArgs;
+            return DriveVideoScreen(args: args);
+          },
         ),
       ],
     );

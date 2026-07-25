@@ -12,6 +12,8 @@ class FakeLiveClient:
                 "title": "Data Structures and Algorithms",
                 "cms_label": "Data Structures and Algorithms (|CSEN301|)",
                 "resource_count": None,
+                "season": "Winter 2024",
+                "season_id": 64,
             },
             {
                 "id": "course_ai",
@@ -19,6 +21,8 @@ class FakeLiveClient:
                 "title": "Agentic Artificial Intelligence",
                 "cms_label": "Agentic Artificial Intelligence (|CSEN901|)",
                 "resource_count": None,
+                "season": "Spring 2024",
+                "season_id": 65,
             },
         ]
 
@@ -79,6 +83,8 @@ def test_live_catalog_is_complete_and_videos_are_only_supplemental() -> None:
     assert courses[0]["has_supplemental_videos"] is True
     assert courses[1]["video_count"] == 0
     assert courses[1]["has_supplemental_videos"] is False
+    winter = service.list_courses(season="Winter 2024")["courses"]
+    assert [course["id"] for course in winter] == ["course_dsa"]
 
     dsa = service.course_content("course_dsa")
     ai = service.course_content("course_ai")
@@ -106,6 +112,7 @@ def test_live_cms_html_parsers_cover_course_links_and_resources() -> None:
     table_courses = client._parse_course_table(table_html)
     assert len(table_courses) == 1
     assert table_courses[0]["code"] == "CSEN301"
+    assert table_courses[0]["season"] == "Winter 2024"
     assert (
         client._course_urls[table_courses[0]["id"]]
         == "https://cms.giu-uni.de/apps/student/"

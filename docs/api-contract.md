@@ -40,7 +40,8 @@ source labels so the mobile interface can distinguish portal facts from advice.
 
 ## CMS learning content
 
-- `GET /v1/cms/courses?refresh=false`
+- `GET /v1/cms/courses?refresh=false&season=Winter%202024` (defaults to the
+  active advisory semester)
 - `GET /v1/cms/courses/{opaque_course_id}/content`
 - `GET /v1/cms/search?query=trees&course_id={opaque_course_id}`
 - `GET /v1/cms/resources/{opaque_resource_id}/download`
@@ -50,6 +51,9 @@ Courses and `cms_resources` are read live from the authenticated GIU CMS.
 `available_videos` is populated only when a live course matches one of the five
 approved Drive collections. Video transcripts return `pending` until a matching
 `backend/content/transcripts/{drive_file_id}.md` file is added.
+
+The advisor also exposes `read_cms_pdf(resource_id)`, which extracts bounded
+text from an authenticated PDF before the model summarizes or explains it.
 
 Completed Markdown intake files can be imported with:
 

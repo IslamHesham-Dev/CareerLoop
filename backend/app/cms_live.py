@@ -225,6 +225,9 @@ class GiuCmsClient:
             name_index = folded.index("name") if "name" in folded else 1
             id_index = folded.index("id")
             season_index = folded.index("seasonid")
+            season_name_index = (
+                folded.index("season") if "season" in folded else None
+            )
             active_index = (
                 folded.index("active") if "active" in folded else None
             )
@@ -256,6 +259,13 @@ class GiuCmsClient:
                         "title": _course_title(label, code),
                         "cms_label": label,
                         "resource_count": None,
+                        "season": (
+                            cells[season_name_index]
+                            if season_name_index is not None
+                            and season_name_index < len(cells)
+                            else ""
+                        ),
+                        "season_id": int(season_number),
                         "active": (
                             cells[active_index].casefold() == "active"
                             if active_index is not None

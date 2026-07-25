@@ -375,6 +375,9 @@ class CmsCourse {
   final String title;
   final String cmsLabel;
   final int? resourceCount;
+  final String season;
+  final int? seasonId;
+  final bool? active;
   final bool hasSupplementalVideos;
   final int videoCount;
   final int transcribedCount;
@@ -385,6 +388,9 @@ class CmsCourse {
     required this.title,
     required this.cmsLabel,
     required this.resourceCount,
+    required this.season,
+    required this.seasonId,
+    required this.active,
     required this.hasSupplementalVideos,
     required this.videoCount,
     required this.transcribedCount,
@@ -396,6 +402,9 @@ class CmsCourse {
         title: json['title'] as String? ?? '',
         cmsLabel: json['cms_label'] as String? ?? '',
         resourceCount: (json['resource_count'] as num?)?.toInt(),
+        season: json['season'] as String? ?? '',
+        seasonId: (json['season_id'] as num?)?.toInt(),
+        active: json['active'] as bool?,
         hasSupplementalVideos:
             json['has_supplemental_videos'] as bool? ?? false,
         videoCount: (json['video_count'] as num?)?.toInt() ?? 0,

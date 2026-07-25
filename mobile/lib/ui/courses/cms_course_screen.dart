@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../data/api_client.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
+import '../viewer/drive_video_screen.dart';
+import '../viewer/pdf_viewer_screen.dart';
 
 class CmsCourseScreen extends StatefulWidget {
   final CmsCourse course;
@@ -20,6 +22,7 @@ class CmsCourseScreen extends StatefulWidget {
 
 class _CmsCourseScreenState extends State<CmsCourseScreen> {
   String _videoFilter = 'all';
+  String? _resourceWeek;
   final Set<String> _downloading = {};
 
   @override
@@ -47,6 +50,11 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
       ...?content?.availableVideos.map((video) => video.contentType),
     }.toList();
     final grouped = _groupResources(resources);
+    final selectedWeek =
+        grouped.containsKey(_resourceWeek) ? _resourceWeek : null;
+    final visibleGroups = selectedWeek == null
+        ? grouped.entries.toList()
+        : grouped.entries.where((entry) => entry.key == selectedWeek).toList();
 
     return Scaffold(
       body: AuroraBackground(
@@ -73,6 +81,15 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                           label: 'Live GIU CMS',
                           icon: Icons.lock_outline_rounded,
                         ),
+                        const SizedBox(width: 8),
+                        FilledButton.tonalIcon(
+                          onPressed: () => _askCourseAi(course),
+                          icon: const Icon(
+                            Icons.auto_awesome_rounded,
+                            size: 17,
+                          ),
+                          label: const Text('Ask AI'),
+                        ),
                       ],
                     ),
                   ),
@@ -96,11 +113,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                         Text(
                           course.title,
                           style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          'Official materials stay separate from the supplemental video archive, so you always know where each resource came from.',
-                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         if (content != null) ...[
                           const SizedBox(height: 18),
@@ -143,7 +155,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                     sliver: SliverToBoxAdapter(
                       child: _SectionTitle(
                         title: 'CMS resources',
-                        detail: '${resources.length} files',
+                        detail: '${resources.length} files · newest first',
                       ),
                     ),
                   ),
@@ -159,22 +171,37 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                         ),
                       ),
                     )
-                  else
+                  else ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+                      sliver: SliverToBoxAdapter(
+                        child: _WeekNavigator(
+                          labels: grouped.keys.toList(),
+                          selected: selectedWeek,
+                          onSelected: (label) => setState(
+                            () => _resourceWeek = label,
+                          ),
+                        ),
+                      ),
+                    ),
                     SliverPadding(
                       padding: const EdgeInsets.symmetric(horizontal: 22),
                       sliver: SliverList.list(
-                        children: grouped.entries
+                        children: visibleGroups
                             .map(
                               (entry) => _WeekGroup(
                                 label: entry.key,
                                 resources: entry.value,
                                 downloading: _downloading,
                                 onOpen: _openResource,
+                                onAskAi: (resource) =>
+                                    _askResourceAi(course, resource),
                               ),
                             )
                             .toList(),
                       ),
                     ),
+                  ],
                   if (content?.availableVideos.isNotEmpty ?? false) ...[
                     const SliverPadding(
                       padding: EdgeInsets.fromLTRB(22, 24, 22, 10),
@@ -215,6 +242,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                         itemBuilder: (context, index) => _VideoCard(
                           video: videos[index],
                           onOpen: () => _openVideo(videos[index]),
+                          onAskAi: () => _askVideoAi(course, videos[index]),
                         ),
                       ),
                     ),
@@ -241,7 +269,23 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
           resource.week == null ? 'General resources' : 'Week ${resource.week}';
       grouped.putIfAbsent(label, () => []).add(resource);
     }
-    return grouped;
+    final entries = grouped.entries.toList()
+      ..sort((left, right) {
+        final leftWeek = _weekNumber(left.key);
+        final rightWeek = _weekNumber(right.key);
+        if (leftWeek == null && rightWeek == null) {
+          return left.key.compareTo(right.key);
+        }
+        if (leftWeek == null) return 1;
+        if (rightWeek == null) return -1;
+        return rightWeek.compareTo(leftWeek);
+      });
+    return Map.fromEntries(entries);
+  }
+
+  static int? _weekNumber(String label) {
+    final match = RegExp(r'^Week (\d+)$').firstMatch(label);
+    return match == null ? null : int.tryParse(match.group(1)!);
   }
 
   static String _label(String value) {
@@ -253,29 +297,85 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
     if (_downloading.contains(resource.id)) return;
     setState(() => _downloading.add(resource.id));
     try {
-      final path =
+      final downloaded =
           await context.read<CmsRepository>().downloadResource(resource);
-      final result = await OpenFilex.open(path);
+      if (downloaded.isPdf) {
+        if (!mounted) return;
+        await context.push(
+          '/viewer/pdf',
+          extra: PdfViewerArgs(
+            path: downloaded.path,
+            title: resource.title,
+            courseTitle:
+                (context.read<CmsRepository>().content[widget.course.id])
+                        ?.course
+                        .title ??
+                    widget.course.title,
+            resourceId: resource.id,
+          ),
+        );
+        return;
+      }
+      final result = await OpenFilex.open(downloaded.path);
       if (result.type != ResultType.done && mounted) {
-        _message(result.message);
+        _message(
+          result.message.isEmpty
+              ? 'The file was downloaded, but no compatible viewer was found.'
+              : result.message,
+        );
+      }
+    } on ApiException catch (error) {
+      if (mounted) {
+        _message(error.message);
       }
     } catch (_) {
-      if (mounted) {
-        _message('This CMS file could not be downloaded right now.');
-      }
+      if (mounted) _message('This CMS file could not be opened right now.');
     } finally {
       if (mounted) setState(() => _downloading.remove(resource.id));
     }
   }
 
-  Future<void> _openVideo(CmsVideo video) async {
-    final opened = await launchUrl(
-      Uri.parse(video.driveUrl),
-      mode: LaunchMode.externalApplication,
+  void _openVideo(CmsVideo video) {
+    context.push(
+      '/viewer/video',
+      extra: DriveVideoArgs(
+        videoId: video.id,
+        title: video.title,
+        courseTitle: (context.read<CmsRepository>().content[widget.course.id])
+                ?.course
+                .title ??
+            widget.course.title,
+        transcriptStatus: video.transcriptStatus,
+      ),
     );
-    if (!opened && mounted) {
-      _message('Google Drive could not open this video.');
-    }
+  }
+
+  void _askCourseAi(CmsCourse course) {
+    context.read<AdvisorRepository>().send(
+          'Use the live GIU CMS tools to help me study ${course.code} '
+          '${course.title} in ${course.season}. First inspect the available '
+          'course resources and supplemental videos, then suggest the most '
+          'useful next study action based only on accessible evidence.',
+        );
+    context.go('/advisor');
+  }
+
+  void _askResourceAi(CmsCourse course, CmsResource resource) {
+    context.read<AdvisorRepository>().send(
+          'I want help with the CMS resource "${resource.title}" in '
+          '${course.code} ${course.title}. Its resource_id is "${resource.id}". '
+          '${resource.fileExtension.toLowerCase() == 'pdf' ? 'Call read_cms_pdf before discussing or summarizing its contents.' : 'Inspect the CMS metadata and do not invent its contents if it cannot be read.'}',
+        );
+    context.go('/advisor');
+  }
+
+  void _askVideoAi(CmsCourse course, CmsVideo video) {
+    context.read<AdvisorRepository>().send(
+          'Help me study the supplemental video "${video.title}" in '
+          '${course.code} ${course.title}. Its video_id is "${video.id}". '
+          'Call get_cms_video_transcript before discussing its substance.',
+        );
+    context.go('/advisor');
   }
 
   void _message(String text) {
@@ -388,17 +488,81 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
+class _WeekNavigator extends StatelessWidget {
+  final List<String> labels;
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  const _WeekNavigator({
+    required this.labels,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    String? newestWeek;
+    for (final label in labels) {
+      if (label.startsWith('Week ')) {
+        newestWeek = label;
+        break;
+      }
+    }
+    final options = <String?>[null, ...labels];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Jump to week',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: options.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final value = options[index];
+              final label = value == null
+                  ? 'All weeks'
+                  : value == newestWeek
+                      ? '$value · Latest'
+                      : value;
+              return ChoiceChip(
+                selected: selected == value,
+                onSelected: (_) => onSelected(value),
+                avatar: value == newestWeek
+                    ? const Icon(Icons.update_rounded, size: 16)
+                    : null,
+                label: Text(label),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _WeekGroup extends StatelessWidget {
   final String label;
   final List<CmsResource> resources;
   final Set<String> downloading;
   final ValueChanged<CmsResource> onOpen;
+  final ValueChanged<CmsResource> onAskAi;
 
   const _WeekGroup({
     required this.label,
     required this.resources,
     required this.downloading,
     required this.onOpen,
+    required this.onAskAi,
   });
 
   @override
@@ -427,6 +591,7 @@ class _WeekGroup extends StatelessWidget {
                 resource: resource,
                 downloading: downloading.contains(resource.id),
                 onOpen: () => onOpen(resource),
+                onAskAi: () => onAskAi(resource),
               ),
             ),
           ),
@@ -440,11 +605,13 @@ class _ResourceCard extends StatelessWidget {
   final CmsResource resource;
   final bool downloading;
   final VoidCallback onOpen;
+  final VoidCallback onAskAi;
 
   const _ResourceCard({
     required this.resource,
     required this.downloading,
     required this.onOpen,
+    required this.onAskAi,
   });
 
   @override
@@ -503,6 +670,15 @@ class _ResourceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Ask AI about this',
+            onPressed: onAskAi,
+            icon: const Icon(
+              Icons.auto_awesome_outlined,
+              color: LensColors.violet,
+              size: 20,
+            ),
+          ),
           IconButton.filledTonal(
             tooltip: 'Download and open',
             onPressed: downloading ? null : onOpen,
@@ -568,8 +744,13 @@ class _VideoArchiveIntro extends StatelessWidget {
 class _VideoCard extends StatelessWidget {
   final CmsVideo video;
   final VoidCallback onOpen;
+  final VoidCallback onAskAi;
 
-  const _VideoCard({required this.video, required this.onOpen});
+  const _VideoCard({
+    required this.video,
+    required this.onOpen,
+    required this.onAskAi,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -620,7 +801,16 @@ class _VideoCard extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.open_in_new_rounded, color: LensColors.muted),
+          IconButton(
+            tooltip: 'Ask AI about this video',
+            onPressed: onAskAi,
+            icon: const Icon(
+              Icons.auto_awesome_outlined,
+              color: LensColors.violet,
+              size: 20,
+            ),
+          ),
+          const Icon(Icons.play_circle_outline, color: LensColors.muted),
         ],
       ),
     );

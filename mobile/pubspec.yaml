@@ -35,6 +35,7 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_markdown: ^0.7.4+3
+  flutter_pdfview: 1.4.1+1
   flutter_secure_storage: ^9.2.4
   go_router: ^14.8.1
   http: ^1.3.0
@@ -43,6 +44,7 @@ dependencies:
   path_provider: ^2.1.5
   provider: ^6.1.2
   url_launcher: ^6.3.1
+  webview_flutter: 4.10.0
 
 dev_dependencies:
   flutter_test:

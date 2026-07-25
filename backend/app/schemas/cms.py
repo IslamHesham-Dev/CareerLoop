@@ -15,6 +15,9 @@ class CmsCourseResponse(BaseModel):
     title: str
     cms_label: str
     resource_count: int | None = None
+    season: str = ""
+    season_id: int | None = None
+    active: bool | None = None
     has_supplemental_videos: bool
     video_count: int
     transcribed_count: int
@@ -23,6 +26,7 @@ class CmsCourseResponse(BaseModel):
 class CmsCourseListResponse(BaseModel):
     source: str
     status: str
+    season: str
     courses: list[CmsCourseResponse]
 
 

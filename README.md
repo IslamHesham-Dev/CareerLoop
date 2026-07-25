@@ -85,7 +85,22 @@ strict per-student cache separation.
 ## CMS and supplemental videos
 
 The course list and official resources come from the authenticated GIU CMS at
-runtime. Five approved Drive collections are matched to their corresponding
+runtime and follow the selected advisory semester. PDFs open inside CareerLoop
+and can be read by the advisor through a bounded authenticated extraction tool.
+Five approved Drive collections are matched to their corresponding
 courses and shown under a separate **Available videos** section; they are not
-treated as the complete CMS. Video substance is available to the advisor only
-after a transcript is added under `backend/content/transcripts/`.
+treated as the complete CMS. Drive videos play in an in-app viewer. Video
+substance is available to the advisor only after a transcript is added under
+`backend/content/transcripts/`.
+
+The canonical transcript intake format is Markdown:
+`backend/content/transcript_intake_template.md`. Each video has immutable
+START/END markers keyed by its Drive file ID. After transcript placeholders are
+filled, the importer validates the mapping and splits the intake file into one
+retrieval source per completed video:
+
+```powershell
+cd backend
+uv run python scripts/import_transcript_intake.py `
+  content/transcript_intake_template.md
+```

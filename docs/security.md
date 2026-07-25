@@ -11,6 +11,8 @@
   material, cached academic data, and conversation state.
 - Official CMS URLs remain server-side behind opaque IDs. The backend streams
   requested files through the authenticated session without persisting them.
+- PDF text extraction is bounded by page and character limits and remains in
+  memory for the current tool call. The mobile PDF copy uses temporary storage.
 - Supplemental video metadata contains only explicitly supplied Drive links;
   Drive continues to enforce access for those videos.
 

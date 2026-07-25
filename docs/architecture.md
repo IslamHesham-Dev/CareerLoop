@@ -22,6 +22,11 @@ The Flutter app separates:
 
 The app contains no GIU credentials and no Anthropic key.
 
+CMS PDFs are downloaded with the opaque CareerLoop bearer token and rendered
+from a private temporary file inside the native app. Supplemental Drive videos
+use Google's preview player inside an embedded WebView. Course, resource, PDF,
+and video surfaces all provide contextual handoffs to the advisor.
+
 ## Backend
 
 Every successful login creates a separate `StudentSession` containing:

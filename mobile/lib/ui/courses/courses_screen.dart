@@ -16,13 +16,18 @@ class CoursesScreen extends StatefulWidget {
 
 class _CoursesScreenState extends State<CoursesScreen> {
   final _search = TextEditingController();
+  String? _cmsSeasonRequested;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AcademicRepository>().loadDashboard();
-      context.read<CmsRepository>().loadCourses();
+      final academic = context.read<AcademicRepository>();
+      academic.loadDashboard();
+      _cmsSeasonRequested = academic.context?.currentSeason;
+      context.read<CmsRepository>().loadCourses(
+            season: academic.context?.currentSeason,
+          );
     });
   }
 
@@ -37,6 +42,18 @@ class _CoursesScreenState extends State<CoursesScreen> {
     final academic = context.watch<AcademicRepository>();
     final cms = context.watch<CmsRepository>();
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    final desiredSeason = academic.context?.currentSeason;
+    if (desiredSeason != null && _cmsSeasonRequested != desiredSeason) {
+      _cmsSeasonRequested = desiredSeason;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.read<CmsRepository>().loadCourses(
+                force: true,
+                season: desiredSeason,
+              );
+        }
+      });
+    }
     final needle = _search.text.trim().toLowerCase();
     final cmsCourses = cms.courses
         .where(
@@ -61,7 +78,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            cms.loadCourses(force: true),
+            cms.loadCourses(
+              force: true,
+              season: academic.context?.currentSeason,
+            ),
             academic.loadDashboard(force: true),
           ]);
         },
@@ -69,11 +89,16 @@ class _CoursesScreenState extends State<CoursesScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
           children: [
-            const PageHeading(
+            PageHeading(
               eyebrow: 'LIVE GIU CMS',
               title: 'Course space',
               subtitle:
                   'Your official course files, organized for mobile. Selected courses also include an independent video archive.',
+              trailing: IconButton.filledTonal(
+                tooltip: 'Ask CareerLoop AI',
+                onPressed: () => context.go('/advisor'),
+                icon: const Icon(Icons.auto_awesome_rounded),
+              ),
             ),
             const SizedBox(height: 18),
             _CmsStatus(
@@ -144,8 +169,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
             _SectionHeading(
               title: 'All CMS courses',
               detail: cms.courses.isEmpty
-                  ? null
-                  : '${cms.courses.length} available',
+                  ? cms.season
+                  : '${cms.courses.length} · ${cms.season ?? ''}',
             ),
             const SizedBox(height: 11),
             if (cms.loadingCourses && cms.courses.isEmpty)
@@ -155,7 +180,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
             else if (cms.error != null && cms.courses.isEmpty)
               LensError(
                 message: cms.error!,
-                onRetry: () => cms.loadCourses(force: true),
+                onRetry: () => cms.loadCourses(
+                  force: true,
+                  season: academic.context?.currentSeason,
+                ),
               )
             else if (cmsCourses.isEmpty)
               const LensCard(
@@ -327,6 +355,22 @@ class _CmsCourseCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
+          IconButton(
+            tooltip: 'Ask AI about ${course.code}',
+            onPressed: () {
+              context.read<AdvisorRepository>().send(
+                    'Help me study ${course.code} ${course.title} in '
+                    '${course.season}. Use the live CMS course tools first and '
+                    'base suggestions only on resources you can verify.',
+                  );
+              context.go('/advisor');
+            },
+            icon: const Icon(
+              Icons.auto_awesome_outlined,
+              color: LensColors.violet,
+              size: 20,
+            ),
+          ),
           const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
         ],
       ),

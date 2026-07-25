@@ -8,7 +8,10 @@ from pathlib import Path
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = BACKEND_ROOT / "content" / "cms_catalog.json"
 TRANSCRIPT_DIR = BACKEND_ROOT / "content" / "transcripts"
-PLACEHOLDER = "[PASTE TRANSCRIPT OR DETAILED SUMMARY HERE]"
+PLACEHOLDERS = {
+    "[PASTE TRANSCRIPT OR DETAILED SUMMARY HERE]",
+    "[PASTE AI TRANSCRIPT OR DETAILED SUMMARY HERE]",
+}
 BLOCK = re.compile(
     r"<!-- TRANSCRIPT START: (?P<id>[^ ]+) -->\s*"
     r"(?P<text>.*?)\s*"
@@ -17,9 +20,35 @@ BLOCK = re.compile(
 )
 
 
+def read_blocks(path: Path, item_ids: list[str]) -> dict[str, str]:
+    if path.suffix.lower() not in {".md", ".markdown"}:
+        raise SystemExit("Transcript intake must be a Markdown file.")
+    text = path.read_text(encoding="utf-8")
+    matches = list(BLOCK.finditer(text))
+    matched_ids = [match.group("id") for match in matches]
+    duplicates = sorted(
+        video_id
+        for video_id in set(matched_ids)
+        if matched_ids.count(video_id) > 1
+    )
+    if duplicates:
+        raise SystemExit(f"Duplicate transcript markers: {duplicates}")
+    blocks = {
+        match.group("id"): match.group("text").strip()
+        for match in matches
+    }
+    missing = sorted(set(item_ids) - set(blocks))
+    if missing:
+        raise SystemExit(
+            f"Missing {len(missing)} catalog transcript block(s). "
+            "Use a fresh generated template and keep blank placeholders."
+        )
+    return blocks
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Import completed CareerLoop transcript intake Markdown."
+        description="Import a completed CareerLoop transcript Markdown file."
     )
     parser.add_argument("input", type=Path)
     parser.add_argument(
@@ -35,10 +64,7 @@ def main() -> None:
         for course in catalog["courses"]
         for item in course["items"]
     }
-    blocks = {
-        match.group("id"): match.group("text").strip()
-        for match in BLOCK.finditer(args.input.read_text(encoding="utf-8"))
-    }
+    blocks = read_blocks(args.input, list(items))
     unknown = sorted(set(blocks) - set(items))
     if unknown:
         raise SystemExit(f"Unknown Drive file IDs: {unknown}")
@@ -47,7 +73,7 @@ def main() -> None:
     imported = 0
     skipped = 0
     for video_id, text in blocks.items():
-        if not text or text == PLACEHOLDER:
+        if not text or text in PLACEHOLDERS:
             skipped += 1
             continue
         course, item = items[video_id]

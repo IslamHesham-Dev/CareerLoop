@@ -296,25 +296,44 @@ class CmsRepository extends ChangeNotifier {
   final Map<String, CmsCourseContent> content = {};
   bool loadingCourses = false;
   final Set<String> loadingContent = {};
+  String? season;
   String? error;
 
   CmsRepository({required this.api});
 
-  Future<void> loadCourses({bool force = false}) async {
-    if (loadingCourses || (!force && courses.isNotEmpty)) return;
+  Future<void> loadCourses({
+    bool force = false,
+    String? season,
+  }) async {
+    final requestedSeason = season?.trim();
+    if (loadingCourses ||
+        (!force &&
+            courses.isNotEmpty &&
+            (requestedSeason == null || requestedSeason == this.season))) {
+      return;
+    }
     loadingCourses = true;
     error = null;
     notifyListeners();
     try {
       final json = await api.get(
         '/v1/cms/courses',
-        query: force ? {'refresh': 'true'} : null,
+        query: {
+          if (force) 'refresh': 'true',
+          if (requestedSeason != null) 'season': requestedSeason,
+        },
       );
-      courses = (json['courses'] as List? ?? const [])
+      final resolvedSeason = json['season'] as String? ?? requestedSeason;
+      final newCourses = (json['courses'] as List? ?? const [])
           .map((item) => CmsCourse.fromJson(
                 Map<String, dynamic>.from(item as Map),
               ))
           .toList();
+      if (this.season != null && this.season != resolvedSeason) {
+        content.clear();
+      }
+      this.season = resolvedSeason;
+      courses = newCourses;
     } on ApiException catch (exception) {
       error = exception.message;
     } catch (_) {
@@ -360,7 +379,7 @@ class CmsRepository extends ChangeNotifier {
     }
   }
 
-  Future<String> downloadResource(CmsResource resource) {
+  Future<DownloadedFile> downloadResource(CmsResource resource) {
     return api.download(
       resource.downloadPath,
       filename: resource.filename,
@@ -371,6 +390,7 @@ class CmsRepository extends ChangeNotifier {
     courses = const [];
     content.clear();
     loadingContent.clear();
+    season = null;
     error = null;
     notifyListeners();
   }

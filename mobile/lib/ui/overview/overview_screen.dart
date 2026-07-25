@@ -145,12 +145,17 @@ class _AdvisorySemesterPicker extends StatelessWidget {
               if (!context.mounted) return;
               if (changed) {
                 context.read<AdvisorRepository>().clearLocal();
+                await context.read<CmsRepository>().loadCourses(
+                      force: true,
+                      season: season,
+                    );
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       academic.error ??
                           'Now advising from $season. '
-                              'The previous advisor conversation was reset.',
+                              'CMS courses and the AI context were refreshed.',
                     ),
                   ),
                 );

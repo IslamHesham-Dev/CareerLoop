@@ -53,9 +53,16 @@ def _cms_call(callable_: Callable[[], Any]) -> Any:
 @router.get("/courses", response_model=CmsCourseListResponse)
 def courses(
     refresh: bool = Query(default=False),
+    season: str | None = Query(default=None, max_length=80),
     student: StudentSession = Depends(get_student_session),
 ) -> dict:
-    return _cms_call(lambda: student.cms.list_courses(force=refresh))
+    selected = season or student.academic.current_season
+    return _cms_call(
+        lambda: student.cms.list_courses(
+            force=refresh,
+            season=selected,
+        )
+    )
 
 
 @router.get(
@@ -106,13 +113,18 @@ def download_resource(
                 yield chunk
 
     encoded_name = quote(download.filename)
+    headers = {
+        "Content-Disposition": (
+            f"attachment; filename*=UTF-8''{encoded_name}"
+        ),
+        "X-Content-Type-Options": "nosniff",
+    }
+    content_length = download.response.headers.get("Content-Length")
+    if content_length:
+        headers["Content-Length"] = content_length
     return StreamingResponse(
         body(),
         media_type=download.content_type,
-        headers={
-            "Content-Disposition": (
-                f"attachment; filename*=UTF-8''{encoded_name}"
-            )
-        },
+        headers=headers,
         background=BackgroundTask(download.response.close),
     )

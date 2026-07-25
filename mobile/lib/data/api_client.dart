@@ -17,6 +17,22 @@ class ApiException implements Exception {
   String toString() => message;
 }
 
+class DownloadedFile {
+  final String path;
+  final String filename;
+  final String contentType;
+
+  const DownloadedFile({
+    required this.path,
+    required this.filename,
+    required this.contentType,
+  });
+
+  bool get isPdf =>
+      contentType.toLowerCase().contains('pdf') ||
+      filename.toLowerCase().endsWith('.pdf');
+}
+
 class ApiClient {
   final String baseUrl;
   final SessionStorage storage;
@@ -80,7 +96,7 @@ class ApiClient {
     return _decode(response);
   }
 
-  Future<String> download(
+  Future<DownloadedFile> download(
     String path, {
     required String filename,
   }) async {
@@ -101,11 +117,36 @@ class ApiClient {
       }
       throw ApiException(message, statusCode: response.statusCode);
     }
+    final disposition = response.headers['content-disposition'] ?? '';
+    final encodedName = RegExp(
+      r"filename\*=UTF-8''([^;]+)",
+      caseSensitive: false,
+    ).firstMatch(disposition)?.group(1);
+    final quotedName = RegExp(
+      r'filename="?([^";]+)"?',
+      caseSensitive: false,
+    ).firstMatch(disposition)?.group(1);
+    var resolvedName = filename;
+    if (encodedName != null && encodedName.isNotEmpty) {
+      resolvedName = Uri.decodeComponent(encodedName);
+    } else if (quotedName != null && quotedName.isNotEmpty) {
+      resolvedName = quotedName;
+    }
+    final contentType =
+        response.headers['content-type'] ?? 'application/octet-stream';
+    if (contentType.toLowerCase().contains('pdf') &&
+        !resolvedName.toLowerCase().endsWith('.pdf')) {
+      resolvedName = '$resolvedName.pdf';
+    }
     final directory = await getTemporaryDirectory();
-    final safeName = filename.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
+    final safeName = resolvedName.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
     final file = File('${directory.path}${Platform.pathSeparator}$safeName');
     await response.stream.pipe(file.openWrite());
-    return file.path;
+    return DownloadedFile(
+      path: file.path,
+      filename: safeName,
+      contentType: contentType,
+    );
   }
 
   Map<String, dynamic> _decode(http.Response response) {

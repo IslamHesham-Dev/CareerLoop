@@ -10,6 +10,7 @@ dependencies = [
     "langchain-anthropic>=0.3",
     "lxml>=5.0",
     "pydantic-settings>=2.7",
+    "pypdf>=5.0",
     "requests>=2.31",
     "requests-ntlm>=1.2",
     "uvicorn[standard]>=0.34",

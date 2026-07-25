@@ -81,9 +81,11 @@ def build_agent(student: StudentSession, settings: Settings):
 
     @tool
     def list_cms_courses() -> dict:
-        """List every course available to the student in the live GIU CMS.
+        """List live GIU CMS courses in the selected advisory semester.
         A course may also report supplemental Drive videos."""
-        return _safe(cms.list_courses)
+        return _safe(
+            lambda: cms.list_courses(season=academic.current_season)
+        )
 
     @tool
     def get_cms_course_content(
@@ -107,6 +109,13 @@ def build_agent(student: StudentSession, settings: Settings):
         """Read the supplied transcript for one CMS video by Drive file ID.
         A pending result means no transcript has been added yet."""
         return _safe(lambda: cms.video_transcript(video_id))
+
+    @tool
+    def read_cms_pdf(resource_id: str) -> dict:
+        """Extract text from one authenticated CMS PDF by the resource ID
+        returned from get_cms_course_content. Use this before summarizing,
+        explaining, or answering substantive questions about that PDF."""
+        return _safe(lambda: cms.resource_text(resource_id))
 
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
@@ -132,6 +141,7 @@ def build_agent(student: StudentSession, settings: Settings):
         get_cms_course_content,
         search_cms_content,
         get_cms_video_transcript,
+        read_cms_pdf,
     ]
     prompt = (
         "You are CareerLoop, a read-only academic advisor and study-planning "
@@ -160,6 +170,7 @@ def build_agent(student: StudentSession, settings: Settings):
         "supplemental Drive lecture/tutorial videos under available_videos; never "
         "describe those five collections as the complete CMS. A resource or video "
         "title is metadata, not evidence of everything taught in it. "
+        "For a CMS PDF, call read_cms_pdf before discussing its substance. "
         "Only summarize or answer from a video's substance when "
         "get_cms_video_transcript returns status=available; when it is pending, "
         "say the transcript has not been supplied yet. You do not otherwise know "
@@ -204,6 +215,7 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
         "get_cms_course_content": "Live GIU CMS resources",
         "search_cms_content": "Live GIU CMS search",
         "get_cms_video_transcript": "Supplemental video transcript",
+        "read_cms_pdf": "GIU CMS PDF",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:

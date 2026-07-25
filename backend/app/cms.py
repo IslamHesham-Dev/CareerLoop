@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+from io import BytesIO
 from pathlib import Path
 from typing import Any
+
+from pypdf import PdfReader
 
 from app.cms_live import GiuCmsClient
 
@@ -141,14 +144,28 @@ class CmsService:
             ),
         }
 
-    def list_courses(self, *, force: bool = False) -> dict[str, Any]:
+    def list_courses(
+        self,
+        *,
+        force: bool = False,
+        season: str | None = None,
+    ) -> dict[str, Any]:
         courses = [
             self._merge_summary(course)
             for course in self.client.list_courses(force=force)
         ]
+        selected = (season or "").strip()
+        if selected and selected.casefold() != "all":
+            needle = _normalized(selected)
+            courses = [
+                course
+                for course in courses
+                if _normalized(course.get("season", "")) == needle
+            ]
         return {
             "source": "GIU CMS",
             "status": "live",
+            "season": selected or "all",
             "courses": courses,
         }
 
@@ -232,6 +249,59 @@ class CmsService:
 
     def video_transcript(self, video_id: str) -> dict[str, Any]:
         return self.supplemental.video_transcript(video_id)
+
+    def resource_text(
+        self,
+        resource_id: str,
+        *,
+        max_chars: int = 60_000,
+        max_pages: int = 80,
+    ) -> dict[str, Any]:
+        """Extract bounded text from an authenticated CMS PDF for the agent."""
+        download = self.client.open_resource(resource_id)
+        try:
+            is_pdf = (
+                "pdf" in download.content_type.casefold()
+                or download.filename.casefold().endswith(".pdf")
+            )
+            if not is_pdf:
+                raise ValueError(
+                    "AI reading is currently available for CMS PDF files."
+                )
+            data = download.response.content
+            if not data.startswith(b"%PDF"):
+                raise RuntimeError(
+                    "GIU CMS did not return a valid PDF document."
+                )
+            reader = PdfReader(BytesIO(data))
+            page_count = len(reader.pages)
+            pages = [
+                page.extract_text() or ""
+                for page in reader.pages[:max_pages]
+            ]
+            text = "\n\n".join(pages).strip()
+            if not text:
+                return {
+                    "resource_id": resource_id,
+                    "filename": download.filename,
+                    "page_count": page_count,
+                    "text": "",
+                    "truncated": False,
+                    "message": (
+                        "The PDF contains no extractable text; it may be "
+                        "scanned images."
+                    ),
+                }
+            truncated = len(text) > max_chars or page_count > max_pages
+            return {
+                "resource_id": resource_id,
+                "filename": download.filename,
+                "page_count": page_count,
+                "text": text[:max_chars],
+                "truncated": truncated,
+            }
+        finally:
+            download.response.close()
 
 
 supplemental_video_catalog = SupplementalVideoCatalog()
