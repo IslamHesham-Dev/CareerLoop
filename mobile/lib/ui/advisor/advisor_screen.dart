@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
+import '../core/practice_launch_card.dart';
 
 class AdvisorScreen extends StatefulWidget {
   const AdvisorScreen({super.key});
@@ -23,6 +25,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
     'Find my weakest assessment',
     'Summarize my academic year',
     'Prepare an advisor brief',
+    'Create a 10-question practice quiz for one of my current courses',
   ];
 
   @override
@@ -101,6 +104,11 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                   ),
                 ),
                 IconButton(
+                  tooltip: 'Practice library',
+                  onPressed: () => context.push('/practice'),
+                  icon: const Icon(Icons.quiz_outlined),
+                ),
+                IconButton(
                   tooltip: 'Reset conversation',
                   onPressed: advisor.messages.isEmpty
                       ? null
@@ -174,6 +182,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
             controller: _controller,
             isSending: advisor.isSending,
             onSend: _send,
+            quickPrompts: _suggestions,
           ),
         ],
       ),
@@ -389,6 +398,10 @@ class _MessageBubble extends StatelessWidget {
                 ),
               ),
             ],
+            if (message.practiceSet != null) ...[
+              const SizedBox(height: 13),
+              PracticeLaunchCard(practiceSet: message.practiceSet!),
+            ],
           ],
         ),
       ),
@@ -442,11 +455,13 @@ class _Composer extends StatelessWidget {
   final TextEditingController controller;
   final bool isSending;
   final VoidCallback onSend;
+  final List<String> quickPrompts;
 
   const _Composer({
     required this.controller,
     required this.isSending,
     required this.onSend,
+    required this.quickPrompts,
   });
 
   @override
@@ -466,6 +481,24 @@ class _Composer extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          PopupMenuButton<String>(
+            tooltip: 'Quick prompts',
+            enabled: !isSending,
+            icon: const Icon(Icons.bolt_rounded),
+            onSelected: (value) {
+              controller.text = value;
+              onSend();
+            },
+            itemBuilder: (context) => quickPrompts
+                .map(
+                  (prompt) => PopupMenuItem(
+                    value: prompt,
+                    child: Text(prompt),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(width: 5),
           Expanded(
             child: TextField(
               controller: controller,

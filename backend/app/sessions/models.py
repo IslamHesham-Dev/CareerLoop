@@ -21,6 +21,7 @@ class StudentSession:
     expires_at: float
     conversation: list[Any] = field(default_factory=list)
     agent: Any = None
+    pending_practice_set: dict[str, Any] | None = None
     chat_lock: threading.RLock = field(default_factory=threading.RLock)
 
     @property
@@ -30,6 +31,7 @@ class StudentSession:
     def close(self) -> None:
         self.conversation.clear()
         self.agent = None
+        self.pending_practice_set = None
         self.academic.clear_cache()
         self.cms.close()
         self.portal.session.auth = None

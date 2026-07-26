@@ -5,6 +5,7 @@ import 'app/app.dart';
 import 'core/environment.dart';
 import 'data/api_client.dart';
 import 'data/repositories.dart';
+import 'data/practice_repository.dart';
 import 'data/session_storage.dart';
 
 Future<void> main() async {
@@ -18,7 +19,12 @@ Future<void> main() async {
   final auth = AuthRepository(api: api, storage: storage);
   final academic = AcademicRepository(api: api);
   final cms = CmsRepository(api: api);
-  final advisor = AdvisorRepository(api: api);
+  final practice = PracticeRepository();
+  await practice.load();
+  final advisor = AdvisorRepository(
+    api: api,
+    practiceRepository: practice,
+  );
 
   await auth.restoreSession();
 
@@ -29,6 +35,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: academic),
         ChangeNotifierProvider.value(value: cms),
         ChangeNotifierProvider.value(value: advisor),
+        ChangeNotifierProvider.value(value: practice),
       ],
       child: const CareerLoopApp(),
     ),

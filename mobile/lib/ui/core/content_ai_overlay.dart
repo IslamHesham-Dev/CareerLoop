@@ -5,6 +5,15 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
+import 'practice_launch_card.dart';
+
+class ContentAiOverlayController {
+  _ContentAiOverlayState? _state;
+
+  void open({String? prompt}) {
+    _state?._openFromController(prompt);
+  }
+}
 
 class ContentAiQuickAction {
   final IconData icon;
@@ -24,6 +33,7 @@ class ContentAiOverlay extends StatefulWidget {
   final String subtitle;
   final String contextInstruction;
   final List<ContentAiQuickAction> quickActions;
+  final ContentAiOverlayController? controller;
 
   const ContentAiOverlay({
     super.key,
@@ -32,6 +42,7 @@ class ContentAiOverlay extends StatefulWidget {
     required this.subtitle,
     required this.contextInstruction,
     required this.quickActions,
+    this.controller,
   });
 
   @override
@@ -49,7 +60,27 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
   String? _error;
 
   @override
+  void initState() {
+    super.initState();
+    widget.controller?._state = this;
+  }
+
+  @override
+  void didUpdateWidget(covariant ContentAiOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      if (oldWidget.controller?._state == this) {
+        oldWidget.controller?._state = null;
+      }
+      widget.controller?._state = this;
+    }
+  }
+
+  @override
   void dispose() {
+    if (widget.controller?._state == this) {
+      widget.controller?._state = null;
+    }
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -184,6 +215,14 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
       _sending = false;
     });
     _scrollToEnd();
+  }
+
+  void _openFromController(String? prompt) {
+    if (!mounted) return;
+    setState(() => _expanded = true);
+    if (prompt != null && prompt.trim().isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _send(prompt));
+    }
   }
 
   void _scrollToEnd() {
@@ -354,6 +393,26 @@ class _ChatPanel extends StatelessWidget {
                             onSubmitted: onPrompt,
                           ),
                         ),
+                        PopupMenuButton<String>(
+                          tooltip: 'Quick prompts',
+                          enabled: !sending,
+                          icon: const Icon(Icons.bolt_rounded),
+                          onSelected: onPrompt,
+                          itemBuilder: (context) => quickActions
+                              .map(
+                                (action) => PopupMenuItem(
+                                  value: action.prompt,
+                                  child: Row(
+                                    children: [
+                                      Icon(action.icon, size: 18),
+                                      const SizedBox(width: 9),
+                                      Flexible(child: Text(action.label)),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
                         const SizedBox(width: 8),
                         IconButton.filled(
                           tooltip: 'Send',
@@ -468,19 +527,28 @@ class _ContentMessageBubble extends StatelessWidget {
                 message.text,
                 style: const TextStyle(color: Colors.white, height: 1.35),
               )
-            : MarkdownBody(
-                data: message.text,
-                selectable: true,
-                styleSheet: MarkdownStyleSheet(
-                  p: const TextStyle(
-                    color: LensColors.ink,
-                    fontSize: 13,
-                    height: 1.4,
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MarkdownBody(
+                    data: message.text,
+                    selectable: true,
+                    styleSheet: MarkdownStyleSheet(
+                      p: const TextStyle(
+                        color: LensColors.ink,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                      listBullet: const TextStyle(color: LensColors.indigo),
+                      tableBorder: TableBorder.all(color: LensColors.line),
+                      tableCellsPadding: const EdgeInsets.all(6),
+                    ),
                   ),
-                  listBullet: const TextStyle(color: LensColors.indigo),
-                  tableBorder: TableBorder.all(color: LensColors.line),
-                  tableCellsPadding: const EdgeInsets.all(6),
-                ),
+                  if (message.practiceSet != null) ...[
+                    const SizedBox(height: 10),
+                    PracticeLaunchCard(practiceSet: message.practiceSet!),
+                  ],
+                ],
               ),
       ),
     );

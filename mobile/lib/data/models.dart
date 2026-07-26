@@ -535,12 +535,98 @@ class ToolActivity {
       );
 }
 
+class PracticeQuestion {
+  final String id;
+  final String question;
+  final List<String> options;
+  final int correctIndex;
+  final String explanation;
+  final String concept;
+
+  const PracticeQuestion({
+    required this.id,
+    required this.question,
+    required this.options,
+    required this.correctIndex,
+    required this.explanation,
+    required this.concept,
+  });
+
+  factory PracticeQuestion.fromJson(Map<String, dynamic> json) =>
+      PracticeQuestion(
+        id: json['id'] as String? ?? '',
+        question: json['question'] as String? ?? '',
+        options: List<String>.from(json['options'] as List? ?? const []),
+        correctIndex: json['correct_index'] as int? ?? 0,
+        explanation: json['explanation'] as String? ?? '',
+        concept: json['concept'] as String? ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'question': question,
+        'options': options,
+        'correct_index': correctIndex,
+        'explanation': explanation,
+        'concept': concept,
+      };
+}
+
+class PracticeSet {
+  final String id;
+  final String title;
+  final String course;
+  final String assessmentType;
+  final String studyNotes;
+  final DateTime createdAt;
+  final List<PracticeQuestion> questions;
+
+  const PracticeSet({
+    required this.id,
+    required this.title,
+    required this.course,
+    required this.assessmentType,
+    required this.studyNotes,
+    required this.createdAt,
+    required this.questions,
+  });
+
+  factory PracticeSet.fromJson(Map<String, dynamic> json) => PracticeSet(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? 'Practice set',
+        course: json['course'] as String? ?? '',
+        assessmentType: json['assessment_type'] as String? ?? 'practice',
+        studyNotes: json['study_notes'] as String? ?? '',
+        createdAt:
+            DateTime.tryParse(json['created_at'] as String? ?? '')?.toLocal() ??
+                DateTime.now(),
+        questions: (json['questions'] as List? ?? const [])
+            .map(
+              (item) => PracticeQuestion.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'title': title,
+        'course': course,
+        'assessment_type': assessmentType,
+        'study_notes': studyNotes,
+        'created_at': createdAt.toUtc().toIso8601String(),
+        'questions': questions.map((question) => question.toJson()).toList(),
+      };
+}
+
 class ChatMessage {
   final bool isUser;
   final String text;
   final DateTime createdAt;
   final List<String> sources;
   final List<ToolActivity> tools;
+  final PracticeSet? practiceSet;
 
   const ChatMessage({
     required this.isUser,
@@ -548,6 +634,7 @@ class ChatMessage {
     required this.createdAt,
     this.sources = const [],
     this.tools = const [],
+    this.practiceSet,
   });
 }
 

@@ -29,6 +29,7 @@ async def chat(
         with student.chat_lock:
             if student.agent is None:
                 student.agent = build_agent(student, settings)
+            student.pending_practice_set = None
             start = len(student.conversation)
             result = student.agent.invoke(
                 {
@@ -42,10 +43,17 @@ async def chat(
             new_messages = student.conversation[start:]
             answer = message_text(student.conversation[-1].content)
             events, sources = tool_events(new_messages)
+            if student.pending_practice_set is not None:
+                notes = student.pending_practice_set["study_notes"].strip()
+                answer = (
+                    f"{notes}\n\n"
+                    "Your interactive practice set is ready below."
+                )
             return ChatResponse(
                 answer=answer,
                 tools=events,
                 sources=sources,
+                practice_set=student.pending_practice_set,
             )
 
     try:
@@ -68,4 +76,5 @@ def reset_chat(
 ) -> MessageResponse:
     with student.chat_lock:
         student.conversation.clear()
+        student.pending_practice_set = None
     return MessageResponse(message="Advisory conversation reset.")

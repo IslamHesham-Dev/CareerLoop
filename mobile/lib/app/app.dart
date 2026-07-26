@@ -11,6 +11,7 @@ import '../ui/courses/course_details_screen.dart';
 import '../ui/courses/cms_course_screen.dart';
 import '../ui/courses/courses_screen.dart';
 import '../ui/overview/overview_screen.dart';
+import '../ui/practice/practice_screens.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/transcript/transcript_screen.dart';
 import '../ui/viewer/drive_video_screen.dart';
@@ -136,6 +137,19 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
             final args = state.extra as DriveVideoArgs;
             return DriveVideoScreen(args: args);
           },
+        ),
+        GoRoute(
+          path: '/practice',
+          builder: (context, state) => const PracticeLibraryScreen(),
+          routes: [
+            GoRoute(
+              path: 'session',
+              builder: (context, state) {
+                final practiceSet = state.extra as PracticeSet;
+                return PracticeSessionScreen(practiceSet: practiceSet);
+              },
+            ),
+          ],
         ),
       ],
     );

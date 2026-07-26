@@ -79,4 +79,31 @@ void main() {
 
     expect(transcript.cumulativeGpaWithGrade, '1.45 (A-)');
   });
+
+  test('maps a hidden practice answer to the correct local option', () {
+    final practice = PracticeSet.fromJson({
+      'id': 'set-1',
+      'title': 'Data Structures Midterm',
+      'course': 'CSEN301',
+      'assessment_type': 'midterm',
+      'study_notes': 'Review balanced tree operations.',
+      'created_at': '2026-07-26T12:00:00Z',
+      'questions': [
+        {
+          'id': 'q-1',
+          'question': 'Which operation is logarithmic in a balanced BST?',
+          'options': ['Traversal', 'Linear scan', 'Search', 'Array append'],
+          'correct_index': 2,
+          'explanation': 'Search follows the logarithmic tree height.',
+          'concept': 'Balanced search trees',
+        },
+      ],
+    });
+
+    expect(practice.questions.single.correctIndex, 2);
+    expect(
+      practice.questions.single.options[practice.questions.single.correctIndex],
+      'Search',
+    );
+  });
 }

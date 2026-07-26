@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'models.dart';
+import 'practice_repository.dart';
 import 'session_storage.dart';
 
 class AuthRepository extends ChangeNotifier {
@@ -405,12 +406,16 @@ class CmsRepository extends ChangeNotifier {
 
 class AdvisorRepository extends ChangeNotifier {
   final ApiClient api;
+  final PracticeRepository practiceRepository;
 
   final List<ChatMessage> messages = [];
   bool isSending = false;
   String? error;
 
-  AdvisorRepository({required this.api});
+  AdvisorRepository({
+    required this.api,
+    required this.practiceRepository,
+  });
 
   Future<ChatMessage?> send(String text) {
     return sendContextual(visibleText: text, agentText: text);
@@ -435,6 +440,13 @@ class AdvisorRepository extends ChangeNotifier {
     notifyListeners();
     try {
       final json = await api.post('/v1/chat', body: {'message': agent});
+      final practiceJson = json['practice_set'];
+      final practiceSet = practiceJson is Map
+          ? PracticeSet.fromJson(Map<String, dynamic>.from(practiceJson))
+          : null;
+      if (practiceSet != null) {
+        await practiceRepository.save(practiceSet);
+      }
       final response = ChatMessage(
         isUser: false,
         text: json['answer'] as String? ?? 'No response was returned.',
@@ -444,6 +456,7 @@ class AdvisorRepository extends ChangeNotifier {
             .map((item) =>
                 ToolActivity.fromJson(Map<String, dynamic>.from(item as Map)))
             .toList(),
+        practiceSet: practiceSet,
       );
       messages.add(response);
       return response;

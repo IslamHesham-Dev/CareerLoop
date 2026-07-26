@@ -12,7 +12,27 @@ class ToolEvent(BaseModel):
     status: str = "completed"
 
 
+class PracticeQuestion(BaseModel):
+    id: str
+    question: str
+    options: list[str]
+    correct_index: int
+    explanation: str
+    concept: str
+
+
+class PracticeSet(BaseModel):
+    id: str
+    title: str
+    course: str
+    assessment_type: str
+    created_at: str
+    study_notes: str
+    questions: list[PracticeQuestion]
+
+
 class ChatResponse(BaseModel):
     answer: str
     tools: list[ToolEvent]
     sources: list[str]
+    practice_set: PracticeSet | None = None
