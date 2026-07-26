@@ -249,19 +249,19 @@ class _CareerHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [LensColors.ink, Color(0xFF1E1B4B)],
+          colors: [LensColors.ink, Color(0xFF34236E)],
         ),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: LensColors.violet.withValues(alpha: .28),
-            blurRadius: 40,
-            offset: const Offset(0, 20),
+            color: LensColors.violet.withValues(alpha: .24),
+            blurRadius: 34,
+            offset: const Offset(0, 17),
           ),
         ],
       ),
@@ -269,36 +269,36 @@ class _CareerHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const GradientPill(
-            label: 'EVIDENCE NETWORK',
-            icon: Icons.hub_rounded,
+            label: 'Evidence network',
+            icon: Icons.hub_outlined,
             dark: true,
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
           const Text(
-            'Your identity becomes\ndefensible with data.',
+            'Your profile becomes\nstronger with every signal.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 26,
+              fontSize: 25,
               height: 1.1,
-              letterSpacing: -0.8,
+              letterSpacing: -.6,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
           Row(
             children: [
               _Signal(
-                label: 'ACADEMICS',
+                label: 'Academics',
                 live: academicReady,
               ),
-              _FlowLine(active: academicReady),
+              const _FlowLine(),
               _Signal(
-                label: 'LEARNING',
+                label: 'Learning',
                 live: cmsConnected,
               ),
-              _FlowLine(active: cmsConnected),
+              const _FlowLine(),
               const _Signal(
-                label: 'CAREER',
+                label: 'Career',
                 live: false,
               ),
             ],
@@ -321,40 +321,30 @@ class _Signal extends StatelessWidget {
       child: Column(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               color: (live ? LensColors.aqua : Colors.white)
-                  .withValues(alpha: live ? .2 : .08),
+                  .withValues(alpha: live ? .16 : .08),
               shape: BoxShape.circle,
               border: Border.all(
                 color: live
-                    ? LensColors.aqua.withValues(alpha: 0.5)
-                    : Colors.white.withValues(alpha: .1),
-                width: 1.5,
+                    ? LensColors.aqua
+                    : Colors.white.withValues(alpha: .16),
               ),
-              boxShadow: live
-                  ? [
-                      BoxShadow(
-                        color: LensColors.aqua.withValues(alpha: 0.2),
-                        blurRadius: 10,
-                      )
-                    ]
-                  : null,
             ),
             child: Icon(
-              live ? Icons.verified_rounded : Icons.add_rounded,
-              color: live ? LensColors.aqua : Colors.white24,
-              size: 20,
+              live ? Icons.check_rounded : Icons.add_rounded,
+              color: live ? LensColors.aqua : Colors.white54,
+              size: 19,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 7),
           Text(
             label,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: live ? .9 : .4),
-              fontSize: 9,
-              letterSpacing: 0.5,
+              color: Colors.white.withValues(alpha: live ? .9 : .5),
+              fontSize: 10,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -365,22 +355,14 @@ class _Signal extends StatelessWidget {
 }
 
 class _FlowLine extends StatelessWidget {
-  final bool active;
-  const _FlowLine({this.active = false});
+  const _FlowLine();
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 2,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              (active ? LensColors.aqua : Colors.white).withValues(alpha: 0.2),
-              (active ? LensColors.aqua : Colors.white).withValues(alpha: 0.05),
-            ],
-          ),
-        ),
+        height: 1,
+        color: Colors.white.withValues(alpha: .16),
       ),
     );
   }
@@ -407,57 +389,47 @@ class _StudioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LensCard(
       onTap: onTap,
-      isGlass: true,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(15),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: .12),
-              borderRadius: BorderRadius.circular(16),
+              color: accent.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: accent, size: 22),
+            child: Icon(icon, color: accent, size: 21),
           ),
           const Spacer(),
           Text(
             title,
             style: const TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: -0.3),
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 5),
           Text(
             subtitle,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: LensColors.muted,
-              fontSize: 11,
-              height: 1.3,
+              fontSize: 10.5,
+              height: 1.35,
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                width: 6,
-                height: 6,
-                decoration:
-                    BoxDecoration(color: accent, shape: BoxShape.circle),
-              ),
-              const SizedBox(width: 6),
-              Text(
-                status.toUpperCase(),
-                style: TextStyle(
-                  color: accent,
-                  fontSize: 9,
-                  letterSpacing: .8,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
+          const SizedBox(height: 9),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              color: accent,
+              fontSize: 8.5,
+              letterSpacing: .7,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),

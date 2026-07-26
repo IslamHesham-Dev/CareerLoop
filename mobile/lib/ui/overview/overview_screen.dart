@@ -186,25 +186,19 @@ class _FocusHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(23),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(30),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            LensColors.ink,
-            Color(0xFF1E293B),
-            LensColors.midnight,
-          ],
-          stops: [0.0, 0.5, 1.0],
+          colors: [LensColors.ink, Color(0xFF28326B)],
         ),
         boxShadow: [
           BoxShadow(
             color: LensColors.indigo.withValues(alpha: .25),
-            blurRadius: 40,
-            offset: const Offset(0, 20),
+            blurRadius: 36,
+            offset: const Offset(0, 18),
           ),
         ],
       ),
@@ -214,91 +208,84 @@ class _FocusHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.white.withValues(alpha: .15),
-                      Colors.white.withValues(alpha: .05),
-                    ],
-                  ),
+                  color: Colors.white.withValues(alpha: .09),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: .15),
+                    color: Colors.white.withValues(alpha: .12),
                   ),
                 ),
                 child: const Icon(
-                  Icons.auto_awesome_rounded,
+                  Icons.all_inclusive_rounded,
                   color: LensColors.aqua,
-                  size: 28,
+                  size: 27,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 13),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'The Evidence Loop',
+                      'The evidence loop',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
-                        fontSize: 22,
-                        letterSpacing: -0.5,
+                        fontSize: 20,
                       ),
                     ),
                     Text(
-                      'AI Agentic Assistant',
+                      'Evidence becomes action',
                       style: TextStyle(
                         color: LensColors.aqua,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                        letterSpacing: 0.5,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
                       ),
                     ),
                   ],
                 ),
               ),
               const GradientPill(
-                label: 'AGENTIC',
+                label: 'LIVE',
                 icon: Icons.bolt_rounded,
                 dark: true,
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 22),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _LoopNode(
-                icon: Icons.school_rounded,
+                icon: Icons.school_outlined,
                 label: 'ACADEMIC',
-                detail: 'Verified Facts',
+                detail: 'Learn · prove',
                 color: LensColors.indigo,
               ),
               _ConnectorLine(color: LensColors.indigo),
               _LoopNode(
-                icon: Icons.hub_rounded,
+                icon: Icons.auto_awesome_rounded,
                 label: 'COPILOT',
-                detail: 'Smart Context',
+                detail: 'Connect · decide',
                 color: LensColors.aqua,
               ),
               _ConnectorLine(color: LensColors.violet),
               _LoopNode(
-                icon: Icons.rocket_launch_rounded,
+                icon: Icons.rocket_launch_outlined,
                 label: 'CAREER',
-                detail: 'Direct Action',
+                detail: 'Match · act',
                 color: LensColors.violet,
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
             ),
             child: Row(
@@ -308,12 +295,11 @@ class _FocusHero extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Your evidence is being used to build your defensible professional identity.',
+                    'Every verified signal can become a stronger plan, profile, application, or interview answer.',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: .7),
                       height: 1.4,
                       fontSize: 11,
-                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
@@ -336,7 +322,7 @@ class _ConnectorLine extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
         child: Container(
-          height: 2,
+          height: 1,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -372,36 +358,29 @@ class _LoopNode extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: .15),
+            color: color.withValues(alpha: .14),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withValues(alpha: .4), width: 1.5),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: .2),
-                blurRadius: 12,
-              ),
-            ],
+            border: Border.all(color: color.withValues(alpha: .45)),
           ),
           child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 7),
         Text(
           label,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 9,
-            letterSpacing: 1.0,
+            fontSize: 8.5,
+            letterSpacing: .7,
             fontWeight: FontWeight.w900,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           detail,
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white.withValues(alpha: .5),
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
+            fontSize: 8.5,
           ),
         ),
       ],
@@ -515,16 +494,16 @@ class _PromptGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     const prompts = [
       (
-        Icons.auto_graph_rounded,
-        'Analyze my skills',
+        Icons.track_changes_rounded,
+        'Find my career evidence',
         'Use my full transcript to identify my strongest career-relevant skills and the evidence for each.',
-        LensColors.indigo
+        LensColors.indigo,
       ),
       (
-        Icons.quiz_rounded,
-        'Create a quiz',
+        Icons.quiz_outlined,
+        'Build a focused quiz',
         'Create a 10-question interactive quiz for my weakest current course.',
-        LensColors.aqua
+        LensColors.aqua,
       ),
     ];
     return Row(
@@ -533,39 +512,27 @@ class _PromptGrid extends StatelessWidget {
             (prompt) => Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: prompt == prompts.first ? 8 : 0,
-                  left: prompt == prompts.last ? 8 : 0,
+                  right: prompt == prompts.first ? 6 : 0,
+                  left: prompt == prompts.last ? 6 : 0,
                 ),
                 child: LensCard(
                   onTap: () => onPrompt(prompt.$3),
-                  isGlass: true,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: SizedBox(
-                    height: 110,
+                    height: 92,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: prompt.$4.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(prompt.$1, color: prompt.$4, size: 20),
-                        ),
+                        Icon(prompt.$1, color: prompt.$4),
                         const Spacer(),
                         Text(
                           prompt.$2,
                           style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.2,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2,
+                            fontSize: 13,
+                            height: 1.25,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        const Icon(Icons.arrow_forward,
-                            size: 14, color: LensColors.muted),
                       ],
                     ),
                   ),

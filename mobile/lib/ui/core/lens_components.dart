@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
@@ -27,9 +26,9 @@ class LensLogo extends StatelessWidget {
             borderRadius: BorderRadius.circular(size * .27),
             boxShadow: [
               BoxShadow(
-                color: LensColors.indigo.withValues(alpha: .22),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
+                color: LensColors.indigo.withValues(alpha: .28),
+                blurRadius: 22,
+                offset: const Offset(0, 9),
               ),
             ],
           ),
@@ -48,8 +47,8 @@ class LensLogo extends StatelessWidget {
             style: TextStyle(
               color: wordmarkColor ?? LensColors.ink,
               fontWeight: FontWeight.w900,
-              letterSpacing: -1.0,
-              fontSize: size * 0.5,
+              letterSpacing: -.55,
+              fontSize: size * .46,
             ),
           ),
         ],
@@ -69,47 +68,39 @@ class AuroraBackground extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: dark ? LensColors.ink : LensColors.canvas,
+        gradient: dark
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF081126),
+                  Color(0xFF151A3E),
+                  Color(0xFF101C35),
+                ],
+              )
+            : const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFFF8F8FF), LensColors.canvas],
+              ),
       ),
       child: Stack(
         children: [
-          // Dynamic Orbs
           Positioned(
-            top: -150,
-            right: -100,
+            top: -120,
+            right: -110,
             child: _GlowOrb(
-              size: 450,
+              size: 300,
               color: (dark ? LensColors.violet : LensColors.indigo)
-                  .withValues(alpha: dark ? .18 : .12),
+                  .withValues(alpha: dark ? .26 : .11),
             ),
           ),
           Positioned(
-            top: 200,
-            left: -180,
+            top: 260,
+            left: -150,
             child: _GlowOrb(
-              size: 400,
-              color: LensColors.aqua.withValues(alpha: dark ? .14 : .08),
-            ),
-          ),
-          Positioned(
-            bottom: -100,
-            right: -50,
-            child: _GlowOrb(
-              size: 350,
-              color: LensColors.violet.withValues(alpha: dark ? .12 : .06),
-            ),
-          ),
-          // Subtle mesh-like gradient overlay
-          Container(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topLeft,
-                radius: 1.5,
-                colors: [
-                  Colors.transparent,
-                  (dark ? LensColors.ink : LensColors.canvas)
-                      .withValues(alpha: 0.4),
-                ],
-              ),
+              size: 320,
+              color: LensColors.aqua.withValues(alpha: dark ? .17 : .09),
             ),
           ),
           child,
@@ -145,76 +136,40 @@ class LensCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final Color? color;
   final VoidCallback? onTap;
-  final bool isGlass;
-  final double blur;
 
   const LensCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(24),
+    this.padding = const EdgeInsets.all(20),
     this.color,
     this.onTap,
-    this.isGlass = false,
-    this.blur = 12,
   });
 
   @override
   Widget build(BuildContext context) {
-    final cardColor =
-        color ?? (isGlass ? Colors.white.withValues(alpha: 0.6) : Colors.white);
-
-    Widget content = Container(
+    final content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: isGlass
-              ? Colors.white.withValues(alpha: 0.4)
-              : LensColors.line.withValues(alpha: 0.5),
-          width: 1,
-        ),
+        color: color ?? Colors.white.withValues(alpha: .94),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withValues(alpha: .9)),
         boxShadow: [
           BoxShadow(
-            color: LensColors.ink.withValues(alpha: .04),
-            blurRadius: 32,
-            offset: const Offset(0, 16),
+            color: LensColors.ink.withValues(alpha: .065),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: child,
     );
-
-    if (isGlass) {
-      content = ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-          child: content,
-        ),
-      );
-    }
-
     if (onTap == null) return content;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: LensColors.ink.withValues(alpha: .04),
-            blurRadius: 32,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(28),
-          onTap: onTap,
-          child: content,
-        ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(26),
+        onTap: onTap,
+        child: content,
       ),
     );
   }

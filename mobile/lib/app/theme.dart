@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 abstract final class LensColors {
-  static const ink = Color(0xFF030712);
-  static const midnight = Color(0xFF0F172A);
-  static const indigo = Color(0xFF4F46E5);
-  static const violet = Color(0xFF8B5CF6);
-  static const aqua = Color(0xFF06B6D4);
-  static const amber = Color(0xFFF59E0B);
-  static const rose = Color(0xFFF43F5E);
-  static const canvas = Color(0xFFF8FAFC);
+  static const ink = Color(0xFF0A1024);
+  static const midnight = Color(0xFF121A36);
+  static const indigo = Color(0xFF5A61F0);
+  static const violet = Color(0xFF8D63F7);
+  static const aqua = Color(0xFF43D7C6);
+  static const amber = Color(0xFFFFC46B);
+  static const rose = Color(0xFFFF7A95);
+  static const canvas = Color(0xFFF4F6FB);
   static const card = Color(0xFFFFFFFF);
-  static const muted = Color(0xFF64748B);
-  static const line = Color(0xFFE2E8F0);
+  static const muted = Color(0xFF68708A);
+  static const line = Color(0xFFE4E7F0);
 }
 
 abstract final class CareerLoopTheme {
@@ -24,7 +24,7 @@ abstract final class CareerLoopTheme {
       primary: LensColors.indigo,
       secondary: LensColors.aqua,
       tertiary: LensColors.violet,
-      error: LensColors.rose,
+      error: const Color(0xFFD8495B),
       surface: LensColors.card,
       onSurface: LensColors.ink,
       outline: LensColors.line,
@@ -34,48 +34,46 @@ abstract final class CareerLoopTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: LensColors.canvas,
-      fontFamily: 'Inter', // Assuming standard system fonts fallback or Inter is added
       textTheme: const TextTheme(
         displaySmall: TextStyle(
-          fontSize: 36,
-          height: 1.1,
-          fontWeight: FontWeight.w900,
-          letterSpacing: -1.2,
+          fontSize: 38,
+          height: 1.05,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -1.4,
           color: LensColors.ink,
         ),
         headlineMedium: TextStyle(
-          fontSize: 30,
-          height: 1.2,
+          fontSize: 28,
+          height: 1.12,
           fontWeight: FontWeight.w800,
-          letterSpacing: -0.8,
+          letterSpacing: -0.7,
           color: LensColors.ink,
         ),
         headlineSmall: TextStyle(
-          fontSize: 24,
-          height: 1.25,
+          fontSize: 22,
+          height: 1.15,
           fontWeight: FontWeight.w700,
-          letterSpacing: -0.4,
+          letterSpacing: -0.35,
           color: LensColors.ink,
         ),
         titleLarge: TextStyle(
-          fontSize: 20,
+          fontSize: 18,
           fontWeight: FontWeight.w700,
-          letterSpacing: -0.2,
           color: LensColors.ink,
         ),
         titleMedium: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
           color: LensColors.ink,
         ),
         bodyLarge: TextStyle(
           fontSize: 16,
-          height: 1.6,
+          height: 1.5,
           color: LensColors.ink,
         ),
         bodyMedium: TextStyle(
           fontSize: 14,
-          height: 1.5,
+          height: 1.45,
           color: LensColors.muted,
         ),
       ),
@@ -88,23 +86,23 @@ abstract final class CareerLoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Colors.white.withValues(alpha: .92),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: LensColors.line),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: LensColors.line),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: LensColors.indigo, width: 2),
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: LensColors.indigo, width: 1.7),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(color: LensColors.rose),
         ),
       ),
@@ -112,29 +110,27 @@ abstract final class CareerLoopTheme {
         style: FilledButton.styleFrom(
           backgroundColor: LensColors.indigo,
           foregroundColor: Colors.white,
-          minimumSize: const Size(0, 56),
+          minimumSize: const Size(0, 54),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(18),
           ),
           textStyle: const TextStyle(
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
-            letterSpacing: 0.2,
           ),
-          elevation: 0,
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 80,
+        height: 72,
         elevation: 0,
         backgroundColor: Colors.white,
-        indicatorColor: LensColors.indigo.withValues(alpha: .08),
+        indicatorColor: LensColors.indigo.withValues(alpha: .12),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: states.contains(WidgetState.selected)
-                ? FontWeight.w700
-                : FontWeight.w500,
+                ? FontWeight.w800
+                : FontWeight.w600,
             color: states.contains(WidgetState.selected)
                 ? LensColors.indigo
                 : LensColors.muted,
