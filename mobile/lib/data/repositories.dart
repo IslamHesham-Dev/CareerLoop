@@ -514,6 +514,7 @@ class NotionRepository extends ChangeNotifier {
   bool exporting = false;
   String mode = 'disabled';
   String? workspaceName;
+  String? configurationMessage;
   String? error;
 
   NotionRepository({required this.api});
@@ -529,6 +530,7 @@ class NotionRepository extends ChangeNotifier {
       connected = json['connected'] as bool? ?? false;
       mode = json['mode'] as String? ?? 'disabled';
       workspaceName = json['workspace_name'] as String?;
+      configurationMessage = json['configuration_message'] as String?;
       return connected;
     } on ApiException catch (exception) {
       error = exception.message;
@@ -603,6 +605,7 @@ class NotionRepository extends ChangeNotifier {
     connected = false;
     mode = 'disabled';
     workspaceName = null;
+    configurationMessage = null;
     error = null;
     notifyListeners();
   }

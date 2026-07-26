@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -7,6 +6,7 @@ import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/practice_repository.dart';
 import '../../data/repositories.dart';
+import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -96,7 +96,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           const SizedBox(height: 9),
           _EvidenceSource(
-            icon: FontAwesomeIcons.linkedinIn,
+            icon: Icons.person_outline_rounded,
+            brand: const LinkedInBrandMark(size: 28),
             title: 'Professional identity',
             subtitle: linkedInReady
                 ? 'LinkedIn PDF experience, education, and certifications'
@@ -247,6 +248,7 @@ class _ProfileHero extends StatelessWidget {
 
 class _EvidenceSource extends StatelessWidget {
   final IconData icon;
+  final Widget? brand;
   final String title;
   final String subtitle;
   final String status;
@@ -255,6 +257,7 @@ class _EvidenceSource extends StatelessWidget {
 
   const _EvidenceSource({
     required this.icon,
+    this.brand,
     required this.title,
     required this.subtitle,
     required this.status,
@@ -276,7 +279,7 @@ class _EvidenceSource extends StatelessWidget {
               color: color.withValues(alpha: .09),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: brand ?? Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

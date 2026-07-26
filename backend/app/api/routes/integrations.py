@@ -38,6 +38,37 @@ def _oauth_configured(settings: Settings) -> bool:
     )
 
 
+def _configuration_message(settings: Settings) -> str | None:
+    token_ready = bool(_internal_token(settings))
+    parent_ready = bool(settings.notion_parent_page_id.strip())
+    if token_ready and not parent_ready:
+        return (
+            "Notion token detected. Add NOTION_PARENT_PAGE_ID to the Render "
+            "service and redeploy."
+        )
+    if parent_ready and not token_ready:
+        return (
+            "Notion page detected. Add NOTION_API_KEY to the Render service "
+            "and redeploy."
+        )
+    oauth_values = (
+        settings.notion_oauth_client_id.strip(),
+        settings.notion_oauth_client_secret.get_secret_value().strip(),
+        settings.notion_oauth_redirect_uri.strip(),
+    )
+    if any(oauth_values) and not all(oauth_values):
+        return (
+            "Notion OAuth is incomplete. Add the client ID, client secret, "
+            "and redirect URI on Render."
+        )
+    if not token_ready and not parent_ready and not any(oauth_values):
+        return (
+            "Add NOTION_API_KEY and NOTION_PARENT_PAGE_ID to the Render "
+            "service, then redeploy."
+        )
+    return None
+
+
 @router.get("/notion/status", response_model=NotionStatusResponse)
 def notion_status(
     student: StudentSession = Depends(get_student_session),
@@ -54,6 +85,7 @@ def notion_status(
         connected=connected,
         mode=mode,
         workspace_name=student.notion_workspace_name,
+        configuration_message=_configuration_message(settings),
     )
 
 
@@ -69,7 +101,8 @@ def connect_notion(
     if not _oauth_configured(settings):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Notion export has not been configured on the backend.",
+            detail=_configuration_message(settings)
+            or "Notion export has not been configured on the backend.",
         )
 
     oauth_state = secrets.token_urlsafe(32)

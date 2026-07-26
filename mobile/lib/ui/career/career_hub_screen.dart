@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/repositories.dart';
+import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
 
 class CareerHubScreen extends StatelessWidget {
@@ -346,19 +346,7 @@ class _LinkedInConnectorCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: linkedInBlue,
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: const FaIcon(
-              FontAwesomeIcons.linkedinIn,
-              color: Colors.white,
-              size: 23,
-            ),
-          ),
+          const LinkedInBrandMark(size: 46),
           const SizedBox(width: 13),
           Expanded(
             child: Column(

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -7,9 +6,10 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/repositories.dart';
+import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
 
-const _linkedInBlue = Color(0xFF0A66C2);
+const _linkedInBlue = LinkedInBrandMark.blue;
 
 class LinkedInImportScreen extends StatefulWidget {
   const LinkedInImportScreen({super.key});
@@ -155,19 +155,7 @@ class _GuidePage extends StatelessWidget {
       children: [
         Row(
           children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: _linkedInBlue,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const FaIcon(
-                FontAwesomeIcons.linkedinIn,
-                color: Colors.white,
-                size: 23,
-              ),
-            ),
+            const LinkedInBrandMark(size: 46),
             const SizedBox(width: 12),
             const Expanded(
               child: Column(
@@ -372,11 +360,7 @@ class _ConnectedProfile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              const FaIcon(
-                FontAwesomeIcons.linkedinIn,
-                color: Colors.white,
-                size: 30,
-              ),
+              const LinkedInBrandMark(size: 40),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
@@ -393,7 +377,7 @@ class _ConnectedProfile extends StatelessWidget {
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      profile.name ?? 'LinkedIn PDF profile',
+                      profile.name ?? 'Professional profile imported',
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 17,
@@ -406,6 +390,15 @@ class _ConnectedProfile extends StatelessWidget {
                         profile.headline!,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10.5,
+                        ),
+                      ),
+                    ] else ...[
+                      const SizedBox(height: 3),
+                      Text(
+                        '${profile.pageCount}-page LinkedIn PDF',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 10.5,

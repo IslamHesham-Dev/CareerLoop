@@ -668,13 +668,15 @@ class LinkedInPdfProfile {
   });
 
   factory LinkedInPdfProfile.fromJson(Map<String, dynamic> json) {
+    final parsedName = json['name'] as String?;
+    final safeName = _credibleLinkedInName(parsedName) ? parsedName : null;
     return LinkedInPdfProfile(
       fileName: json['file_name'] as String? ?? 'LinkedIn_Profile.pdf',
       importedAt: DateTime.tryParse(json['imported_at'] as String? ?? '') ??
           DateTime.now(),
       pageCount: (json['page_count'] as num?)?.toInt() ?? 1,
-      name: json['name'] as String?,
-      headline: json['headline'] as String?,
+      name: safeName,
+      headline: safeName == null ? null : json['headline'] as String?,
       summary: json['summary'] as String?,
       contact: List<String>.from(json['contact'] as List? ?? const []),
       experience: List<String>.from(json['experience'] as List? ?? const []),
@@ -700,6 +702,30 @@ class LinkedInPdfProfile {
         'skills': skills,
         'raw_text': rawText,
       };
+}
+
+bool _credibleLinkedInName(String? value) {
+  if (value == null) return false;
+  final words = value.trim().split(RegExp(r'\s+'));
+  if (words.length < 2 || words.length > 6) return false;
+  const nonNameTerms = {
+    'academy',
+    'badge',
+    'certification',
+    'certified',
+    'certificate',
+    'course',
+    'credential',
+    'diploma',
+    'foundations',
+    'license',
+    'professional',
+    'specialist',
+  };
+  return words
+      .map((word) => word.toLowerCase().replaceAll(RegExp(r'[^a-z-]'), ''))
+      .where((word) => word.isNotEmpty)
+      .every((word) => !nonNameTerms.contains(word));
 }
 
 extension _LastOrNull<T> on Iterable<T> {

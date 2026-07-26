@@ -21,7 +21,7 @@ class _Page:
     def __init__(self, text: str) -> None:
         self.text = text
 
-    def extract_text(self) -> str:
+    def extract_text(self, **_kwargs) -> str:
         return self.text
 
 
@@ -89,6 +89,35 @@ def test_linkedin_pdf_rejects_a_scan_without_text(
 
     with pytest.raises(LinkedInPdfError, match="selectable text"):
         extract_linkedin_profile(b"%PDF-fake", file_name="scan.pdf")
+
+
+def test_certification_is_never_used_as_profile_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    text = """Contact
+ada@example.com
+Certifications
+Certified Cloud Professional
+Ada Lovelace
+Software Engineer
+Berlin, Germany
+Summary
+I build reliable analytical systems.
+"""
+    monkeypatch.setattr(
+        linkedin_pdf,
+        "PdfReader",
+        lambda stream: _Reader(stream, text=text),
+    )
+
+    profile = extract_linkedin_profile(
+        b"%PDF-fake",
+        file_name="LinkedIn Profile.pdf",
+    )
+
+    assert profile.name != "Certified Cloud Professional"
+    assert profile.name is None
+    assert profile.headline is None
 
 
 def test_linkedin_profile_can_be_rehydrated_and_removed() -> None:

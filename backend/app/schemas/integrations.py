@@ -8,6 +8,7 @@ class NotionStatusResponse(BaseModel):
     connected: bool
     mode: str
     workspace_name: str | None = None
+    configuration_message: str | None = None
 
 
 class NotionConnectResponse(BaseModel):

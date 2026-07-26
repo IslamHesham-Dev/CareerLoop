@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.notion import NotionClient, NotionIntegrationError
+from app.config import Settings
 
 
 class _Response:
@@ -120,3 +121,15 @@ def test_notion_routes_are_exposed() -> None:
     assert "/v1/integrations/notion/connect" in paths
     assert "/v1/integrations/notion/callback" in paths
     assert "/v1/integrations/notion/export" in paths
+
+
+def test_notion_settings_accept_render_friendly_aliases(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("NOTION_INTEGRATION_TOKEN", "secret-token")
+    monkeypatch.setenv("NOTION_PAGE_ID", "parent-page")
+
+    settings = Settings(_env_file=None)
+
+    assert settings.notion_api_key.get_secret_value() == "secret-token"
+    assert settings.notion_parent_page_id == "parent-page"

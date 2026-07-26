@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from pydantic import Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -30,27 +30,48 @@ class Settings(BaseSettings):
     )
     notion_api_key: SecretStr = Field(
         default=SecretStr(""),
-        validation_alias="NOTION_API_KEY",
+        validation_alias=AliasChoices(
+            "NOTION_API_KEY",
+            "NOTION_TOKEN",
+            "NOTION_INTEGRATION_TOKEN",
+            "DEGREELENS_NOTION_API_KEY",
+        ),
     )
     notion_parent_page_id: str = Field(
         default="",
-        validation_alias="NOTION_PARENT_PAGE_ID",
+        validation_alias=AliasChoices(
+            "NOTION_PARENT_PAGE_ID",
+            "NOTION_PAGE_ID",
+            "DEGREELENS_NOTION_PARENT_PAGE_ID",
+        ),
     )
     notion_oauth_client_id: str = Field(
         default="",
-        validation_alias="NOTION_OAUTH_CLIENT_ID",
+        validation_alias=AliasChoices(
+            "NOTION_OAUTH_CLIENT_ID",
+            "DEGREELENS_NOTION_OAUTH_CLIENT_ID",
+        ),
     )
     notion_oauth_client_secret: SecretStr = Field(
         default=SecretStr(""),
-        validation_alias="NOTION_OAUTH_CLIENT_SECRET",
+        validation_alias=AliasChoices(
+            "NOTION_OAUTH_CLIENT_SECRET",
+            "DEGREELENS_NOTION_OAUTH_CLIENT_SECRET",
+        ),
     )
     notion_oauth_redirect_uri: str = Field(
         default="",
-        validation_alias="NOTION_OAUTH_REDIRECT_URI",
+        validation_alias=AliasChoices(
+            "NOTION_OAUTH_REDIRECT_URI",
+            "DEGREELENS_NOTION_OAUTH_REDIRECT_URI",
+        ),
     )
     notion_api_version: str = Field(
         default="2026-03-11",
-        validation_alias="NOTION_API_VERSION",
+        validation_alias=AliasChoices(
+            "NOTION_API_VERSION",
+            "DEGREELENS_NOTION_API_VERSION",
+        ),
     )
     session_ttl_minutes: int = 45
     advisory_year: str = "2024-2025"

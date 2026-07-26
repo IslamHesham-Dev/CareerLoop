@@ -63,6 +63,7 @@ class _NotionExportActionState extends State<NotionExportAction> {
     if (!repository.available) {
       _showError(
         repository.error ??
+            repository.configurationMessage ??
             'Notion export is not configured on the CareerLoop backend.',
       );
       setState(() => _working = false);
@@ -212,7 +213,8 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
         ? notion.workspaceName ?? 'Connected'
         : notion.available
             ? 'Connect once, then export in one tap'
-            : 'Backend setup required';
+            : notion.configurationMessage ??
+                'Notion is not configured on this deployment';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -243,6 +245,8 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
                 const SizedBox(height: 3),
                 Text(
                   statusText,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
                     fontSize: 10.5,
@@ -261,8 +265,10 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
             const Icon(Icons.check_circle_rounded, color: LensColors.aqua)
           else
             TextButton(
-              onPressed: notion.available ? () => _connect(notion) : null,
-              child: const Text('Connect'),
+              onPressed: notion.available
+                  ? () => _connect(notion)
+                  : notion.refreshStatus,
+              child: Text(notion.available ? 'Connect' : 'Retry'),
             ),
         ],
       ),
