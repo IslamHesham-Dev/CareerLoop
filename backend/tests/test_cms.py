@@ -1,4 +1,7 @@
+import json
+
 from app.cms import CmsService, supplemental_video_catalog
+from app.cms import SupplementalVideoCatalog
 from app.cms_live import CMS_COURSE_LIST_PATH, GiuCmsClient
 from app.main import app
 
@@ -247,6 +250,62 @@ def test_video_transcripts_begin_in_pending_state() -> None:
 
     assert result["status"] == "pending"
     assert result["transcript"] is None
+
+
+def test_filled_intake_markdown_is_immediately_available_to_the_agent(
+    tmp_path,
+) -> None:
+    video_id = "drive-video-1"
+    catalog_path = tmp_path / "catalog.json"
+    intake_path = tmp_path / "intake.md"
+    transcript_dir = tmp_path / "transcripts"
+    catalog_path.write_text(
+        json.dumps(
+            {
+                "courses": [
+                    {
+                        "slug": "algorithms",
+                        "catalog_code": "DSA",
+                        "title": "Data Structures and Algorithms",
+                        "aliases": ["DSA"],
+                        "source_folders": [],
+                        "items": [
+                            {
+                                "id": video_id,
+                                "title": "Hash tables",
+                                "content_type": "lecture",
+                                "transcript_status": "pending",
+                                "transcript_file": None,
+                            }
+                        ],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    intake_path.write_text(
+        f"""
+<!-- TRANSCRIPT START: {video_id} -->
+Hash tables use a hash function to map keys into buckets.
+<!-- TRANSCRIPT END: {video_id} -->
+""",
+        encoding="utf-8",
+    )
+    catalog = SupplementalVideoCatalog(
+        catalog_path,
+        transcript_dir=transcript_dir,
+        intake_path=intake_path,
+    )
+
+    summary, videos = catalog.videos_for(title="Data Structures and Algorithms")
+    transcript = catalog.video_transcript(video_id)
+
+    assert summary["transcribed_count"] == 1
+    assert videos[0]["transcript_status"] == "available"
+    assert transcript["status"] == "available"
+    assert "hash function" in transcript["transcript"]
+    assert transcript["source"] == f"transcript_intake_template.md#{video_id}"
 
 
 def test_cms_routes_are_published() -> None:

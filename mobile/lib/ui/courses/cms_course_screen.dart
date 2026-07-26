@@ -11,6 +11,8 @@ import '../core/lens_components.dart';
 import '../viewer/drive_video_screen.dart';
 import '../viewer/pdf_viewer_screen.dart';
 
+enum _CourseContentSection { materials, videos }
+
 class CmsCourseScreen extends StatefulWidget {
   final CmsCourse course;
 
@@ -21,8 +23,10 @@ class CmsCourseScreen extends StatefulWidget {
 }
 
 class _CmsCourseScreenState extends State<CmsCourseScreen> {
+  _CourseContentSection _section = _CourseContentSection.materials;
   String _videoFilter = 'all';
   String? _resourceWeek;
+  final _videoSearch = TextEditingController();
   final Set<String> _downloading = {};
 
   @override
@@ -34,15 +38,26 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
   }
 
   @override
+  void dispose() {
+    _videoSearch.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cms = context.watch<CmsRepository>();
     final content = cms.content[widget.course.id];
     final course = content?.course ?? widget.course;
     final loading = cms.loadingContent.contains(widget.course.id);
     final resources = content?.cmsResources ?? const <CmsResource>[];
-    final videos = (content?.availableVideos ?? const <CmsVideo>[])
+    final allVideos = content?.availableVideos ?? const <CmsVideo>[];
+    final videoNeedle = _videoSearch.text.trim().toLowerCase();
+    final videos = allVideos
         .where(
-          (video) => _videoFilter == 'all' || video.contentType == _videoFilter,
+          (video) =>
+              (_videoFilter == 'all' || video.contentType == _videoFilter) &&
+              (videoNeedle.isEmpty ||
+                  video.title.toLowerCase().contains(videoNeedle)),
         )
         .toList();
     final videoFilters = <String>{
@@ -55,6 +70,12 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
     final visibleGroups = selectedWeek == null
         ? grouped.entries.toList()
         : grouped.entries.where((entry) => entry.key == selectedWeek).toList();
+    final hasVideos = allVideos.isNotEmpty;
+    final activeSection =
+        hasVideos ? _section : _CourseContentSection.materials;
+    final transcribedVideos = allVideos
+        .where((video) => video.transcriptStatus == 'available')
+        .length;
 
     return Scaffold(
       body: AuroraBackground(
@@ -120,6 +141,17 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                             resources: resources.length,
                             videos: content.availableVideos.length,
                           ),
+                          if (hasVideos) ...[
+                            const SizedBox(height: 14),
+                            _CourseContentTabs(
+                              selected: activeSection,
+                              materials: resources.length,
+                              videos: allVideos.length,
+                              onSelected: (section) => setState(
+                                () => _section = section,
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),
@@ -149,7 +181,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                       ),
                     ),
                   )
-                else ...[
+                else if (activeSection == _CourseContentSection.materials) ...[
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
                     sliver: SliverToBoxAdapter(
@@ -161,7 +193,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                   ),
                   if (resources.isEmpty)
                     const SliverPadding(
-                      padding: EdgeInsets.symmetric(horizontal: 22),
+                      padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
                       sliver: SliverToBoxAdapter(
                         child: LensCard(
                           child: Text(
@@ -185,7 +217,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                       ),
                     ),
                     SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
+                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 102),
                       sliver: SliverList.list(
                         children: visibleGroups
                             .map(
@@ -202,38 +234,80 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                       ),
                     ),
                   ],
-                  if (content?.availableVideos.isNotEmpty ?? false) ...[
-                    const SliverPadding(
-                      padding: EdgeInsets.fromLTRB(22, 24, 22, 10),
-                      sliver: SliverToBoxAdapter(
-                        child: _VideoArchiveIntro(),
+                ] else ...[
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+                    sliver: SliverToBoxAdapter(
+                      child: _VideoArchiveIntro(
+                        videos: allVideos.length,
+                        transcripts: transcribedVideos,
                       ),
                     ),
-                    if (videoFilters.length > 1)
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
-                        sliver: SliverToBoxAdapter(
-                          child: SizedBox(
-                            height: 38,
-                            child: ListView.separated(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: videoFilters.length,
-                              separatorBuilder: (_, __) =>
-                                  const SizedBox(width: 8),
-                              itemBuilder: (context, index) {
-                                final filter = videoFilters[index];
-                                return ChoiceChip(
-                                  selected: _videoFilter == filter,
-                                  onSelected: (_) => setState(
-                                    () => _videoFilter = filter,
-                                  ),
-                                  label: Text(_label(filter)),
-                                );
-                              },
-                            ),
+                  ),
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
+                    sliver: SliverToBoxAdapter(
+                      child: TextField(
+                        controller: _videoSearch,
+                        textInputAction: TextInputAction.search,
+                        onChanged: (_) => setState(() {}),
+                        onSubmitted: (_) =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        decoration: InputDecoration(
+                          hintText: 'Search recordings',
+                          prefixIcon: const Icon(Icons.search_rounded),
+                          suffixIcon: videoNeedle.isEmpty
+                              ? null
+                              : IconButton(
+                                  tooltip: 'Clear video search',
+                                  onPressed: () {
+                                    _videoSearch.clear();
+                                    setState(() {});
+                                  },
+                                  icon: const Icon(Icons.close_rounded),
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (videoFilters.length > 1)
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+                      sliver: SliverToBoxAdapter(
+                        child: SizedBox(
+                          height: 38,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: videoFilters.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 8),
+                            itemBuilder: (context, index) {
+                              final filter = videoFilters[index];
+                              return ChoiceChip(
+                                selected: _videoFilter == filter,
+                                onSelected: (_) => setState(
+                                  () => _videoFilter = filter,
+                                ),
+                                label: Text(_label(filter)),
+                              );
+                            },
                           ),
                         ),
                       ),
+                    ),
+                  if (videos.isEmpty)
+                    const SliverPadding(
+                      padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
+                      sliver: SliverToBoxAdapter(
+                        child: LensCard(
+                          child: Text(
+                            'No recording matches these filters.',
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    )
+                  else
                     SliverPadding(
                       padding: const EdgeInsets.fromLTRB(22, 0, 22, 120),
                       sliver: SliverList.separated(
@@ -245,11 +319,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                           onAskAi: () => _askVideoAi(course, videos[index]),
                         ),
                       ),
-                    ),
-                  ] else
-                    const SliverPadding(
-                      padding: EdgeInsets.only(bottom: 120),
-                      sliver: SliverToBoxAdapter(child: SizedBox.shrink()),
                     ),
                 ],
               ],
@@ -421,6 +490,135 @@ class _CourseSummary extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CourseContentTabs extends StatelessWidget {
+  final _CourseContentSection selected;
+  final int materials;
+  final int videos;
+  final ValueChanged<_CourseContentSection> onSelected;
+
+  const _CourseContentTabs({
+    required this.selected,
+    required this.materials,
+    required this.videos,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .82),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: LensColors.line),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _CourseContentTab(
+              icon: Icons.folder_copy_outlined,
+              label: 'Materials',
+              count: materials,
+              selected: selected == _CourseContentSection.materials,
+              onTap: () => onSelected(_CourseContentSection.materials),
+            ),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: _CourseContentTab(
+              icon: Icons.smart_display_outlined,
+              label: 'Videos',
+              count: videos,
+              selected: selected == _CourseContentSection.videos,
+              accent: LensColors.violet,
+              onTap: () => onSelected(_CourseContentSection.videos),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CourseContentTab extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int count;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _CourseContentTab({
+    required this.icon,
+    required this.label,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+    this.accent = LensColors.indigo,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '$label, $count items',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            color:
+                selected ? accent.withValues(alpha: .11) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: selected ? accent : LensColors.muted,
+              ),
+              const SizedBox(width: 7),
+              Flexible(
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: selected ? LensColors.ink : LensColors.muted,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? accent.withValues(alpha: .13)
+                      : LensColors.line.withValues(alpha: .7),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    color: selected ? accent : LensColors.muted,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -697,7 +895,13 @@ class _ResourceCard extends StatelessWidget {
 }
 
 class _VideoArchiveIntro extends StatelessWidget {
-  const _VideoArchiveIntro();
+  final int videos;
+  final int transcripts;
+
+  const _VideoArchiveIntro({
+    required this.videos,
+    required this.transcripts,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -710,23 +914,27 @@ class _VideoArchiveIntro extends StatelessWidget {
           color: LensColors.violet.withValues(alpha: .13),
         ),
       ),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.video_library_outlined, color: LensColors.violet),
-          SizedBox(width: 12),
+          const Icon(
+            Icons.video_library_outlined,
+            color: LensColors.violet,
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Available videos',
+                const Text(
+                  'Video learning library',
                   style: TextStyle(fontWeight: FontWeight.w800),
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  'Supplemental Drive recordings matched to this course. They are separate from official CMS files.',
-                  style: TextStyle(
+                  '$videos recordings · $transcripts AI-ready. '
+                  'Play a video or ask AI using its transcript.',
+                  style: const TextStyle(
                     color: LensColors.muted,
                     fontSize: 11,
                     height: 1.4,
@@ -787,26 +995,74 @@ class _VideoCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 6),
-                Text(
-                  [
-                    _CmsCourseScreenState._label(video.contentType),
-                    if (video.sizeLabel.isNotEmpty) video.sizeLabel,
-                    transcriptReady ? 'Transcript ready' : 'Transcript pending',
-                  ].join('  ·  '),
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(fontSize: 10),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        [
+                          _CmsCourseScreenState._label(video.contentType),
+                          if (video.sizeLabel.isNotEmpty) video.sizeLabel,
+                        ].join(' · '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(fontSize: 10),
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: (transcriptReady
+                                ? LensColors.aqua
+                                : LensColors.muted)
+                            .withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            transcriptReady
+                                ? Icons.auto_awesome_rounded
+                                : Icons.schedule_rounded,
+                            size: 11,
+                            color: transcriptReady
+                                ? LensColors.aqua
+                                : LensColors.muted,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            transcriptReady ? 'AI ready' : 'Transcript pending',
+                            style: TextStyle(
+                              color: transcriptReady
+                                  ? LensColors.aqua
+                                  : LensColors.muted,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
           IconButton(
-            tooltip: 'Ask AI about this video',
+            tooltip: transcriptReady
+                ? 'Ask AI using this transcript'
+                : 'Ask AI about transcript availability',
             onPressed: onAskAi,
-            icon: const Icon(
+            icon: Icon(
               Icons.auto_awesome_outlined,
-              color: LensColors.violet,
+              color: transcriptReady ? LensColors.violet : LensColors.muted,
               size: 20,
             ),
           ),

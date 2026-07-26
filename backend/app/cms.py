@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import threading
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -15,21 +16,96 @@ def _normalized(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.casefold()).strip()
 
 
+TRANSCRIPT_BLOCK = re.compile(
+    r"<!-- TRANSCRIPT START: (?P<id>[^ ]+) -->\s*"
+    r"(?P<text>.*?)\s*"
+    r"<!-- TRANSCRIPT END: (?P=id) -->",
+    re.DOTALL,
+)
+TRANSCRIPT_PLACEHOLDERS = {
+    "[PASTE TRANSCRIPT OR DETAILED SUMMARY HERE]",
+    "[PASTE AI TRANSCRIPT OR DETAILED SUMMARY HERE]",
+}
+
+
 class SupplementalVideoCatalog:
     """The five approved Drive collections, never the CMS course catalog."""
 
-    def __init__(self, catalog_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        catalog_path: Path | None = None,
+        *,
+        transcript_dir: Path | None = None,
+        intake_path: Path | None = None,
+    ) -> None:
         backend_root = Path(__file__).resolve().parent.parent
         self.catalog_path = (
             catalog_path or backend_root / "content" / "cms_catalog.json"
         )
-        self.transcript_dir = backend_root / "content" / "transcripts"
+        self.transcript_dir = (
+            transcript_dir or backend_root / "content" / "transcripts"
+        )
+        self.intake_path = (
+            intake_path
+            or backend_root / "content" / "transcript_intake_template.md"
+        )
         self._catalog = json.loads(
             self.catalog_path.read_text(encoding="utf-8")
         )
+        self._intake_cache_key: tuple[int, int] | None = None
+        self._intake_cache: dict[str, str] = {}
+        self._transcript_lock = threading.RLock()
 
-    @staticmethod
-    def _summary(course: dict[str, Any]) -> dict[str, Any]:
+    def _intake_transcripts(self) -> dict[str, str]:
+        with self._transcript_lock:
+            if not self.intake_path.exists():
+                self._intake_cache_key = None
+                self._intake_cache = {}
+                return {}
+            stat = self.intake_path.stat()
+            cache_key = (stat.st_mtime_ns, stat.st_size)
+            if cache_key != self._intake_cache_key:
+                text = self.intake_path.read_text(encoding="utf-8")
+                self._intake_cache = {
+                    match.group("id"): content
+                    for match in TRANSCRIPT_BLOCK.finditer(text)
+                    if (
+                        (content := match.group("text").strip())
+                        and content not in TRANSCRIPT_PLACEHOLDERS
+                    )
+                }
+                self._intake_cache_key = cache_key
+            return dict(self._intake_cache)
+
+    def _available_transcript_ids(self) -> set[str]:
+        file_ids = (
+            {
+                path.stem
+                for path in self.transcript_dir.glob("*.md")
+                if path.is_file()
+            }
+            if self.transcript_dir.exists()
+            else set()
+        )
+        return file_ids | set(self._intake_transcripts())
+
+    def _transcript(self, video_id: str) -> tuple[str, str] | None:
+        transcript_path = self.transcript_dir / f"{video_id}.md"
+        if transcript_path.exists():
+            return (
+                transcript_path.read_text(encoding="utf-8"),
+                f"transcripts/{video_id}.md",
+            )
+        intake = self._intake_transcripts().get(video_id)
+        if intake:
+            return (
+                intake,
+                f"transcript_intake_template.md#{video_id}",
+            )
+        return None
+
+    def _summary(self, course: dict[str, Any]) -> dict[str, Any]:
+        available = self._available_transcript_ids()
         return {
             "slug": course["slug"],
             "catalog_code": course["catalog_code"],
@@ -38,7 +114,7 @@ class SupplementalVideoCatalog:
             "source_folders": course["source_folders"],
             "video_count": len(course["items"]),
             "transcribed_count": sum(
-                item["transcript_status"] == "available"
+                item["id"] in available
                 for item in course["items"]
             ),
         }
@@ -83,15 +159,32 @@ class SupplementalVideoCatalog:
         course = self.match(code=code, title=title, label=label)
         if course is None:
             return None, []
-        return self._summary(course), list(course["items"])
+        available = self._available_transcript_ids()
+        videos = []
+        for item in course["items"]:
+            video = dict(item)
+            if item["id"] in available:
+                video["transcript_status"] = "available"
+                transcript_path = self.transcript_dir / f"{item['id']}.md"
+                if transcript_path.exists():
+                    video["transcript_file"] = f"transcripts/{item['id']}.md"
+                elif not video.get("transcript_file"):
+                    video["transcript_file"] = (
+                        f"transcript_intake_template.md#{item['id']}"
+                    )
+            else:
+                video["transcript_status"] = "pending"
+                video["transcript_file"] = None
+            videos.append(video)
+        return self._summary(course), videos
 
     def video_transcript(self, video_id: str) -> dict[str, Any]:
         for course in self._catalog["courses"]:
             for item in course["items"]:
                 if item["id"] != video_id:
                     continue
-                transcript_path = self.transcript_dir / f"{video_id}.md"
-                if not transcript_path.exists():
+                transcript = self._transcript(video_id)
+                if transcript is None:
                     return {
                         "video_id": video_id,
                         "course": course["title"],
@@ -103,14 +196,15 @@ class SupplementalVideoCatalog:
                             "video yet."
                         ),
                     }
+                text, source = transcript
                 return {
                     "video_id": video_id,
                     "course": course["title"],
                     "title": item["title"],
                     "status": "available",
-                    "transcript": transcript_path.read_text(
-                        encoding="utf-8"
-                    ),
+                    "transcript": text,
+                    "source": source,
+                    "character_count": len(text),
                 }
         raise ValueError(f"No supplemental video matches ID {video_id!r}.")
 
