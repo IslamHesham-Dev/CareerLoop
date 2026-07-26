@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../app/theme.dart';
-import '../../data/repositories.dart';
+import '../core/ai_assist_sheet.dart';
 
 class DriveVideoArgs {
   final String videoId;
@@ -95,20 +93,6 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
             ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: FilledButton.icon(
-              style: FilledButton.styleFrom(
-                backgroundColor: LensColors.aqua,
-                foregroundColor: LensColors.ink,
-              ),
-              onPressed: _askAi,
-              icon: const Icon(Icons.auto_awesome_rounded, size: 17),
-              label: const Text('Ask AI'),
-            ),
-          ),
-        ],
       ),
       body: Stack(
         children: [
@@ -154,17 +138,72 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
             ),
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAssist,
+        backgroundColor: LensColors.aqua,
+        foregroundColor: LensColors.ink,
+        icon: const Icon(Icons.auto_awesome_rounded),
+        label: const Text('Video Assist'),
+      ),
     );
   }
 
-  void _askAi() {
+  void _openAssist() {
     final ready = widget.args.transcriptStatus == 'available';
-    context.read<AdvisorRepository>().send(
-          'I am watching the supplemental video "${widget.args.title}" in '
-          '${widget.args.courseTitle}. Its video_id is '
-          '"${widget.args.videoId}". Call get_cms_video_transcript before '
-          'discussing its substance. ${ready ? 'Use the transcript to help me study it.' : 'If the transcript is still pending, explain that clearly and only use reliable metadata.'}',
-        );
-    context.go('/advisor');
+    final evidence = 'First call get_cms_video_transcript with video_id '
+        '"${widget.args.videoId}". Base the answer on that transcript and '
+        'clearly say if it is unavailable.';
+    showAiAssistSheet(
+      context,
+      title: 'Video Assist',
+      subtitle: widget.args.title,
+      icon: Icons.smart_display_outlined,
+      actions: [
+        AiAssistAction(
+          icon: Icons.summarize_outlined,
+          title: 'Summarize recording',
+          subtitle: ready
+              ? 'Topics, explanations, and takeaways'
+              : 'Available after the transcript is prepared',
+          enabled: ready,
+          prompt: '$evidence Summarize this recording from '
+              '${widget.args.courseTitle} into a clear topic outline, key '
+              'explanations, and a revision checklist.',
+        ),
+        AiAssistAction(
+          icon: Icons.account_tree_outlined,
+          title: 'Extract key concepts',
+          subtitle: ready
+              ? 'Definitions, examples, and relationships'
+              : 'Available after the transcript is prepared',
+          enabled: ready,
+          prompt: '$evidence Extract the key concepts from this recording. '
+              'For each concept give its definition, the lecturer\'s example, '
+              'and how it connects to the other concepts.',
+        ),
+        AiAssistAction(
+          icon: Icons.style_outlined,
+          title: 'Create flashcards',
+          subtitle: ready
+              ? 'Active-recall cards from the transcript'
+              : 'Available after the transcript is prepared',
+          enabled: ready,
+          prompt: '$evidence Create 15 concise active-recall flashcards from '
+              'this recording. Cover definitions, reasoning, and applied '
+              'examples. Format each as Front and Back.',
+        ),
+        AiAssistAction(
+          icon: Icons.quiz_outlined,
+          title: 'Quiz me',
+          subtitle: ready
+              ? 'Questions first; answers stay hidden'
+              : 'Available after the transcript is prepared',
+          enabled: ready,
+          prompt: '$evidence Quiz me on this recording with 10 mixed '
+              'conceptual and applied questions. Do not reveal answers until '
+              'I submit my attempts.',
+        ),
+      ],
+    );
   }
 }
