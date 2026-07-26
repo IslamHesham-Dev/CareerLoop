@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
 abstract final class LensColors {
-  static const ink = Color(0xFF0A1024);
-  static const midnight = Color(0xFF121A36);
-  static const indigo = Color(0xFF5A61F0);
-  static const violet = Color(0xFF8D63F7);
-  static const aqua = Color(0xFF43D7C6);
-  static const amber = Color(0xFFFFC46B);
-  static const rose = Color(0xFFFF7A95);
-  static const canvas = Color(0xFFF4F6FB);
+  static const ink = Color(0xFF172033);
+  static const midnight = Color(0xFF24304A);
+  static const indigo = Color(0xFF3457D5);
+  static const violet = Color(0xFF7057A8);
+  static const aqua = Color(0xFF1F9D86);
+  static const amber = Color(0xFFC58A24);
+  static const rose = Color(0xFFD95D6F);
+  static const canvas = Color(0xFFF5F5F1);
   static const card = Color(0xFFFFFFFF);
-  static const muted = Color(0xFF68708A);
-  static const line = Color(0xFFE4E7F0);
+  static const muted = Color(0xFF667085);
+  static const line = Color(0xFFE5E7E2);
 }
 
 abstract final class CareerLoopTheme {
@@ -24,7 +24,7 @@ abstract final class CareerLoopTheme {
       primary: LensColors.indigo,
       secondary: LensColors.aqua,
       tertiary: LensColors.violet,
-      error: const Color(0xFFD8495B),
+      error: LensColors.rose,
       surface: LensColors.card,
       onSurface: LensColors.ink,
       outline: LensColors.line,
@@ -36,21 +36,21 @@ abstract final class CareerLoopTheme {
       scaffoldBackgroundColor: LensColors.canvas,
       textTheme: const TextTheme(
         displaySmall: TextStyle(
-          fontSize: 38,
-          height: 1.05,
+          fontSize: 36,
+          height: 1.08,
           fontWeight: FontWeight.w800,
           letterSpacing: -1.4,
           color: LensColors.ink,
         ),
         headlineMedium: TextStyle(
-          fontSize: 28,
-          height: 1.12,
+          fontSize: 27,
+          height: 1.16,
           fontWeight: FontWeight.w800,
           letterSpacing: -0.7,
           color: LensColors.ink,
         ),
         headlineSmall: TextStyle(
-          fontSize: 22,
+          fontSize: 21,
           height: 1.15,
           fontWeight: FontWeight.w700,
           letterSpacing: -0.35,
@@ -86,23 +86,23 @@ abstract final class CareerLoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: .92),
+        fillColor: Colors.white,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: LensColors.line),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: LensColors.line),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: LensColors.indigo, width: 1.7),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: LensColors.rose),
         ),
       ),
@@ -112,7 +112,7 @@ abstract final class CareerLoopTheme {
           foregroundColor: Colors.white,
           minimumSize: const Size(0, 54),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
           ),
           textStyle: const TextStyle(
             fontSize: 15,
@@ -121,10 +121,10 @@ abstract final class CareerLoopTheme {
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        height: 72,
+        height: 68,
         elevation: 0,
         backgroundColor: Colors.white,
-        indicatorColor: LensColors.indigo.withValues(alpha: .12),
+        indicatorColor: LensColors.indigo.withValues(alpha: .10),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 11,
