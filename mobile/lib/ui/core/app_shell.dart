@@ -39,9 +39,9 @@ class AppShell extends StatelessWidget {
             onDestinationSelected: _select,
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home_rounded),
-                label: 'Home',
+                icon: Icon(Icons.all_inclusive_outlined),
+                selectedIcon: Icon(Icons.all_inclusive_rounded),
+                label: 'Loop',
               ),
               NavigationDestination(
                 icon: Icon(Icons.auto_stories_outlined),
@@ -52,6 +52,11 @@ class AppShell extends StatelessWidget {
                 icon: Icon(Icons.auto_awesome_outlined),
                 selectedIcon: Icon(Icons.auto_awesome_rounded),
                 label: 'Copilot',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.rocket_launch_outlined),
+                selectedIcon: Icon(Icons.rocket_launch_rounded),
+                label: 'Career',
               ),
               NavigationDestination(
                 icon: Icon(Icons.person_outline_rounded),

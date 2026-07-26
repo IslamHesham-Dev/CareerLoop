@@ -66,8 +66,10 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                   width: 45,
                   height: 45,
                   decoration: BoxDecoration(
-                    color: LensColors.indigo,
-                    borderRadius: BorderRadius.circular(13),
+                    gradient: const LinearGradient(
+                      colors: [LensColors.indigo, LensColors.violet],
+                    ),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Icon(Icons.auto_awesome_rounded,
                       color: Colors.white),
@@ -157,6 +159,25 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 ),
               ),
             ),
+          if (advisor.messages.isNotEmpty)
+            SizedBox(
+              height: 42,
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                scrollDirection: Axis.horizontal,
+                itemCount: _suggestions.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (context, index) => ActionChip(
+                  onPressed: advisor.isSending
+                      ? null
+                      : () => _send(_suggestions[index]),
+                  label: Text(
+                    _suggestions[index],
+                    style: const TextStyle(fontSize: 11),
+                  ),
+                ),
+              ),
+            ),
           _Composer(
             controller: _controller,
             isSending: advisor.isSending,
@@ -226,8 +247,17 @@ class _AdvisorWelcome extends StatelessWidget {
             width: 66,
             height: 66,
             decoration: BoxDecoration(
-              color: LensColors.indigo,
-              borderRadius: BorderRadius.circular(18),
+              gradient: const LinearGradient(
+                colors: [LensColors.indigo, LensColors.violet],
+              ),
+              borderRadius: BorderRadius.circular(23),
+              boxShadow: [
+                BoxShadow(
+                  color: LensColors.indigo.withValues(alpha: .25),
+                  blurRadius: 30,
+                  offset: const Offset(0, 14),
+                ),
+              ],
             ),
             child: const Icon(Icons.auto_awesome_rounded,
                 color: Colors.white, size: 30),
@@ -288,7 +318,9 @@ class _MessageBubble extends StatelessWidget {
           margin: const EdgeInsets.only(left: 44, bottom: 15),
           padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
           decoration: const BoxDecoration(
-            color: LensColors.indigo,
+            gradient: LinearGradient(
+              colors: [LensColors.indigo, LensColors.violet],
+            ),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(21),
               topRight: Radius.circular(21),

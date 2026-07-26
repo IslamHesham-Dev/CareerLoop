@@ -116,20 +116,20 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
             StatefulShellBranch(
               routes: [
                 GoRoute(
+                  path: '/career',
+                  builder: (context, state) => const CareerHubScreen(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
                   path: '/profile',
                   builder: (context, state) => const ProfileScreen(),
                 ),
               ],
             ),
           ],
-        ),
-        GoRoute(
-          path: '/career',
-          builder: (context, state) => const Scaffold(
-            body: AuroraBackground(
-              child: CareerHubScreen(),
-            ),
-          ),
         ),
         GoRoute(
           path: '/settings',
