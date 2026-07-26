@@ -27,12 +27,9 @@ CMS_SITES: dict[str, CmsSite] = {
         course_list_path="/apps/student/ViewAllCourseStn",
         course_view_path="/apps/student/CourseViewStn.aspx",
     ),
-    # UNVERIFIED. Hosts/paths taken from a GIU project on the same CMS. The course
-    # list page differs (HomePageStn), so the course-list parsing may need a tweak
-    # once a GIU login is available.
     "giu": CmsSite(
         base_url="https://cms.giu-uni.de",
-        course_list_path="/apps/student/HomePageStn.aspx",
+        course_list_path="/apps/student/ViewAllCourseStn.aspx",
         course_view_path="/apps/student/CourseViewStn.aspx",
     ),
 }

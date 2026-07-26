@@ -298,6 +298,7 @@ class CmsRepository extends ChangeNotifier {
   final Set<String> loadingContent = {};
   String? season;
   String? error;
+  int _courseRequest = 0;
 
   CmsRepository({required this.api});
 
@@ -306,12 +307,12 @@ class CmsRepository extends ChangeNotifier {
     String? season,
   }) async {
     final requestedSeason = season?.trim();
-    if (loadingCourses ||
-        (!force &&
-            courses.isNotEmpty &&
-            (requestedSeason == null || requestedSeason == this.season))) {
+    if (!force &&
+        courses.isNotEmpty &&
+        (requestedSeason == null || requestedSeason == this.season)) {
       return;
     }
+    final request = ++_courseRequest;
     loadingCourses = true;
     error = null;
     notifyListeners();
@@ -329,18 +330,23 @@ class CmsRepository extends ChangeNotifier {
                 Map<String, dynamic>.from(item as Map),
               ))
           .toList();
+      if (request != _courseRequest) return;
       if (this.season != null && this.season != resolvedSeason) {
         content.clear();
       }
       this.season = resolvedSeason;
       courses = newCourses;
     } on ApiException catch (exception) {
+      if (request != _courseRequest) return;
       error = exception.message;
     } catch (_) {
+      if (request != _courseRequest) return;
       error = 'The CMS learning library could not be loaded.';
     } finally {
-      loadingCourses = false;
-      notifyListeners();
+      if (request == _courseRequest) {
+        loadingCourses = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -390,6 +396,7 @@ class CmsRepository extends ChangeNotifier {
     courses = const [];
     content.clear();
     loadingContent.clear();
+    _courseRequest++;
     season = null;
     error = null;
     notifyListeners();

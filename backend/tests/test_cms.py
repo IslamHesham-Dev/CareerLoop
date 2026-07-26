@@ -1,5 +1,5 @@
 from app.cms import CmsService, supplemental_video_catalog
-from app.cms_live import GiuCmsClient
+from app.cms_live import CMS_COURSE_LIST_PATH, GiuCmsClient
 from app.main import app
 
 
@@ -158,6 +158,84 @@ def test_live_cms_html_parsers_cover_course_links_and_resources() -> None:
     assert resources[0]["title"] == "Complexity slides (Lecture)"
     assert resources[0]["file_extension"] == "pdf"
     assert resources[0]["download_path"].startswith("/v1/cms/resources/")
+    client.close()
+
+
+def test_view_all_courses_maps_historical_seasons_and_drive_videos() -> None:
+    client = GiuCmsClient("student", "secret")
+    html = """
+    <div><strong>Season : 68 , Title: Spring 2026</strong></div>
+    <div><strong>Current Season</strong></div>
+    <table>
+      <tr><th>Name</th><th>Active</th></tr>
+      <tr>
+        <td>(|ICS603|) Advanced Machine Learning (2719)</td>
+        <td>Active</td>
+      </tr>
+    </table>
+    <div class="season-heading">
+      <span>Season :</span><strong>67</strong>
+      <span>, Title: Winter 2025</span>
+    </div>
+    <table>
+      <tr><th>Name</th><th>Active</th></tr>
+      <tr>
+        <td>(|CSEN301|) Data Structures and Algorithms (2617)</td>
+        <td>Active</td>
+      </tr>
+      <tr>
+        <td>
+          <a href="/apps/student/CourseViewStn.aspx?id=2620&amp;sid=67">
+            (|ICS504|) Machine Learning (2620)
+          </a>
+        </td>
+        <td>Active</td>
+      </tr>
+    </table>
+    """
+
+    courses = client._parse_all_course_seasons(
+        html,
+        page_url=(
+            "https://cms.giu-uni.de/apps/student/ViewAllCourseStn.aspx"
+        ),
+    )
+
+    assert CMS_COURSE_LIST_PATH == "/apps/student/ViewAllCourseStn.aspx"
+    assert [(course["season_id"], course["season"]) for course in courses] == [
+        (68, "Spring 2026"),
+        (67, "Winter 2025"),
+        (67, "Winter 2025"),
+    ]
+    dsa = next(course for course in courses if course["code"] == "CSEN301")
+    assert dsa["title"] == "Data Structures and Algorithms"
+    assert dsa["active"] is True
+    assert (
+        client._course_urls[dsa["id"]]
+        == "https://cms.giu-uni.de/apps/student/"
+        "CourseViewStn.aspx?id=2617&sid=67"
+    )
+
+    class ParsedClient:
+        def list_courses(self, *, force: bool = False):
+            return courses
+
+        def close(self):
+            pass
+
+    service = CmsService(ParsedClient())
+    winter = service.list_courses(season="Winter 2025")
+    assert [course["code"] for course in winter["courses"]] == [
+        "CSEN301",
+        "ICS504",
+    ]
+    dsa_summary = next(
+        course
+        for course in winter["courses"]
+        if course["code"] == "CSEN301"
+    )
+    assert dsa_summary["has_supplemental_videos"] is True
+    assert dsa_summary["video_count"] == 53
     client.close()
 
 

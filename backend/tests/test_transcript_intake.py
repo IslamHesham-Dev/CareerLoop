@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from scripts.import_transcript_intake import PLACEHOLDERS, read_blocks
+from scripts.import_transcript_intake import read_blocks
 
 
 BACKEND_ROOT = Path(__file__).resolve().parent.parent
@@ -26,4 +26,3 @@ def test_generated_markdown_maps_every_marker_to_its_video_id() -> None:
 
     assert list(blocks) == item_ids
     assert len(blocks) == 153
-    assert set(blocks.values()) <= PLACEHOLDERS

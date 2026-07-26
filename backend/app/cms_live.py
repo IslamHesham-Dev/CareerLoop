@@ -5,7 +5,7 @@ import re
 import threading
 from dataclasses import dataclass
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -14,9 +14,15 @@ from requests_ntlm import HttpNtlmAuth
 
 CMS_BASE_URL = "https://cms.giu-uni.de"
 CMS_STUDENT_PATH = "/apps/student/"
-CMS_COURSE_LIST_PATH = "/apps/student/HomePageStn.aspx"
+CMS_COURSE_LIST_PATH = "/apps/student/ViewAllCourseStn.aspx"
+CMS_COURSE_HOME_PATH = "/apps/student/HomePageStn.aspx"
 CMS_COURSE_VIEW_PATH = "/apps/student/CourseViewStn.aspx"
 COURSE_CODE = re.compile(r"\b[A-Z]{2,8}\s*-?\s*\d{2,4}[A-Z]?\b", re.I)
+SEASON_HEADING = re.compile(
+    r"\bSeason\s*:\s*(?P<id>\d+)\s*,\s*Title\s*:\s*"
+    r"(?P<title>.+?)(?:\s+Current\s+Season)?\s*$",
+    re.I,
+)
 
 
 def _clean(value: str | None) -> str:
@@ -277,6 +283,125 @@ class GiuCmsClient:
                 self._course_urls[course_id] = url
         return courses
 
+    def _parse_all_course_seasons(
+        self,
+        html: str,
+        *,
+        page_url: str,
+    ) -> list[dict[str, Any]]:
+        """Parse ViewAllCourseStn's season headings and course tables.
+
+        The historical-course page renders a heading such as
+        ``Season : 67 , Title: Winter 2025`` followed by a table whose visible
+        columns are Name and Active. The final number in each course label is
+        the course offering ID expected by CourseViewStn; the season heading
+        supplies its ``sid``.
+        """
+        soup = BeautifulSoup(html, "lxml")
+        courses: list[dict[str, Any]] = []
+        seen_tables: set[int] = set()
+        heading_elements: list[Tag] = []
+        for text_node in soup.find_all(string=SEASON_HEADING):
+            if isinstance(text_node.parent, Tag):
+                heading_elements.append(text_node.parent)
+        # Some ASP.NET themes split "Season", its number, and its title over
+        # nested spans. Inspect compact heading-like containers as a fallback.
+        for element in soup.find_all(
+            ["strong", "b", "span", "p", "div", "h1", "h2", "h3", "h4"]
+        ):
+            text = _clean(element.get_text(" ", strip=True))
+            if text.casefold().count("season :") != 1:
+                continue
+            if SEASON_HEADING.search(text) and element not in heading_elements:
+                heading_elements.append(element)
+
+        for element in heading_elements:
+            heading = SEASON_HEADING.search(
+                _clean(element.get_text(" ", strip=True))
+            )
+            if heading is None:
+                continue
+            season_number = int(heading.group("id"))
+            season_title = re.sub(
+                r"\s+Current\s+Season\s*$",
+                "",
+                _clean(heading.group("title")),
+                flags=re.I,
+            )
+            table = element.find_next("table")
+            if table is None or id(table) in seen_tables:
+                continue
+            seen_tables.add(id(table))
+
+            rows = table.find_all("tr")
+            if not rows:
+                continue
+            headers = [
+                _clean(cell.get_text(" ", strip=True)).casefold()
+                for cell in rows[0].find_all(["th", "td"])
+            ]
+            name_index = headers.index("name") if "name" in headers else 0
+            active_index = (
+                headers.index("active") if "active" in headers else None
+            )
+            for row in rows[1:]:
+                cells = row.find_all(["th", "td"])
+                if len(cells) <= name_index:
+                    continue
+                label = _clean(cells[name_index].get_text(" ", strip=True))
+                if not label:
+                    continue
+
+                course_number = ""
+                for anchor in cells[name_index].find_all("a", href=True):
+                    try:
+                        anchor_url = self._safe_url(
+                            urljoin(page_url, str(anchor["href"]))
+                        )
+                    except ValueError:
+                        continue
+                    query = parse_qs(urlparse(anchor_url).query)
+                    candidate = (query.get("id") or [""])[0]
+                    if candidate.lstrip("-").isdigit():
+                        course_number = candidate
+                        break
+                if not course_number:
+                    offering = re.search(r"\((\d+)\)\s*$", label)
+                    course_number = offering.group(1) if offering else ""
+                if not course_number:
+                    continue
+
+                url = self._safe_url(
+                    f"{CMS_COURSE_VIEW_PATH}?id={course_number}"
+                    f"&sid={season_number}"
+                )
+                course_id = _stable_id("course", url)
+                code = _course_code(label)
+                active_text = (
+                    _clean(cells[active_index].get_text(" ", strip=True))
+                    if active_index is not None
+                    and active_index < len(cells)
+                    else ""
+                )
+                courses.append(
+                    {
+                        "id": course_id,
+                        "code": code or "CMS",
+                        "title": _course_title(label, code),
+                        "cms_label": label,
+                        "resource_count": None,
+                        "season": season_title,
+                        "season_id": season_number,
+                        "active": (
+                            active_text.casefold() == "active"
+                            if active_text
+                            else None
+                        ),
+                    }
+                )
+                self._course_urls[course_id] = url
+        return courses
+
     def _navigation_candidates(self, html: str, page_url: str) -> list[str]:
         soup = BeautifulSoup(html, "lxml")
         candidates: list[str] = []
@@ -303,23 +428,37 @@ class GiuCmsClient:
             if self._courses_cache is not None and not force:
                 return [dict(course) for course in self._courses_cache]
 
-            # Request the concrete student home page. IIS rejects the bare
-            # /apps/student/ directory on GIU even when these same credentials
-            # are valid for HomePageStn.aspx.
+            # ViewAllCourseStn is the season-aware source. HomePageStn exposes
+            # only the current subset and therefore cannot answer historical
+            # advisory-semester requests.
             landing = self._get(CMS_COURSE_LIST_PATH)
             html = landing.text
-            courses = self._parse_course_table(html)
+            courses = self._parse_all_course_seasons(
+                html,
+                page_url=landing.url,
+            )
+            if not courses:
+                courses = self._parse_course_table(html)
             if not courses:
                 courses = self._parse_course_links(
                     html,
                     page_url=landing.url,
                 )
 
-            # Some CMS versions place the course grid one navigation step away
-            # from the student landing page. Discover it from same-host links
-            # instead of hard-coding a brittle controller route.
+            # Retain the current-course page as a compatibility fallback for a
+            # CMS deployment that does not expose the historical table.
             if not courses:
-                for candidate in self._navigation_candidates(html, landing.url):
+                home = self._get(CMS_COURSE_HOME_PATH)
+                courses = self._parse_course_table(home.text)
+                if not courses:
+                    courses = self._parse_course_links(
+                        home.text,
+                        page_url=home.url,
+                    )
+                candidates = self._navigation_candidates(home.text, home.url)
+                for candidate in candidates:
+                    if courses:
+                        break
                     response = self._get(candidate)
                     courses.extend(
                         self._parse_course_links(
@@ -327,8 +466,6 @@ class GiuCmsClient:
                             page_url=response.url,
                         )
                     )
-                    if courses:
-                        break
 
             unique = {course["id"]: course for course in courses}
             courses = sorted(
