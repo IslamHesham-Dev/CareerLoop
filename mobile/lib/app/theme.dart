@@ -128,7 +128,7 @@ abstract final class CareerLoopTheme {
         height: 80,
         elevation: 0,
         backgroundColor: Colors.white,
-        indicatorColor: LensColors.indigo.withOpacity(0.08),
+        indicatorColor: LensColors.indigo.withValues(alpha: .08),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 12,
