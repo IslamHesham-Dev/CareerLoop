@@ -83,6 +83,34 @@ def test_notion_export_surfaces_the_api_error(
         )
 
 
+def test_notion_export_builds_url_when_write_only_response_omits_it(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        requests,
+        "post",
+        lambda *args, **kwargs: _Response(
+            200,
+            {"object": "page", "id": "abcd1234-5678-90ab-cdef-1234567890ab"},
+        ),
+    )
+
+    page = NotionClient(
+        "write-only-token",
+        api_version="2026-03-11",
+    ).create_markdown_page(
+        title="CareerLoop plan",
+        markdown="## Next step\n\nApply today.",
+        sources=[],
+        parent_page_id=None,
+    )
+
+    assert page.page_id == "abcd1234-5678-90ab-cdef-1234567890ab"
+    assert page.url == (
+        "https://www.notion.so/abcd1234567890abcdef1234567890ab"
+    )
+
+
 def test_notion_oauth_exchange_uses_basic_auth(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

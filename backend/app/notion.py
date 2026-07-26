@@ -85,10 +85,16 @@ class NotionClient:
             )
         page_id = data.get("id")
         page_url = data.get("url")
-        if not isinstance(page_id, str) or not isinstance(page_url, str):
+        if not isinstance(page_id, str) or not page_id:
             raise NotionIntegrationError(
-                "Notion returned an incomplete page response."
+                "Notion accepted the request but did not return a page ID."
             )
+        # With Insert Content but no Read Content capability, Notion can
+        # successfully create a page while returning only the always-visible
+        # page ID. The canonical page URL is derivable from that UUID.
+        if not isinstance(page_url, str) or not page_url:
+            compact_page_id = page_id.replace("-", "")
+            page_url = f"https://www.notion.so/{compact_page_id}"
         return NotionPage(page_id=page_id, url=page_url)
 
     @staticmethod
