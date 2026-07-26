@@ -6,7 +6,7 @@ from fastapi.concurrency import run_in_threadpool
 
 from guc_portal import GucPortal
 
-from app.cms import CmsService
+from app.cms import CmsService, UnavailableCmsService
 from app.cms_live import GiuCmsClient
 from app.dependencies import get_access_token, get_student_session
 from app.schemas.auth import (
@@ -19,6 +19,14 @@ from app.sessions.models import StudentSession
 from app.state import session_store
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
+
+CMS_UNAVAILABLE_MESSAGE = (
+    "GIU CMS is not available for this account right now. This commonly "
+    "happens when final-year or graduate students no longer have active CMS "
+    "course access. CareerLoop will continue to work with your portal grades, "
+    "transcripts, semester history, and academic advisor; only CMS materials "
+    "and its course-linked videos are unavailable."
+)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -55,46 +63,21 @@ async def login(payload: LoginRequest) -> LoginResponse:
             detail="Could not establish a GIU portal session.",
         ) from None
 
-    # One university sign-in establishes both authenticated services. Validate
-    # CMS now so the app never creates a portal-only session that fails later
-    # when the student opens Courses.
-    cms = CmsService(GiuCmsClient(username, password))
+    # Portal authentication is the session requirement. CMS is optional because
+    # final-year and graduate accounts may retain portal access after their CMS
+    # course access has ended.
+    live_cms = CmsService(GiuCmsClient(username, password))
     try:
         await run_in_threadpool(
-            lambda: cms.client.list_courses(force=True)
+            lambda: live_cms.client.list_courses(force=True)
         )
-    except requests.HTTPError as exc:
-        cms.close()
-        portal.session.auth = None
-        portal.session.close()
-        response = exc.response
-        if response is not None and response.status_code in {401, 403}:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=(
-                    "The portal accepted this account, but GIU CMS did not. "
-                    "Use the same university username and password you use "
-                    "when opening CMS in your browser."
-                ),
-            ) from None
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "The portal signed in, but GIU CMS is temporarily "
-                "unavailable. No partial session was created."
-            ),
-        ) from None
+        cms: CmsService | UnavailableCmsService = live_cms
+    except requests.RequestException:
+        live_cms.close()
+        cms = UnavailableCmsService(CMS_UNAVAILABLE_MESSAGE)
     except Exception:
-        cms.close()
-        portal.session.auth = None
-        portal.session.close()
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=(
-                "The university account was accepted, but the CMS course "
-                "workspace could not be initialized."
-            ),
-        ) from None
+        live_cms.close()
+        cms = UnavailableCmsService(CMS_UNAVAILABLE_MESSAGE)
     try:
         token, student = session_store.create(
             portal,
@@ -121,7 +104,8 @@ async def login(payload: LoginRequest) -> LoginResponse:
         advisory_year=student.academic.advisory_year,
         enrollment_year=student.academic.enrollment_year,
         transcript_years=student.academic.transcript_window_years,
-        cms_connected=True,
+        cms_connected=cms.connected,
+        cms_message=cms.unavailable_message,
     )
 
 
@@ -136,7 +120,8 @@ def session_status(
         advisory_year=student.academic.advisory_year,
         enrollment_year=student.academic.enrollment_year,
         transcript_years=student.academic.transcript_window_years,
-        cms_connected=True,
+        cms_connected=student.cms.connected,
+        cms_message=student.cms.unavailable_message,
     )
 
 

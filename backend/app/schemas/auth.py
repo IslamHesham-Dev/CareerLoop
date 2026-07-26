@@ -18,6 +18,7 @@ class LoginResponse(BaseModel):
     enrollment_year: int
     transcript_years: list[str]
     cms_connected: bool
+    cms_message: str | None = None
 
 
 class SessionResponse(BaseModel):
@@ -28,6 +29,7 @@ class SessionResponse(BaseModel):
     enrollment_year: int
     transcript_years: list[str]
     cms_connected: bool
+    cms_message: str | None = None
 
 
 class MessageResponse(BaseModel):

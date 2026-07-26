@@ -4,8 +4,9 @@
 
 CareerLoop is a private academic and career advisory prototype. It currently
 combines GIU portal records, a Flutter mobile experience, and a
-FastAPI/LangChain backend. The same short-lived university login now opens a
-read-only GIU CMS session for the student's full course and resource catalog.
+FastAPI/LangChain backend. The same short-lived university login attempts to
+open a read-only GIU CMS session for the student's course and resource catalog;
+portal-only operation remains available when CMS access has ended.
 
 ## Repository
 
@@ -31,9 +32,10 @@ DEGREELENS_ADVISORY_YEAR=2024-2025
 ```
 
 Do not add GIU usernames or passwords to the backend environment. The login
-screen sends credentials over HTTPS to establish short-lived, isolated portal
-and CMS sessions. Credential material is retained only by their in-memory NTLM
-authentication objects and is destroyed at logout or expiry.
+screen sends credentials over HTTPS to establish a short-lived, isolated portal
+session and, when the account permits it, a CMS session. Credential material is
+retained only by the in-memory authentication objects and is destroyed at
+logout or expiry.
 
 Run locally:
 

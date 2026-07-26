@@ -8,7 +8,7 @@ from typing import Any
 from guc_portal import GucPortal
 
 from app.academic import AcademicService
-from app.cms import CmsService
+from app.cms import CmsService, UnavailableCmsService
 
 
 @dataclass
@@ -16,7 +16,7 @@ class StudentSession:
     session_id: str
     portal: GucPortal
     academic: AcademicService
-    cms: CmsService
+    cms: CmsService | UnavailableCmsService
     created_at: float
     expires_at: float
     conversation: list[Any] = field(default_factory=list)

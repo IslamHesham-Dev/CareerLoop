@@ -143,6 +143,21 @@ def build_agent(student: StudentSession, settings: Settings):
         get_cms_video_transcript,
         read_cms_pdf,
     ]
+    cms_context = (
+        "The CMS tools read the student's complete live GIU CMS course "
+        "catalog and official course resources. Five matching courses "
+        "additionally expose supplemental Drive lecture/tutorial videos under "
+        "available_videos; never describe those five collections as the "
+        "complete CMS."
+        if cms.connected
+        else (
+            "GIU CMS is unavailable for this account, which can happen after "
+            "final-year or graduate course access ends. Continue using portal "
+            "grades, transcripts, and advisory tools. If the student asks for "
+            "CMS materials, explain this limitation briefly and do not treat "
+            "it as a failure of the rest of CareerLoop."
+        )
+    )
     prompt = (
         "You are CareerLoop, a read-only academic advisor and study-planning "
         "assistant for a GIU student. Use portal tools for every factual claim "
@@ -165,10 +180,7 @@ def build_agent(student: StudentSession, settings: Settings):
         "(4.00-4.99), and 0-49.9 F (5.00-6.00). A band does not justify "
         "inventing an exact GPA. "
         "Summarize strengths, weak assessments, and practical study priorities. "
-        "The CMS tools read the student's complete live GIU CMS course catalog "
-        "and official course resources. Five matching courses additionally expose "
-        "supplemental Drive lecture/tutorial videos under available_videos; never "
-        "describe those five collections as the complete CMS. A resource or video "
+        f"{cms_context} A resource or video "
         "title is metadata, not evidence of everything taught in it. "
         "For a CMS PDF, call read_cms_pdf before discussing its substance. "
         "When the student asks about a named lecture, tutorial, or recording "

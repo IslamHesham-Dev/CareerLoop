@@ -331,3 +331,68 @@ class LensError extends StatelessWidget {
     );
   }
 }
+
+class CmsAccessNotice extends StatelessWidget {
+  final String? message;
+
+  const CmsAccessNotice({super.key, this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(17),
+      decoration: BoxDecoration(
+        color: LensColors.amber.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: LensColors.amber.withValues(alpha: .20),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: LensColors.amber.withValues(alpha: .13),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Icon(
+              Icons.school_outlined,
+              color: LensColors.amber,
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'CMS access is unavailable',
+                  style: TextStyle(
+                    color: LensColors.ink,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  message ??
+                      'This commonly happens when final-year or graduate '
+                          'students no longer have active CMS course access. '
+                          'Your portal grades, transcripts, semester history, '
+                          'and academic advisor will continue to work.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontSize: 11,
+                        height: 1.45,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

@@ -2,6 +2,21 @@ import 'package:careerloop/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('keeps the CMS limited-access message without failing the session', () {
+    final session = SessionInfo.fromJson({
+      'current_season': 'Winter 2025',
+      'advisory_year': '2024-2025',
+      'enrollment_year': 2021,
+      'transcript_years': ['2024-2025'],
+      'expires_in_seconds': 2700,
+      'cms_connected': false,
+      'cms_message': 'CMS access may end after graduation.',
+    });
+
+    expect(session.cmsConnected, isFalse);
+    expect(session.cmsMessage, contains('graduation'));
+  });
+
   test('extracts a GIU course code and title from its long portal label', () {
     final course = CourseSummary.fromLabel(
       'GIU-Cairo.Informatics and Computer Science - '

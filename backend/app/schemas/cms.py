@@ -28,6 +28,7 @@ class CmsCourseListResponse(BaseModel):
     status: str
     season: str
     courses: list[CmsCourseResponse]
+    message: str | None = None
 
 
 class CmsResourceResponse(BaseModel):

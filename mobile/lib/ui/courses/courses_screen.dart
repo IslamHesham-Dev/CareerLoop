@@ -25,9 +25,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
       final academic = context.read<AcademicRepository>();
       academic.loadDashboard();
       _cmsSeasonRequested = academic.context?.currentSeason;
-      context.read<CmsRepository>().loadCourses(
-            season: academic.context?.currentSeason,
-          );
+      final cmsConnected =
+          context.read<AuthRepository>().session?.cmsConnected ?? false;
+      if (cmsConnected) {
+        context.read<CmsRepository>().loadCourses(
+              season: academic.context?.currentSeason,
+            );
+      }
     });
   }
 
@@ -41,9 +45,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
     final cms = context.watch<CmsRepository>();
+    final session = context.watch<AuthRepository>().session;
+    final cmsConnected = session?.cmsConnected ?? false;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final desiredSeason = academic.context?.currentSeason;
-    if (desiredSeason != null && _cmsSeasonRequested != desiredSeason) {
+    if (cmsConnected &&
+        desiredSeason != null &&
+        _cmsSeasonRequested != desiredSeason) {
       _cmsSeasonRequested = desiredSeason;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -78,10 +86,11 @@ class _CoursesScreenState extends State<CoursesScreen> {
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            cms.loadCourses(
-              force: true,
-              season: academic.context?.currentSeason,
-            ),
+            if (cmsConnected)
+              cms.loadCourses(
+                force: true,
+                season: academic.context?.currentSeason,
+              ),
             academic.loadDashboard(force: true),
           ]);
         },
@@ -90,10 +99,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
           padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
           children: [
             PageHeading(
-              eyebrow: 'LIVE GIU CMS',
+              eyebrow: cmsConnected ? 'LIVE GIU CMS' : 'PORTAL COURSES',
               title: 'Course space',
-              subtitle:
-                  'Your official course files, organized for mobile. Selected courses also include an independent video archive.',
+              subtitle: cmsConnected
+                  ? 'Your official course files, organized for mobile. '
+                      'Selected courses also include a video learning library.'
+                  : 'Your portal course history remains available even when '
+                      'CMS course access has ended.',
               trailing: IconButton.filledTonal(
                 tooltip: 'Ask CareerLoop AI',
                 onPressed: () => context.go('/advisor'),
@@ -101,10 +113,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
               ),
             ),
             const SizedBox(height: 18),
-            _CmsStatus(
-              courseCount: cms.courses.length,
-              loading: cms.loadingCourses,
-            ),
+            if (cmsConnected)
+              _CmsStatus(
+                courseCount: cms.courses.length,
+                loading: cms.loadingCourses,
+              )
+            else
+              CmsAccessNotice(message: session?.cmsMessage),
             const SizedBox(height: 18),
             TextField(
               controller: _search,
@@ -165,40 +180,42 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       .toList(),
                 ),
               ),
-            const SizedBox(height: 28),
-            _SectionHeading(
-              title: 'All CMS courses',
-              detail: cms.courses.isEmpty
-                  ? cms.season
-                  : '${cms.courses.length} · ${cms.season ?? ''}',
-            ),
-            const SizedBox(height: 11),
-            if (cms.loadingCourses && cms.courses.isEmpty)
-              const LensCard(
-                child: LensLoading(label: 'Connecting to GIU CMS...'),
-              )
-            else if (cms.error != null && cms.courses.isEmpty)
-              LensError(
-                message: cms.error!,
-                onRetry: () => cms.loadCourses(
-                  force: true,
-                  season: academic.context?.currentSeason,
-                ),
-              )
-            else if (cmsCourses.isEmpty)
-              const LensCard(
-                child: Text(
-                  'No CMS course matches this search.',
-                  textAlign: TextAlign.center,
-                ),
-              )
-            else
-              ...cmsCourses.map(
-                (course) => Padding(
-                  padding: const EdgeInsets.only(bottom: 11),
-                  child: _CmsCourseCard(course: course),
-                ),
+            if (cmsConnected) ...[
+              const SizedBox(height: 28),
+              _SectionHeading(
+                title: 'All CMS courses',
+                detail: cms.courses.isEmpty
+                    ? cms.season
+                    : '${cms.courses.length} · ${cms.season ?? ''}',
               ),
+              const SizedBox(height: 11),
+              if (cms.loadingCourses && cms.courses.isEmpty)
+                const LensCard(
+                  child: LensLoading(label: 'Connecting to GIU CMS...'),
+                )
+              else if (cms.error != null && cms.courses.isEmpty)
+                LensError(
+                  message: cms.error!,
+                  onRetry: () => cms.loadCourses(
+                    force: true,
+                    season: academic.context?.currentSeason,
+                  ),
+                )
+              else if (cmsCourses.isEmpty)
+                const LensCard(
+                  child: Text(
+                    'No CMS course matches this search.',
+                    textAlign: TextAlign.center,
+                  ),
+                )
+              else
+                ...cmsCourses.map(
+                  (course) => Padding(
+                    padding: const EdgeInsets.only(bottom: 11),
+                    child: _CmsCourseCard(course: course),
+                  ),
+                ),
+            ],
           ],
         ),
       ),

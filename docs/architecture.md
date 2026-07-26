@@ -32,14 +32,16 @@ and video surfaces all provide contextual handoffs to the advisor.
 Every successful login creates a separate `StudentSession` containing:
 
 - one authenticated `GucPortal`
-- one authenticated `GiuCmsClient`
+- one authenticated `GiuCmsClient`, or an explicit unavailable-CMS capability
 - one `AcademicService` and cache
 - one agent conversation
 - a short expiry and revocable random token
 
-The login is atomic: the backend validates both the portal and the concrete GIU
-CMS student home page with the same submitted credentials before issuing the
-CareerLoop token. It does not create a partial portal-only session.
+Portal authentication is required before the backend issues a CareerLoop token.
+CMS is an optional capability because final-year and graduate accounts may
+retain portal access after CMS course access ends. Login and session responses
+report `cms_connected` and a friendly `cms_message` when that capability is
+unavailable.
 
 Only a SHA-256 digest of the opaque token is stored in the server lookup table.
 Sessions are serialized per chat, and portal access is locked because the

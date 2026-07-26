@@ -73,9 +73,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
     final hasVideos = allVideos.isNotEmpty;
     final activeSection =
         hasVideos ? _section : _CourseContentSection.materials;
-    final transcribedVideos = allVideos
-        .where((video) => video.transcriptStatus == 'available')
-        .length;
 
     return Scaffold(
       body: AuroraBackground(
@@ -235,15 +232,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                     ),
                   ],
                 ] else ...[
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
-                    sliver: SliverToBoxAdapter(
-                      child: _VideoArchiveIntro(
-                        videos: allVideos.length,
-                        transcripts: transcribedVideos,
-                      ),
-                    ),
-                  ),
                   SliverPadding(
                     padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
                     sliver: SliverToBoxAdapter(
@@ -887,61 +875,6 @@ class _ResourceCard extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.download_rounded, size: 20),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VideoArchiveIntro extends StatelessWidget {
-  final int videos;
-  final int transcripts;
-
-  const _VideoArchiveIntro({
-    required this.videos,
-    required this.transcripts,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: LensColors.violet.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: LensColors.violet.withValues(alpha: .13),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(
-            Icons.video_library_outlined,
-            color: LensColors.violet,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Video learning library',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '$videos recordings · $transcripts AI-ready. '
-                  'Play a video or ask AI using its transcript.',
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 11,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),

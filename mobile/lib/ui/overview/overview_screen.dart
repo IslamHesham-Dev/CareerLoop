@@ -26,6 +26,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
+    final session = context.watch<AuthRepository>().session;
     return SafeArea(
       bottom: false,
       child: RefreshIndicator(
@@ -58,6 +59,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         'A calm view of where you stand and what deserves attention next.',
                   ),
                   const SizedBox(height: 18),
+                  if (session != null && !session.cmsConnected) ...[
+                    CmsAccessNotice(message: session.cmsMessage),
+                    const SizedBox(height: 18),
+                  ],
                   _AdvisorySemesterPicker(academic: academic),
                   const SizedBox(height: 24),
                   const _FocusHero(),
@@ -145,17 +150,25 @@ class _AdvisorySemesterPicker extends StatelessWidget {
               if (!context.mounted) return;
               if (changed) {
                 context.read<AdvisorRepository>().clearLocal();
-                await context.read<CmsRepository>().loadCourses(
-                      force: true,
-                      season: season,
-                    );
+                final cmsConnected =
+                    context.read<AuthRepository>().session?.cmsConnected ??
+                        false;
+                if (cmsConnected) {
+                  await context.read<CmsRepository>().loadCourses(
+                        force: true,
+                        season: season,
+                      );
+                }
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
                       academic.error ??
-                          'Now advising from $season. '
-                              'CMS courses and the AI context were refreshed.',
+                          (cmsConnected
+                              ? 'Now advising from $season. CMS courses and '
+                                  'the AI context were refreshed.'
+                              : 'Now advising from $season. Portal records '
+                                  'and the AI context were refreshed.'),
                     ),
                   ),
                 );

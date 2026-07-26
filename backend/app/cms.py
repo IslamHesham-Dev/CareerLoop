@@ -212,6 +212,9 @@ class SupplementalVideoCatalog:
 class CmsService:
     """Per-student view of live GIU CMS plus optional Drive videos."""
 
+    connected = True
+    unavailable_message: str | None = None
+
     def __init__(
         self,
         client: GiuCmsClient,
@@ -396,6 +399,65 @@ class CmsService:
             }
         finally:
             download.response.close()
+
+
+class UnavailableCmsService:
+    """Safe, non-blocking CMS capability for accounts without CMS access."""
+
+    connected = False
+
+    def __init__(self, message: str) -> None:
+        self.unavailable_message = message
+        self.client = self
+        self.supplemental = supplemental_video_catalog
+
+    def close(self) -> None:
+        pass
+
+    def list_courses(
+        self,
+        *,
+        force: bool = False,
+        season: str | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "source": "GIU CMS",
+            "status": "unavailable",
+            "season": (season or "all").strip() or "all",
+            "courses": [],
+            "message": self.unavailable_message,
+        }
+
+    def course_content(self, course_id: str) -> dict[str, Any]:
+        raise ValueError(self.unavailable_message)
+
+    def search(
+        self,
+        query: str,
+        *,
+        course_id: str | None = None,
+        limit: int = 50,
+    ) -> dict[str, Any]:
+        return {
+            "query": query,
+            "matches": [],
+            "message": self.unavailable_message,
+        }
+
+    def video_transcript(self, video_id: str) -> dict[str, Any]:
+        return self.supplemental.video_transcript(video_id)
+
+    def resource_text(
+        self,
+        resource_id: str,
+        *,
+        max_chars: int = 60_000,
+        max_pages: int = 80,
+    ) -> dict[str, Any]:
+        raise RuntimeError(self.unavailable_message)
+
+    def open_resource(self, resource_id: str):
+        raise RuntimeError(self.unavailable_message)
 
 
 supplemental_video_catalog = SupplementalVideoCatalog()
