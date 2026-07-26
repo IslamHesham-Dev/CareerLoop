@@ -47,10 +47,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               const SizedBox(height: 28),
               const PageHeading(
-                eyebrow: 'Control centre',
+                eyebrow: 'Identity & data controls',
                 title: 'Private by design.',
                 subtitle:
-                    'Manage the assumptions, session, and cached academic data behind CareerLoop.',
+                    'Manage the evidence sources, context, and private session behind your CareerLoop profile.',
               ),
               const SizedBox(height: 24),
               LensCard(
@@ -58,7 +58,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     _SettingRow(
                       icon: Icons.school_rounded,
-                      title: 'Advisor transcript reference',
+                      title: 'Academic context year',
                       value: academic.context?.transcriptYear ??
                           auth.session?.advisoryYear ??
                           '2024-2025',
@@ -66,7 +66,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const Divider(height: 25),
                     const _SettingRow(
                       icon: Icons.visibility_outlined,
-                      title: 'Academic data source',
+                      title: 'Connected academic sources',
                       value: 'GIU Portal + GIU CMS',
                     ),
                   ],
@@ -106,7 +106,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () =>
                           context.read<AdvisorRepository>().reset(),
                       icon: const Icon(Icons.forum_outlined),
-                      label: const Text('Reset advisor conversation'),
+                      label: const Text('Reset Copilot conversation'),
                     ),
                   ],
                 ),

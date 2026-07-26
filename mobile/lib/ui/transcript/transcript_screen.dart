@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
@@ -31,11 +32,21 @@ class _TranscriptScreenState extends State<TranscriptScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
         children: [
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton.filledTonal(
+              tooltip: 'Back to profile',
+              onPressed: () =>
+                  context.canPop() ? context.pop() : context.go('/profile'),
+              icon: const Icon(Icons.arrow_back_rounded),
+            ),
+          ),
+          const SizedBox(height: 18),
           const PageHeading(
-            eyebrow: 'Academic record',
-            title: 'Transcript',
+            eyebrow: 'Verified academic profile',
+            title: 'Academic Record',
             subtitle:
-                'Select an academic year to inspect its courses and results.',
+                'The evidence layer behind academic insights, skill signals, and future applications.',
           ),
           const SizedBox(height: 18),
           _TranscriptYearPicker(academic: academic),

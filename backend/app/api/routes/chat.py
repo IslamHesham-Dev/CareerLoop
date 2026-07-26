@@ -133,7 +133,7 @@ async def chat(
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="The academic advisor could not complete this request.",
+            detail="CareerLoop Copilot could not complete this request.",
         ) from None
 
 

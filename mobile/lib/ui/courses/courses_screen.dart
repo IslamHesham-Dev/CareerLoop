@@ -99,13 +99,15 @@ class _CoursesScreenState extends State<CoursesScreen> {
           padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
           children: [
             PageHeading(
-              eyebrow: cmsConnected ? 'LIVE GIU CMS' : 'PORTAL COURSES',
-              title: 'Course space',
+              eyebrow: cmsConnected
+                  ? 'ACADEMIC GROWTH · LIVE CMS'
+                  : 'ACADEMIC GROWTH',
+              title: 'Learning Space',
               subtitle: cmsConnected
-                  ? 'Your official course files, organized for mobile. '
-                      'Selected courses also include a video learning library.'
-                  : 'Your portal course history remains available even when '
-                      'CMS course access has ended.',
+                  ? 'Course evidence, official materials, recordings, and AI '
+                      'practice in one workspace.'
+                  : 'Your academic record and local practice remain useful '
+                      'even when CMS access has ended.',
               trailing: IconButton.filledTonal(
                 tooltip: 'Ask CareerLoop AI',
                 onPressed: () => context.go('/advisor'),
@@ -141,7 +143,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             ),
             const SizedBox(height: 26),
             _SectionHeading(
-              title: 'Advisory semester',
+              title: 'Learning context',
               detail: academic.context?.currentSeason ?? 'Portal',
             ),
             const SizedBox(height: 11),
@@ -183,7 +185,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             if (cmsConnected) ...[
               const SizedBox(height: 28),
               _SectionHeading(
-                title: 'All CMS courses',
+                title: 'Course library',
                 detail: cms.courses.isEmpty
                     ? cms.season
                     : '${cms.courses.length} · ${cms.season ?? ''}',
@@ -259,8 +261,8 @@ class _CmsStatus extends StatelessWidget {
           Expanded(
             child: Text(
               loading
-                  ? 'Syncing your CMS workspace'
-                  : 'Connected to your private GIU CMS session',
+                  ? 'Syncing verified learning evidence'
+                  : 'Official GIU CMS learning evidence connected',
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12,

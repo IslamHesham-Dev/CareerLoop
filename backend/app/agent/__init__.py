@@ -1,1 +1,1 @@
-"""Academic advisory agent."""
+"""CareerLoop evidence-grounded Copilot."""

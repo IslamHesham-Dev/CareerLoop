@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 48),
                         Text(
-                          'Sign in',
+                          'Start your\nevidence loop.',
                           style: Theme.of(context)
                               .textTheme
                               .displaySmall
@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          'Use your GIU Portal account to access your academic record.',
+                          'Connect verified GIU academic evidence now. Career signals join the same private profile as you add them.',
                           style: TextStyle(
                             color: LensColors.muted,
                             fontSize: 15,
@@ -104,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   const Text(
-                                    'GIU Portal',
+                                    'University connection',
                                     style: TextStyle(
                                       color: LensColors.ink,
                                       fontSize: 16,
@@ -272,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const Divider(color: LensColors.line),
                         const SizedBox(height: 14),
                         const Text(
-                          'Academic records are provided by the GIU Student Portal.',
+                          'Your first CareerLoop evidence source is the GIU Student Portal.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: LensColors.muted,

@@ -21,10 +21,10 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
   final _scrollController = ScrollController();
 
   static const _suggestions = [
-    'List my current courses',
-    'Find my weakest assessment',
-    'Summarize my academic year',
-    'Prepare an advisor brief',
+    'Turn my academic strengths into career evidence',
+    'Find my weakest assessment and plan the next move',
+    'Summarize my academic profile',
+    'Prepare a decision brief from my verified data',
     'Create a 10-question interactive quiz for my weakest current course',
   ];
 
@@ -80,7 +80,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Academic advisor',
+                        'CareerLoop Copilot',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
@@ -92,7 +92,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                           _OnlineDot(),
                           SizedBox(width: 6),
                           Text(
-                            'Portal-grounded guidance',
+                            'Academic evidence active',
                             style: TextStyle(
                               color: LensColors.muted,
                               fontSize: 11.5,
@@ -195,7 +195,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
       builder: (context) => AlertDialog(
         title: const Text('Start a fresh conversation?'),
         content: const Text(
-          'Your portal cache stays available, but the advisor will forget this chat.',
+          'Your evidence and saved practice stay available, but the Copilot will forget this chat.',
         ),
         actions: [
           TextButton(
@@ -270,7 +270,7 @@ class _AdvisorWelcome extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          'I can inspect portal grades and your transcript, explain patterns, and turn evidence into a practical next step.',
+          'I connect your verified academic evidence to study decisions, profile insights, and practical career next steps.',
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: LensColors.muted,
               ),
@@ -441,7 +441,7 @@ class _ThinkingBubble extends StatelessWidget {
             ),
             SizedBox(width: 10),
             Text(
-              'Reading your academic picture…',
+              'Connecting the evidence...',
               style: TextStyle(fontSize: 12, color: LensColors.muted),
             ),
           ],
@@ -506,7 +506,7 @@ class _Composer extends StatelessWidget {
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Ask about a course, grade, or plan…',
+                hintText: 'Ask about learning, evidence, or your next move...',
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 13,

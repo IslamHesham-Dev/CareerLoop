@@ -6,12 +6,15 @@ import '../data/models.dart';
 import '../data/repositories.dart';
 import '../ui/advisor/advisor_screen.dart';
 import '../ui/auth/login_screen.dart';
+import '../ui/career/career_hub_screen.dart';
 import '../ui/core/app_shell.dart';
+import '../ui/core/lens_components.dart';
 import '../ui/courses/course_details_screen.dart';
 import '../ui/courses/cms_course_screen.dart';
 import '../ui/courses/courses_screen.dart';
 import '../ui/overview/overview_screen.dart';
 import '../ui/practice/practice_screens.dart';
+import '../ui/profile/profile_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/transcript/transcript_screen.dart';
 import '../ui/viewer/drive_video_screen.dart';
@@ -113,8 +116,16 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
             StatefulShellBranch(
               routes: [
                 GoRoute(
-                  path: '/transcript',
-                  builder: (context, state) => const TranscriptScreen(),
+                  path: '/career',
+                  builder: (context, state) => const CareerHubScreen(),
+                ),
+              ],
+            ),
+            StatefulShellBranch(
+              routes: [
+                GoRoute(
+                  path: '/profile',
+                  builder: (context, state) => const ProfileScreen(),
                 ),
               ],
             ),
@@ -137,6 +148,14 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
             final args = state.extra as DriveVideoArgs;
             return DriveVideoScreen(args: args);
           },
+        ),
+        GoRoute(
+          path: '/transcript',
+          builder: (context, state) => const Scaffold(
+            body: AuroraBackground(
+              child: TranscriptScreen(),
+            ),
+          ),
         ),
         GoRoute(
           path: '/practice',

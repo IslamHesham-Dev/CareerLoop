@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
-import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
 
@@ -53,10 +52,10 @@ class _OverviewScreenState extends State<OverviewScreen> {
               sliver: SliverList.list(
                 children: [
                   const PageHeading(
-                    eyebrow: 'Academic focus',
-                    title: 'Your degree,\nin focus.',
+                    eyebrow: 'Your CareerLoop',
+                    title: 'Academic evidence.\nCareer momentum.',
                     subtitle:
-                        'A calm view of where you stand and what deserves attention next.',
+                        'One intelligent loop turns what you learn and achieve into what you can do next.',
                   ),
                   const SizedBox(height: 18),
                   if (session != null && !session.cmsConnected) ...[
@@ -80,8 +79,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     _Metrics(academic: academic),
                     const SizedBox(height: 26),
                     _SectionTitle(
-                      title: 'Quick focus',
-                      action: 'Open advisor',
+                      title: 'Next best actions',
+                      action: 'Open Copilot',
                       onTap: () => context.go('/advisor'),
                     ),
                     const SizedBox(height: 12),
@@ -92,15 +91,14 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       },
                     ),
                     const SizedBox(height: 28),
-                    _SectionTitle(
-                      title: 'Current courses',
+                    const _SectionTitle(
+                      title: 'Your two growth loops',
                     ),
                     const SizedBox(height: 12),
-                    ...academic.courses.map(
-                      (course) => Padding(
-                        padding: const EdgeInsets.only(bottom: 11),
-                        child: _CompactCourseCard(course: course),
-                      ),
+                    _PillarRoutes(
+                      courseCount: academic.courses.length,
+                      onLearn: () => context.go('/courses'),
+                      onCareer: () => context.go('/career'),
                     ),
                   ],
                 ],
@@ -127,8 +125,8 @@ class _AdvisorySemesterPicker extends StatelessWidget {
       value: current,
       isExpanded: true,
       decoration: const InputDecoration(
-        labelText: 'Advisory semester',
-        helperText: 'Controls dashboard courses and the AI advisor context.',
+        labelText: 'Active learning context',
+        helperText: 'Controls course evidence and the Copilot context.',
         prefixIcon: Icon(Icons.calendar_month_outlined),
       ),
       items: options
@@ -188,62 +186,225 @@ class _FocusHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(23),
+      width: double.infinity,
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(32),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [LensColors.ink, Color(0xFF28326B)],
+          colors: [
+            LensColors.ink,
+            Color(0xFF1E293B),
+            LensColors.midnight,
+          ],
+          stops: [0.0, 0.5, 1.0],
         ),
         boxShadow: [
           BoxShadow(
-            color: LensColors.indigo.withValues(alpha: .23),
-            blurRadius: 36,
-            offset: const Offset(0, 18),
+            color: LensColors.indigo.withValues(alpha: .25),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Clarity before\nthe next move.',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 28,
-              height: 1.08,
-              letterSpacing: -.7,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'The selected historical semester is used as your current advisory context.',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: .62),
-              height: 1.45,
-              fontSize: 13,
-            ),
-          ),
-          const SizedBox(height: 22),
           Row(
             children: [
-              const Icon(Icons.auto_awesome_rounded,
-                  color: LensColors.aqua, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                'Evidence-based academic guidance',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .86),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withValues(alpha: .15),
+                      Colors.white.withValues(alpha: .05),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .15),
+                  ),
                 ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: LensColors.aqua,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'The Evidence Loop',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 22,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    Text(
+                      'AI Agentic Assistant',
+                      style: TextStyle(
+                        color: LensColors.aqua,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const GradientPill(
+                label: 'AGENTIC',
+                icon: Icons.bolt_rounded,
+                dark: true,
               ),
             ],
           ),
+          const SizedBox(height: 32),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _LoopNode(
+                icon: Icons.school_rounded,
+                label: 'ACADEMIC',
+                detail: 'Verified Facts',
+                color: LensColors.indigo,
+              ),
+              _ConnectorLine(color: LensColors.indigo),
+              _LoopNode(
+                icon: Icons.hub_rounded,
+                label: 'COPILOT',
+                detail: 'Smart Context',
+                color: LensColors.aqua,
+              ),
+              _ConnectorLine(color: LensColors.violet),
+              _LoopNode(
+                icon: Icons.rocket_launch_rounded,
+                label: 'CAREER',
+                detail: 'Direct Action',
+                color: LensColors.violet,
+              ),
+            ],
+          ),
+          const SizedBox(height: 28),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded,
+                    color: Colors.white60, size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Your evidence is being used to build your defensible professional identity.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .7),
+                      height: 1.4,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _ConnectorLine extends StatelessWidget {
+  final Color color;
+  const _ConnectorLine({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Container(
+          height: 2,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.withValues(alpha: 0.5),
+                color.withValues(alpha: 0.1),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LoopNode extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String detail;
+  final Color color;
+
+  const _LoopNode({
+    required this.icon,
+    required this.label,
+    required this.detail,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: .15),
+            shape: BoxShape.circle,
+            border: Border.all(color: color.withValues(alpha: .4), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: .2),
+                blurRadius: 12,
+              ),
+            ],
+          ),
+          child: Icon(icon, color: color, size: 20),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 9,
+            letterSpacing: 1.0,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          detail,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: .5),
+            fontSize: 9,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -263,7 +424,7 @@ class _Metrics extends StatelessWidget {
             child: _Metric(
               icon: Icons.auto_stories_rounded,
               value: '${academic.courses.length}',
-              label: 'Courses',
+              label: 'Academic signals',
               color: LensColors.indigo,
             ),
           ),
@@ -354,14 +515,16 @@ class _PromptGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     const prompts = [
       (
-        Icons.track_changes_rounded,
-        'Find my weakest assessment',
-        'Which assessment needs my attention most?'
+        Icons.auto_graph_rounded,
+        'Analyze my skills',
+        'Use my full transcript to identify my strongest career-relevant skills and the evidence for each.',
+        LensColors.indigo
       ),
       (
-        Icons.event_note_rounded,
-        'Plan my next week',
-        'Build a one-week study plan from my available grades.'
+        Icons.quiz_rounded,
+        'Create a quiz',
+        'Create a 10-question interactive quiz for my weakest current course.',
+        LensColors.aqua
       ),
     ];
     return Row(
@@ -370,27 +533,39 @@ class _PromptGrid extends StatelessWidget {
             (prompt) => Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: prompt == prompts.first ? 6 : 0,
-                  left: prompt == prompts.last ? 6 : 0,
+                  right: prompt == prompts.first ? 8 : 0,
+                  left: prompt == prompts.last ? 8 : 0,
                 ),
                 child: LensCard(
                   onTap: () => onPrompt(prompt.$3),
-                  padding: const EdgeInsets.all(16),
+                  isGlass: true,
+                  padding: const EdgeInsets.all(20),
                   child: SizedBox(
-                    height: 92,
+                    height: 110,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(prompt.$1, color: LensColors.indigo),
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: prompt.$4.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(prompt.$1, color: prompt.$4, size: 20),
+                        ),
                         const Spacer(),
                         Text(
                           prompt.$2,
                           style: const TextStyle(
-                            fontSize: 13,
-                            height: 1.25,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                            height: 1.2,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
                           ),
                         ),
+                        const SizedBox(height: 4),
+                        const Icon(Icons.arrow_forward,
+                            size: 14, color: LensColors.muted),
                       ],
                     ),
                   ),
@@ -403,62 +578,111 @@ class _PromptGrid extends StatelessWidget {
   }
 }
 
-class _CompactCourseCard extends StatelessWidget {
-  final CourseSummary course;
+class _PillarRoutes extends StatelessWidget {
+  final int courseCount;
+  final VoidCallback onLearn;
+  final VoidCallback onCareer;
 
-  const _CompactCourseCard({required this.course});
+  const _PillarRoutes({
+    required this.courseCount,
+    required this.onLearn,
+    required this.onCareer,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return LensCard(
-      onTap: () => context.push('/courses/${course.code}', extra: course),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Container(
-            width: 47,
-            height: 47,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: LensColors.indigo.withValues(alpha: .09),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              course.code
-                  .replaceAll(RegExp(r'\d'), '')
-                  .characters
-                  .take(3)
-                  .join(),
-              style: const TextStyle(
-                color: LensColors.indigo,
-                fontWeight: FontWeight.w900,
-                fontSize: 11,
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(course.code,
-                    style: const TextStyle(
-                        color: LensColors.indigo,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w800)),
-                const SizedBox(height: 4),
-                Text(
-                  course.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+    return Column(
+      children: [
+        LensCard(
+          onTap: onLearn,
+          padding: const EdgeInsets.all(17),
+          child: Row(
+            children: [
+              Container(
+                width: 47,
+                height: 47,
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-              ],
-            ),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  color: LensColors.indigo,
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Academic Growth',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '$courseCount courses · materials · AI practice',
+                      style: const TextStyle(
+                        color: LensColors.muted,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: LensColors.indigo,
+              ),
+            ],
           ),
-          const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
-        ],
-      ),
+        ),
+        const SizedBox(height: 10),
+        LensCard(
+          onTap: onCareer,
+          padding: const EdgeInsets.all(17),
+          child: Row(
+            children: [
+              Container(
+                width: 47,
+                height: 47,
+                decoration: BoxDecoration(
+                  color: LensColors.violet.withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.rocket_launch_rounded,
+                  color: LensColors.violet,
+                ),
+              ),
+              const SizedBox(width: 13),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Career Momentum',
+                      style: TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Profile · opportunities · application studio',
+                      style: TextStyle(
+                        color: LensColors.muted,
+                        fontSize: 10.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: LensColors.violet,
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

@@ -24,7 +24,7 @@ CMS_UNAVAILABLE_MESSAGE = (
     "GIU CMS is not available for this account right now. This commonly "
     "happens when final-year or graduate students no longer have active CMS "
     "course access. CareerLoop will continue to work with your portal grades, "
-    "transcripts, semester history, and academic advisor; only CMS materials "
+    "transcripts, semester history, and CareerLoop Copilot; only CMS materials "
     "and its course-linked videos are unavailable."
 )
 
