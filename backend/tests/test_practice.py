@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.agent.factory import PracticeQuestionInput, PracticeSetInput
+from app.api.routes.chat import practice_control_message, requires_practice_set
 from app.schemas.chat import ChatResponse
 
 
@@ -59,3 +60,21 @@ def test_chat_response_can_carry_practice_separately_from_visible_answer() -> No
     assert "Search" not in response.answer
     assert response.practice_set is not None
     assert response.practice_set.questions[0].correct_index == 2
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        "Create a quiz from these PDFs",
+        "Prepare me for my midterm with practice questions",
+        "Quiz me on data structures",
+        "Generate 12 MCQs for the final",
+    ],
+)
+def test_quiz_creation_requests_require_a_practice_set(message: str) -> None:
+    assert requires_practice_set(message)
+    assert "create_practice_set" in practice_control_message(message)
+
+
+def test_an_information_question_about_quizzes_does_not_create_a_set() -> None:
+    assert not requires_practice_set("What is the purpose of a diagnostic quiz?")

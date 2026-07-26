@@ -114,12 +114,6 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
                 'lecturer\'s example, and its relationship to other concepts.',
           ),
           ContentAiQuickAction(
-            icon: Icons.style_outlined,
-            label: 'Create flashcards',
-            prompt: 'Create 15 active-recall flashcards from the recording, '
-                'formatted as Front and Back.',
-          ),
-          ContentAiQuickAction(
             icon: Icons.quiz_outlined,
             label: 'Quiz me on this video',
             prompt: 'Quiz me with 10 conceptual and applied questions. Keep '

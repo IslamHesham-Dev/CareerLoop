@@ -25,7 +25,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
     'Find my weakest assessment',
     'Summarize my academic year',
     'Prepare an advisor brief',
-    'Create a 10-question practice quiz for one of my current courses',
+    'Create a 10-question interactive quiz for my weakest current course',
   ];
 
   @override

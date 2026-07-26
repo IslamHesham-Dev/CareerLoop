@@ -18,6 +18,52 @@ from app.dependencies import get_student_session
 router = APIRouter(prefix="/chat", tags=["advisor"])
 
 
+def requires_practice_set(message: str) -> bool:
+    normalized = " ".join(message.lower().split())
+    has_practice_format = any(
+        phrase in normalized
+        for phrase in (
+            "quiz",
+            "mcq",
+            "multiple choice",
+            "practice question",
+            "exam prep",
+            "exam practice",
+            "midterm prep",
+            "midterm practice",
+            "final prep",
+            "final practice",
+        )
+    )
+    has_creation_intent = any(
+        phrase in normalized
+        for phrase in (
+            "create",
+            "make",
+            "generate",
+            "prepare",
+            "build",
+            "practice",
+            "quiz me",
+            "test me",
+            "give me",
+            "i want",
+        )
+    )
+    return has_practice_format and has_creation_intent
+
+
+def practice_control_message(message: str) -> str:
+    return (
+        f"{message}\n\n"
+        "[APPLICATION CONTROL — NOT USER-VISIBLE]\n"
+        "This is an explicit interactive quiz request. After reading the "
+        "necessary evidence, you must call create_practice_set in this turn. "
+        "Put notes in study_notes and keep every question, option, answer, and "
+        "explanation out of your visible response."
+    )
+
+
 @router.post("", response_model=ChatResponse)
 async def chat(
     payload: ChatRequest,
@@ -31,15 +77,36 @@ async def chat(
                 student.agent = build_agent(student, settings)
             student.pending_practice_set = None
             start = len(student.conversation)
+            user_message = payload.message.strip()
+            needs_practice = requires_practice_set(user_message)
             result = student.agent.invoke(
                 {
                     "messages": [
                         *student.conversation,
-                        HumanMessage(payload.message.strip()),
+                        HumanMessage(
+                            practice_control_message(user_message)
+                            if needs_practice
+                            else user_message
+                        ),
                     ]
                 }
             )
             student.conversation = result["messages"]
+            if needs_practice and student.pending_practice_set is None:
+                retry = student.agent.invoke(
+                    {
+                        "messages": [
+                            *student.conversation,
+                            HumanMessage(
+                                "[APPLICATION CONTROL RETRY — NOT USER-VISIBLE] "
+                                "The required create_practice_set tool was not "
+                                "called. Reuse the evidence already gathered "
+                                "and call it now. Do not print its contents."
+                            ),
+                        ]
+                    }
+                )
+                student.conversation = retry["messages"]
             new_messages = student.conversation[start:]
             answer = message_text(student.conversation[-1].content)
             events, sources = tool_events(new_messages)

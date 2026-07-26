@@ -671,16 +671,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
           prompt: '$evidence Create a 10-question active-recall quiz from '
               'this document. Do not show answers until I attempt it.',
         ),
-        AiAssistAction(
-          icon: Icons.style_outlined,
-          title: 'Make flashcards',
-          subtitle: isPdf
-              ? 'Concise Front and Back cards'
-              : 'AI reading is currently available for PDFs',
-          enabled: isPdf,
-          prompt: '$evidence Create 15 high-value flashcards from this '
-              'document, formatted as Front and Back.',
-        ),
       ],
     );
   }
@@ -705,16 +695,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
           enabled: ready,
           prompt: '$evidence Summarize this ${course.code} recording into '
               'a topic outline, key explanations, and revision checklist.',
-        ),
-        AiAssistAction(
-          icon: Icons.style_outlined,
-          title: 'Create flashcards',
-          subtitle: ready
-              ? 'Active recall from the transcript'
-              : 'Transcript is still being prepared',
-          enabled: ready,
-          prompt: '$evidence Create 15 concise active-recall flashcards from '
-              'this recording, formatted as Front and Back.',
         ),
         AiAssistAction(
           icon: Icons.quiz_outlined,
@@ -786,7 +766,8 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
             'practice quiz. Keep its answers hidden until I respond.',
       'Final' =>
         'Create a cumulative high-yield review, connect concepts across the '
-            'documents, identify likely traps, and build a revision plan.',
+            'documents, identify likely traps, build a revision plan, and '
+            'prepare an interactive practice quiz.',
       _ =>
         'Create a coverage map, prioritize weak/high-value concepts, build a '
             'revision plan, and finish with mixed practice questions.',
