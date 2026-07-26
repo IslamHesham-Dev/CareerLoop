@@ -412,13 +412,21 @@ class AdvisorRepository extends ChangeNotifier {
 
   AdvisorRepository({required this.api});
 
-  Future<void> send(String text) async {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty || isSending) return;
+  Future<ChatMessage?> send(String text) {
+    return sendContextual(visibleText: text, agentText: text);
+  }
+
+  Future<ChatMessage?> sendContextual({
+    required String visibleText,
+    required String agentText,
+  }) async {
+    final visible = visibleText.trim();
+    final agent = agentText.trim();
+    if (visible.isEmpty || agent.isEmpty || isSending) return null;
     messages.add(
       ChatMessage(
         isUser: true,
-        text: trimmed,
+        text: visible,
         createdAt: DateTime.now(),
       ),
     );
@@ -426,23 +434,25 @@ class AdvisorRepository extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final json = await api.post('/v1/chat', body: {'message': trimmed});
-      messages.add(
-        ChatMessage(
-          isUser: false,
-          text: json['answer'] as String? ?? 'No response was returned.',
-          createdAt: DateTime.now(),
-          sources: List<String>.from(json['sources'] as List? ?? const []),
-          tools: (json['tools'] as List? ?? const [])
-              .map((item) =>
-                  ToolActivity.fromJson(Map<String, dynamic>.from(item as Map)))
-              .toList(),
-        ),
+      final json = await api.post('/v1/chat', body: {'message': agent});
+      final response = ChatMessage(
+        isUser: false,
+        text: json['answer'] as String? ?? 'No response was returned.',
+        createdAt: DateTime.now(),
+        sources: List<String>.from(json['sources'] as List? ?? const []),
+        tools: (json['tools'] as List? ?? const [])
+            .map((item) =>
+                ToolActivity.fromJson(Map<String, dynamic>.from(item as Map)))
+            .toList(),
       );
+      messages.add(response);
+      return response;
     } on ApiException catch (exception) {
       error = exception.message;
+      return null;
     } catch (_) {
       error = 'The advisor could not be reached.';
+      return null;
     } finally {
       isSending = false;
       notifyListeners();

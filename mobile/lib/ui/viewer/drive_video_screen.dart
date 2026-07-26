@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../app/theme.dart';
-import '../core/ai_assist_sheet.dart';
+import '../core/content_ai_overlay.dart';
 
 class DriveVideoArgs {
   final String videoId;
@@ -51,9 +51,7 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
           },
           onWebResourceError: (error) {
             if (error.isForMainFrame ?? true) {
-              if (mounted) {
-                setState(() => _error = error.description);
-              }
+              if (mounted) setState(() => _error = error.description);
             }
           },
         ),
@@ -94,116 +92,85 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
           ],
         ),
       ),
-      body: Stack(
-        children: [
-          if (_error == null)
-            WebViewWidget(controller: _controller)
-          else
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(28),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.video_file_outlined,
-                      color: LensColors.rose,
-                      size: 42,
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'This Drive video could not be embedded.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
+      body: ContentAiOverlay(
+        title: 'Video Assist',
+        subtitle: widget.args.title,
+        contextInstruction: 'First call get_cms_video_transcript with '
+            'video_id "${widget.args.videoId}". The open recording is '
+            '"${widget.args.title}" from ${widget.args.courseTitle}. Base '
+            'answers about its substance on that transcript and clearly say '
+            'if it is unavailable.',
+        quickActions: const [
+          ContentAiQuickAction(
+            icon: Icons.summarize_outlined,
+            label: 'Summarize this recording',
+            prompt: 'Summarize this recording into a topic outline, key '
+                'explanations, and a revision checklist.',
+          ),
+          ContentAiQuickAction(
+            icon: Icons.account_tree_outlined,
+            label: 'Extract its key concepts',
+            prompt: 'Extract the key concepts. Give each definition, the '
+                'lecturer\'s example, and its relationship to other concepts.',
+          ),
+          ContentAiQuickAction(
+            icon: Icons.style_outlined,
+            label: 'Create flashcards',
+            prompt: 'Create 15 active-recall flashcards from the recording, '
+                'formatted as Front and Back.',
+          ),
+          ContentAiQuickAction(
+            icon: Icons.quiz_outlined,
+            label: 'Quiz me on this video',
+            prompt: 'Quiz me with 10 conceptual and applied questions. Keep '
+                'the answers hidden until I attempt them.',
+          ),
+        ],
+        child: Stack(
+          children: [
+            if (_error == null)
+              WebViewWidget(controller: _controller)
+            else
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.video_file_outlined,
+                        color: LensColors.rose,
+                        size: 42,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'The owner may need to enable link access.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: .58),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'This Drive video could not be embedded.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      Text(
+                        'The owner may need to enable link access.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: .58),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          if (_progress < 100 && _error == null)
-            Align(
-              alignment: Alignment.topCenter,
-              child: LinearProgressIndicator(value: _progress / 100),
-            ),
-        ],
+            if (_progress < 100 && _error == null)
+              Align(
+                alignment: Alignment.topCenter,
+                child: LinearProgressIndicator(value: _progress / 100),
+              ),
+          ],
+        ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAssist,
-        backgroundColor: LensColors.aqua,
-        foregroundColor: LensColors.ink,
-        icon: const Icon(Icons.auto_awesome_rounded),
-        label: const Text('Video Assist'),
-      ),
-    );
-  }
-
-  void _openAssist() {
-    final ready = widget.args.transcriptStatus == 'available';
-    final evidence = 'First call get_cms_video_transcript with video_id '
-        '"${widget.args.videoId}". Base the answer on that transcript and '
-        'clearly say if it is unavailable.';
-    showAiAssistSheet(
-      context,
-      title: 'Video Assist',
-      subtitle: widget.args.title,
-      icon: Icons.smart_display_outlined,
-      actions: [
-        AiAssistAction(
-          icon: Icons.summarize_outlined,
-          title: 'Summarize recording',
-          subtitle: ready
-              ? 'Topics, explanations, and takeaways'
-              : 'Available after the transcript is prepared',
-          enabled: ready,
-          prompt: '$evidence Summarize this recording from '
-              '${widget.args.courseTitle} into a clear topic outline, key '
-              'explanations, and a revision checklist.',
-        ),
-        AiAssistAction(
-          icon: Icons.account_tree_outlined,
-          title: 'Extract key concepts',
-          subtitle: ready
-              ? 'Definitions, examples, and relationships'
-              : 'Available after the transcript is prepared',
-          enabled: ready,
-          prompt: '$evidence Extract the key concepts from this recording. '
-              'For each concept give its definition, the lecturer\'s example, '
-              'and how it connects to the other concepts.',
-        ),
-        AiAssistAction(
-          icon: Icons.style_outlined,
-          title: 'Create flashcards',
-          subtitle: ready
-              ? 'Active-recall cards from the transcript'
-              : 'Available after the transcript is prepared',
-          enabled: ready,
-          prompt: '$evidence Create 15 concise active-recall flashcards from '
-              'this recording. Cover definitions, reasoning, and applied '
-              'examples. Format each as Front and Back.',
-        ),
-        AiAssistAction(
-          icon: Icons.quiz_outlined,
-          title: 'Quiz me',
-          subtitle: ready
-              ? 'Questions first; answers stay hidden'
-              : 'Available after the transcript is prepared',
-          enabled: ready,
-          prompt: '$evidence Quiz me on this recording with 10 mixed '
-              'conceptual and applied questions. Do not reveal answers until '
-              'I submit my attempts.',
-        ),
-      ],
     );
   }
 }
