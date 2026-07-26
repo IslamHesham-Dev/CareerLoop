@@ -75,6 +75,26 @@ def build_agent(student: StudentSession, settings: Settings):
         return _safe(academic.full_transcript)
 
     @tool
+    def get_linkedin_pdf_profile() -> dict:
+        """Read the professional profile that the student explicitly imported
+        from LinkedIn's Save to PDF feature. Use it for career-profile, CV,
+        cover-letter, job-fit, skill, experience, education, contact, or
+        certification questions. This is a user-supplied snapshot, not live
+        LinkedIn data."""
+        if student.linkedin_profile is None:
+            return {
+                "status": "not_connected",
+                "message": (
+                    "No LinkedIn PDF has been imported into CareerLoop yet."
+                ),
+            }
+        return {
+            "status": "available",
+            "source": "User-imported LinkedIn profile PDF",
+            **student.linkedin_profile,
+        }
+
+    @tool
     def list_grade_seasons() -> list[str] | dict:
         """List all GIU seasons that expose detailed grades."""
         return _safe(academic.list_grade_seasons)
@@ -187,6 +207,7 @@ def build_agent(student: StudentSession, settings: Settings):
         get_advisory_course_grades,
         get_advisory_transcript,
         get_full_transcript,
+        get_linkedin_pdf_profile,
         list_grade_seasons,
         list_courses_in_season,
         get_course_grades,
@@ -218,10 +239,11 @@ def build_agent(student: StudentSession, settings: Settings):
         "You are CareerLoop Copilot, an evidence-grounded academic-growth and "
         "early-career decision assistant for a GIU student. CareerLoop turns "
         "verified academic, learning, project, professional, and opportunity "
-        "signals into explainable next actions. In the current build only GIU "
-        "portal, transcript, CMS, supplied video transcripts, and local "
-        "practice evidence are connected; GitHub, LinkedIn, CV, company, job, "
-        "email, and course-provider connectors are not connected yet. Never "
+        "signals into explainable next actions. In the current build GIU "
+        "portal, transcript, CMS, supplied video transcripts, local practice, "
+        "and an optional user-imported LinkedIn profile PDF are supported; "
+        "GitHub, live LinkedIn APIs, CV, company, job, email, and "
+        "course-provider connectors are not connected yet. Never "
         "imply that an unconnected source was inspected. Use portal tools for "
         "every factual claim about the student's records. "
         f"Treat {academic.current_season} as the simulated current semester and "
@@ -244,7 +266,12 @@ def build_agent(student: StudentSession, settings: Settings):
         "Summarize strengths, weak assessments, and practical study priorities. "
         "For career questions, translate verified courses, grades, and learning "
         "evidence into clearly labeled skill signals and possible directions, "
-        "not unsupported claims of professional experience. Separate evidence, "
+        "not unsupported claims of professional experience. When a career "
+        "question depends on the student's name, headline, summary, work "
+        "experience, education, contact information, skills, or certifications, "
+        "call get_linkedin_pdf_profile. Treat its contents as a user-supplied "
+        "snapshot, never as live LinkedIn data, and do not invent fields that "
+        "are missing. Separate evidence, "
         "inference, and recommendation so the student can reuse only defensible "
         "claims in a future CV or application. "
         f"{cms_context} A resource or video "
@@ -309,6 +336,7 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
         "get_advisory_course_grades": "GIU detailed grades",
         "get_advisory_transcript": "GIU transcript",
         "get_full_transcript": "GIU transcript",
+        "get_linkedin_pdf_profile": "Imported LinkedIn profile PDF",
         "list_grade_seasons": "GIU detailed-grade seasons",
         "list_courses_in_season": "GIU detailed-grade seasons",
         "get_course_grades": "GIU detailed grades",

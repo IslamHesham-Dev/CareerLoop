@@ -638,6 +638,70 @@ class ChatMessage {
   });
 }
 
+class LinkedInPdfProfile {
+  final String fileName;
+  final DateTime importedAt;
+  final int pageCount;
+  final String? name;
+  final String? headline;
+  final String? summary;
+  final List<String> contact;
+  final List<String> experience;
+  final List<String> education;
+  final List<String> certifications;
+  final List<String> skills;
+  final String rawText;
+
+  const LinkedInPdfProfile({
+    required this.fileName,
+    required this.importedAt,
+    required this.pageCount,
+    required this.name,
+    required this.headline,
+    required this.summary,
+    required this.contact,
+    required this.experience,
+    required this.education,
+    required this.certifications,
+    required this.skills,
+    required this.rawText,
+  });
+
+  factory LinkedInPdfProfile.fromJson(Map<String, dynamic> json) {
+    return LinkedInPdfProfile(
+      fileName: json['file_name'] as String? ?? 'LinkedIn_Profile.pdf',
+      importedAt: DateTime.tryParse(json['imported_at'] as String? ?? '') ??
+          DateTime.now(),
+      pageCount: (json['page_count'] as num?)?.toInt() ?? 1,
+      name: json['name'] as String?,
+      headline: json['headline'] as String?,
+      summary: json['summary'] as String?,
+      contact: List<String>.from(json['contact'] as List? ?? const []),
+      experience: List<String>.from(json['experience'] as List? ?? const []),
+      education: List<String>.from(json['education'] as List? ?? const []),
+      certifications:
+          List<String>.from(json['certifications'] as List? ?? const []),
+      skills: List<String>.from(json['skills'] as List? ?? const []),
+      rawText: json['raw_text'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'file_name': fileName,
+        'imported_at': importedAt.toUtc().toIso8601String(),
+        'page_count': pageCount,
+        'name': name,
+        'headline': headline,
+        'summary': summary,
+        'contact': contact,
+        'experience': experience,
+        'education': education,
+        'certifications': certifications,
+        'skills': skills,
+        'raw_text': rawText,
+      };
+}
+
 extension _LastOrNull<T> on Iterable<T> {
   T? get lastOrNull => isEmpty ? null : last;
 }

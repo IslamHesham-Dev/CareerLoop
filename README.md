@@ -136,3 +136,24 @@ The public connection must allow inserting content and its exact redirect URI
 must match the value configured in Notion. OAuth tokens currently live only for
 the short CareerLoop session, just like the GIU portal session. Use encrypted
 persistent user storage before supporting long-lived production accounts.
+
+## LinkedIn PDF professional profile
+
+CareerLoop does not log into or scrape LinkedIn. The user exports the
+LinkedIn-generated profile PDF from the web profile page and imports it through
+**Career Studio → LinkedIn profile**. The app provides a three-step guide for
+finding **Save to PDF**.
+
+The original PDF and its extracted metadata are stored in the mobile app's
+private application-support directory. The backend reads the uploaded PDF only
+to extract professional evidence into the current short-lived CareerLoop
+session; it does not persist the original file. Supported evidence includes
+name, headline, summary, contact details, experience, education, skills, and
+certification names.
+
+When a new backend session starts, the app rehydrates the extracted local
+profile before the next Copilot message. The agent can then call
+`get_linkedin_pdf_profile` for relevant CV, job-fit, cover-letter, career,
+experience, education, skills, or certification questions. Replacing or
+removing the PDF clears the previous Copilot context to prevent stale career
+claims from being reused.

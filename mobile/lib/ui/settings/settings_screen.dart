@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
+import '../../data/career_profile_repository.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
 import '../core/notion_export_action.dart';
@@ -153,10 +154,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final advisor = context.read<AdvisorRepository>();
                         final cms = context.read<CmsRepository>();
                         final notion = context.read<NotionRepository>();
+                        final career = context.read<CareerProfileRepository>();
                         await advisor.reset();
                         academic.clearLocal();
                         cms.clearLocal();
                         notion.clearLocal();
+                        career.markSessionChanged();
                         await auth.logout();
                       },
                 icon: const Icon(Icons.logout_rounded),

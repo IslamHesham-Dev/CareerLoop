@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
+import 'career_profile_repository.dart';
 import 'models.dart';
 import 'practice_repository.dart';
 import 'session_storage.dart';
@@ -407,6 +408,7 @@ class CmsRepository extends ChangeNotifier {
 class AdvisorRepository extends ChangeNotifier {
   final ApiClient api;
   final PracticeRepository practiceRepository;
+  final CareerProfileRepository careerProfileRepository;
 
   final List<ChatMessage> messages = [];
   bool isSending = false;
@@ -415,6 +417,7 @@ class AdvisorRepository extends ChangeNotifier {
   AdvisorRepository({
     required this.api,
     required this.practiceRepository,
+    required this.careerProfileRepository,
   });
 
   Future<ChatMessage?> send(String text) {
@@ -439,6 +442,7 @@ class AdvisorRepository extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
+      await careerProfileRepository.ensureSynced();
       final json = await api.post('/v1/chat', body: {'message': agent});
       final practiceJson = json['practice_set'];
       final practiceSet = practiceJson is Map

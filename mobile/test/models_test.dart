@@ -2,6 +2,28 @@ import 'package:careerloop/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('loads the professional evidence extracted from a LinkedIn PDF', () {
+    final profile = LinkedInPdfProfile.fromJson({
+      'file_name': 'LinkedIn.pdf',
+      'imported_at': '2026-07-26T12:00:00Z',
+      'page_count': 2,
+      'name': 'Ada Lovelace',
+      'headline': 'Software Engineer',
+      'summary': 'Builds reliable systems.',
+      'contact': ['ada@example.com'],
+      'experience': ['Example GmbH'],
+      'education': ['GIU'],
+      'certifications': ['Cloud Foundations'],
+      'skills': ['Python'],
+      'raw_text': 'Ada Lovelace\nSoftware Engineer',
+    });
+
+    expect(profile.name, 'Ada Lovelace');
+    expect(profile.experience, contains('Example GmbH'));
+    expect(profile.toJson()['skills'], ['Python']);
+    expect(profile.pageCount, 2);
+  });
+
   test('keeps the CMS limited-access message without failing the session', () {
     final session = SessionInfo.fromJson({
       'current_season': 'Winter 2025',
