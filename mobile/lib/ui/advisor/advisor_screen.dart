@@ -7,6 +7,7 @@ import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
+import '../core/notion_export_action.dart';
 import '../core/practice_launch_card.dart';
 
 class AdvisorScreen extends StatefulWidget {
@@ -368,6 +369,11 @@ class _MessageBubble extends StatelessWidget {
                 tableBorder: TableBorder.all(color: LensColors.line),
                 tableCellsPadding: const EdgeInsets.all(8),
               ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: NotionExportAction(message: message),
             ),
             if (message.tools.any((tool) => tool.status == 'error')) ...[
               const SizedBox(height: 14),

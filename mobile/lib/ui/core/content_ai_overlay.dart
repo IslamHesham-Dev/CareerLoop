@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
+import 'notion_export_action.dart';
 import 'practice_launch_card.dart';
 
 class ContentAiOverlayController {
@@ -542,6 +543,14 @@ class _ContentMessageBubble extends StatelessWidget {
                       listBullet: const TextStyle(color: LensColors.indigo),
                       tableBorder: TableBorder.all(color: LensColors.line),
                       tableCellsPadding: const EdgeInsets.all(6),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: NotionExportAction(
+                      message: message,
+                      compact: true,
                     ),
                   ),
                   if (message.practiceSet != null) ...[

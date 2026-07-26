@@ -106,3 +106,33 @@ cd backend
 uv run python scripts/import_transcript_intake.py `
   content/transcript_intake_template.md
 ```
+
+## Notion response export
+
+Every Copilot answer, including answers from the floating content assistant,
+can be exported as a structured Notion page. The AI response remains Markdown
+throughout the pipeline, while Notion credentials stay on the backend.
+
+For the quickest single-workspace demo, create an internal Notion integration,
+share a regular parent page with that integration, and add these values to
+`backend/.env`:
+
+```env
+NOTION_API_KEY=ntn_your_internal_integration_token
+NOTION_PARENT_PAGE_ID=the_parent_page_id
+NOTION_API_VERSION=2026-03-11
+```
+
+For a multi-user public connection, leave those two values empty and configure:
+
+```env
+NOTION_OAUTH_CLIENT_ID=your_public_connection_client_id
+NOTION_OAUTH_CLIENT_SECRET=your_public_connection_client_secret
+NOTION_OAUTH_REDIRECT_URI=https://careerloop.onrender.com/v1/integrations/notion/callback
+NOTION_API_VERSION=2026-03-11
+```
+
+The public connection must allow inserting content and its exact redirect URI
+must match the value configured in Notion. OAuth tokens currently live only for
+the short CareerLoop session, just like the GIU portal session. Use encrypted
+persistent user storage before supporting long-lived production accounts.

@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
+import '../core/notion_export_action.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -72,6 +73,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ],
                 ),
               ),
+              const SizedBox(height: 18),
+              const NotionConnectionCard(),
               const SizedBox(height: 18),
               LensCard(
                 child: Column(
@@ -149,9 +152,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : () async {
                         final advisor = context.read<AdvisorRepository>();
                         final cms = context.read<CmsRepository>();
+                        final notion = context.read<NotionRepository>();
                         await advisor.reset();
                         academic.clearLocal();
                         cms.clearLocal();
+                        notion.clearLocal();
                         await auth.logout();
                       },
                 icon: const Icon(Icons.logout_rounded),

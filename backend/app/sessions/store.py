@@ -81,6 +81,22 @@ class SessionStore:
             return True
         return False
 
+    def find_by_notion_oauth_state(
+        self,
+        state: str,
+    ) -> StudentSession | None:
+        now = time.time()
+        with self._lock:
+            self._purge_expired_locked(now)
+            for session in self._sessions.values():
+                if (
+                    session.notion_oauth_state == state
+                    and session.notion_oauth_expires_at is not None
+                    and session.notion_oauth_expires_at > now
+                ):
+                    return session
+        return None
+
     def _purge_expired_locked(self, now: float) -> None:
         expired = [
             digest

@@ -488,3 +488,118 @@ class AdvisorRepository extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+class NotionExportResult {
+  final String pageId;
+  final String pageUrl;
+  final String title;
+
+  const NotionExportResult({
+    required this.pageId,
+    required this.pageUrl,
+    required this.title,
+  });
+}
+
+class NotionRepository extends ChangeNotifier {
+  final ApiClient api;
+
+  bool available = false;
+  bool connected = false;
+  bool loading = false;
+  bool exporting = false;
+  String mode = 'disabled';
+  String? workspaceName;
+  String? error;
+
+  NotionRepository({required this.api});
+
+  Future<bool> refreshStatus() async {
+    if (loading) return connected;
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      final json = await api.get('/v1/integrations/notion/status');
+      available = json['available'] as bool? ?? false;
+      connected = json['connected'] as bool? ?? false;
+      mode = json['mode'] as String? ?? 'disabled';
+      workspaceName = json['workspace_name'] as String?;
+      return connected;
+    } on ApiException catch (exception) {
+      error = exception.message;
+      return false;
+    } catch (_) {
+      error = 'The Notion connection could not be checked.';
+      return false;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Uri?> beginConnection() async {
+    loading = true;
+    error = null;
+    notifyListeners();
+    try {
+      final json = await api.post('/v1/integrations/notion/connect');
+      connected = json['connected'] as bool? ?? false;
+      final authorizationUrl = json['authorization_url'] as String?;
+      return authorizationUrl == null ? null : Uri.tryParse(authorizationUrl);
+    } on ApiException catch (exception) {
+      error = exception.message;
+      return null;
+    } catch (_) {
+      error = 'Notion authorization could not be started.';
+      return null;
+    } finally {
+      loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<NotionExportResult?> exportResponse({
+    required String title,
+    required String markdown,
+    required List<String> sources,
+  }) async {
+    if (exporting) return null;
+    exporting = true;
+    error = null;
+    notifyListeners();
+    try {
+      final json = await api.post(
+        '/v1/integrations/notion/export',
+        body: {
+          'title': title,
+          'markdown': markdown,
+          'sources': sources,
+        },
+      );
+      return NotionExportResult(
+        pageId: json['page_id'] as String? ?? '',
+        pageUrl: json['page_url'] as String? ?? '',
+        title: json['title'] as String? ?? title,
+      );
+    } on ApiException catch (exception) {
+      error = exception.message;
+      return null;
+    } catch (_) {
+      error = 'The response could not be exported to Notion.';
+      return null;
+    } finally {
+      exporting = false;
+      notifyListeners();
+    }
+  }
+
+  void clearLocal() {
+    available = false;
+    connected = false;
+    mode = 'disabled';
+    workspaceName = null;
+    error = null;
+    notifyListeners();
+  }
+}

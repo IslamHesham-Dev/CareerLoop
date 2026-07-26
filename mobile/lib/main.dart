@@ -25,6 +25,7 @@ Future<void> main() async {
     api: api,
     practiceRepository: practice,
   );
+  final notion = NotionRepository(api: api);
 
   await auth.restoreSession();
 
@@ -36,6 +37,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: cms),
         ChangeNotifierProvider.value(value: advisor),
         ChangeNotifierProvider.value(value: practice),
+        ChangeNotifierProvider.value(value: notion),
       ],
       child: const CareerLoopApp(),
     ),

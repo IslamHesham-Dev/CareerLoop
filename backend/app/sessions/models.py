@@ -22,6 +22,10 @@ class StudentSession:
     conversation: list[Any] = field(default_factory=list)
     agent: Any = None
     pending_practice_set: dict[str, Any] | None = None
+    notion_access_token: str | None = None
+    notion_workspace_name: str | None = None
+    notion_oauth_state: str | None = None
+    notion_oauth_expires_at: float | None = None
     chat_lock: threading.RLock = field(default_factory=threading.RLock)
 
     @property
@@ -32,6 +36,10 @@ class StudentSession:
         self.conversation.clear()
         self.agent = None
         self.pending_practice_set = None
+        self.notion_access_token = None
+        self.notion_workspace_name = None
+        self.notion_oauth_state = None
+        self.notion_oauth_expires_at = None
         self.academic.clear_cache()
         self.cms.close()
         self.portal.session.auth = None
