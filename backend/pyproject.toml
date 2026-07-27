@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.7",
     "pypdf>=5.0",
     "python-multipart>=0.0.20",
+    "reportlab>=4.0",
     "requests>=2.31",
     "requests-ntlm>=1.2",
     "swelist==0.1.10",

@@ -327,6 +327,216 @@ def build_agent(student: StudentSession, settings: Settings):
         except Exception as e:
             return {"error": str(e)}
 
+    @tool
+    def generate_cover_letter_for_job(
+        job_title: str,
+        company_name: str,
+        custom_input: str = "",
+    ) -> dict:
+        """Generate a personalized cover letter for a job opportunity.
+        Use this when the student wants to create a cover letter for a specific job.
+        Combines extracted CV/LinkedIn data with job posting details."""
+        from cover_letter_generator import CoverLetterGenerator
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+
+        try:
+            career_data = student.linkedin_profile or {}
+            if not career_data and student.resume_profile:
+                career_data = student.resume_profile
+
+            if not career_data:
+                return {
+                    "status": "error",
+                    "message": "No resume or LinkedIn profile loaded. Import a resume or LinkedIn PDF first.",
+                }
+
+            job_posting = {
+                "title": job_title,
+                "company": company_name,
+            }
+
+            generator = CoverLetterGenerator(anthropic_api_key=api_key)
+            cover_letter = generator.generate_cover_letter(
+                career_data=career_data,
+                job_posting=job_posting,
+                custom_input=custom_input,
+            )
+
+            return {
+                "status": "success",
+                "cover_letter": cover_letter,
+                "job_title": job_title,
+                "company_name": company_name,
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": str(exc),
+            }
+
+    @tool
+    def export_cover_letter_as_pdf(
+        cover_letter_text: str,
+        job_title: str = "",
+        company_name: str = "",
+    ) -> dict:
+        """Export a cover letter as a downloadable PDF file.
+        Use this after generating a cover letter to create a PDF version.
+        Returns the PDF as base64-encoded data that can be downloaded."""
+        from cover_letter_generator import CoverLetterGenerator
+        import base64
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+
+        try:
+            career_data = student.linkedin_profile or {}
+            if not career_data and student.resume_profile:
+                career_data = student.resume_profile
+
+            if not career_data:
+                return {
+                    "status": "error",
+                    "message": "No resume or LinkedIn profile loaded.",
+                }
+
+            # Extract candidate name from career data
+            candidate_name = career_data.get("name", "Candidate")
+            filename = f"{candidate_name.replace(' ', '_')}_Cover_Letter.pdf"
+
+            generator = CoverLetterGenerator(anthropic_api_key=api_key)
+            pdf_bytes = generator.generate_cover_letter_pdf(
+                career_data=career_data,
+                job_posting={
+                    "title": job_title,
+                    "company": company_name,
+                },
+                custom_input="",
+                filename=filename,
+            )
+
+            # Encode PDF as base64 for transmission
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+
+            return {
+                "status": "success",
+                "filename": filename,
+                "pdf_base64": pdf_base64,
+                "message": f"PDF cover letter created: {filename}",
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": str(exc),
+            }
+
+    @tool
+    def generate_cv(
+        target_position: str = "",
+        target_company: str = "",
+        custom_input: str = "",
+    ) -> dict:
+        """Generate a tailored one-page CV in LaTeX format (with a compiled
+        PDF when a LaTeX engine is available on the server) from the
+        student's academic transcript, imported resume, imported LinkedIn
+        PDF, and connected GitHub evidence. Optionally tailor content to a
+        specific position and/or company by name. Call this when the
+        student asks to generate, build, tailor, or update their CV or
+        resume. Requires at least one of a resume, LinkedIn PDF, or GitHub
+        profile to already be connected."""
+        from app.tone import ToneProfile, build_tone_reference
+        from cv_generator import CVGenerator, build_career_context
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+
+        if not (
+            student.resume_profile
+            or student.linkedin_profile
+            or student.github_profile
+        ):
+            return {
+                "status": "error",
+                "message": (
+                    "No resume, LinkedIn PDF, or GitHub profile is connected "
+                    "yet. Import at least one before generating a CV."
+                ),
+            }
+
+        try:
+            transcript = academic.full_transcript()
+        except Exception:
+            transcript = None
+
+        cms_course_titles = None
+        if cms.connected:
+            try:
+                cms_courses = cms.list_courses(season=academic.current_season)
+                cms_course_titles = [
+                    course.get("title") or course.get("code") or ""
+                    for course in cms_courses.get("courses", [])
+                ]
+                cms_course_titles = [title for title in cms_course_titles if title]
+            except Exception:
+                cms_course_titles = None
+
+        career_context = build_career_context(
+            resume_profile=student.resume_profile,
+            linkedin_profile=student.linkedin_profile,
+            github_profile=student.github_profile,
+            transcript=transcript,
+            cms_course_titles=cms_course_titles,
+        )
+
+        tone_reference = ""
+        if student.tone_profile:
+            tone_reference = build_tone_reference(
+                ToneProfile(answers=student.tone_profile)
+            )
+
+        try:
+            generator = CVGenerator(
+                anthropic_api_key=api_key, model=settings.anthropic_model
+            )
+            result = generator.generate(
+                career_context=career_context,
+                target_position=target_position,
+                target_company=target_company,
+                custom_input=custom_input,
+                tone_reference=tone_reference,
+            )
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+        candidate_name = result.content.full_name or "Candidate"
+        base_filename = candidate_name.replace(" ", "_")
+
+        response: dict[str, Any] = {
+            "status": "success",
+            "filename": f"{base_filename}_CV.tex",
+            "latex_source": result.latex_source,
+            "sources_used": career_context.get("sources_used", []),
+        }
+        if result.pdf_bytes:
+            import base64
+
+            response["pdf_filename"] = f"{base_filename}_CV.pdf"
+            response["pdf_base64"] = base64.b64encode(result.pdf_bytes).decode(
+                "utf-8"
+            )
+        else:
+            response["pdf_note"] = (
+                "No LaTeX engine was available on the server to compile a "
+                "PDF; paste latex_source into Overleaf (or a local LaTeX "
+                "install) to render it."
+            )
+        return response
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -358,6 +568,9 @@ def build_agent(student: StudentSession, settings: Settings):
         create_practice_set,
         search_tech_jobs,
         get_company_jobs,
+        generate_cover_letter_for_job,
+        export_cover_letter_as_pdf,
+        generate_cv,
     ]
     if cms.connected:
         cms_context = (
@@ -543,6 +756,9 @@ def tool_events(
             "Coursera course catalogue",
         ],
         "get_company_jobs": "Company career page (LLM Extracted)",
+        "generate_cover_letter_for_job": "Generated cover letter (AI)",
+        "export_cover_letter_as_pdf": "Cover letter PDF export",
+        "generate_cv": "Generated CV (AI, LaTeX)",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:
@@ -581,6 +797,19 @@ def tool_events(
                     )
                 if evidence.get("resume"):
                     mapped_sources.append("Imported resume PDF")
+        if name == "generate_cv" and isinstance(parsed, dict):
+            sources_used = parsed.get("sources_used")
+            source_labels = {
+                "resume": "Imported resume PDF",
+                "linkedin": "Imported LinkedIn profile PDF",
+                "github": "Connected GitHub project evidence",
+                "academic_transcript": f"{university_label} transcript",
+                "cms_courses": f"Live {university_label} CMS",
+            }
+            for key in sources_used or []:
+                label = source_labels.get(key)
+                if label:
+                    mapped_sources.append(label)
         for source in mapped_sources or []:
             if source not in sources:
                 sources.append(source)
