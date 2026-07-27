@@ -38,7 +38,10 @@ def _safe(callable_) -> dict[str, Any] | list[str]:
         return {"error": str(exc)}
     except Exception:
         return {
-            "error": "The requested GIU data source is temporarily unavailable.",
+            "error": (
+                "The requested university data source is temporarily "
+                "unavailable."
+            ),
             "advice": "Wait about one minute, then try again.",
         }
 
@@ -46,6 +49,7 @@ def _safe(callable_) -> dict[str, Any] | list[str]:
 def build_agent(student: StudentSession, settings: Settings):
     academic = student.academic
     cms = student.cms
+    university = student.university_label
 
     @tool
     def get_advisory_context() -> dict:
@@ -60,7 +64,7 @@ def build_agent(student: StudentSession, settings: Settings):
     @tool
     def get_advisory_course_grades(course: str) -> dict:
         """Get detailed grades for a current-advisory-semester course.
-        The course may be an exact GIU label or a unique fragment such as ICS501."""
+        The course may be an exact university label or a unique fragment."""
         return _safe(lambda: academic.course_grades(course))
 
     @tool
@@ -96,12 +100,12 @@ def build_agent(student: StudentSession, settings: Settings):
 
     @tool
     def list_grade_seasons() -> list[str] | dict:
-        """List all GIU seasons that expose detailed grades."""
+        """List all university seasons that expose detailed grades."""
         return _safe(academic.list_grade_seasons)
 
     @tool
     def list_courses_in_season(season: str) -> dict:
-        """List exact GIU course labels inside a named historical season."""
+        """List exact university course labels in a historical season."""
         return _safe(lambda: academic.list_courses(season))
 
     @tool
@@ -121,8 +125,7 @@ def build_agent(student: StudentSession, settings: Settings):
 
     @tool
     def list_cms_courses() -> dict:
-        """List live GIU CMS courses in the selected advisory semester.
-        A course may also report supplemental Drive videos."""
+        """List live university CMS courses in the advisory semester."""
         return _safe(
             lambda: cms.list_courses(season=academic.current_season)
         )
@@ -131,9 +134,8 @@ def build_agent(student: StudentSession, settings: Settings):
     def get_cms_course_content(
         course_id: str,
     ) -> dict:
-        """Get real GIU CMS resources for one course by the opaque course ID
-        returned by list_cms_courses. For five matched courses, the result also
-        includes supplemental Drive videos."""
+        """Get live CMS resources for one course by the opaque course ID
+        returned by list_cms_courses."""
         return _safe(lambda: cms.course_content(course_id))
 
     @tool
@@ -250,26 +252,31 @@ def build_agent(student: StudentSession, settings: Settings):
         create_practice_set,
         search_tech_jobs,
     ]
-    cms_context = (
-        "The CMS tools read the student's complete live GIU CMS course "
-        "catalog and official course resources. Five matching courses "
-        "additionally expose supplemental Drive lecture/tutorial videos under "
-        "available_videos; never describe those five collections as the "
-        "complete CMS."
-        if cms.connected
-        else (
-            "GIU CMS is unavailable for this account, which can happen after "
-            "final-year or graduate course access ends. Continue using portal "
-            "grades, transcripts, and advisory tools. If the student asks for "
-            "CMS materials, explain this limitation briefly and do not treat "
-            "it as a failure of the rest of CareerLoop."
+    if cms.connected:
+        cms_context = (
+            f"The CMS tools read the student's live {university} CMS course "
+            "catalog and official course resources."
         )
-    )
+        if student.institution == "giu":
+            cms_context += (
+                " Five matching courses additionally expose supplemental "
+                "Drive lecture/tutorial videos under available_videos; never "
+                "describe those five collections as the complete CMS."
+            )
+    else:
+        cms_context = (
+            f"{university} CMS is unavailable for this account. Continue "
+            "using portal grades, transcripts, and advisory tools. If the "
+            "student asks for CMS materials, explain this limitation briefly "
+            "and do not treat it as a failure of the rest of CareerLoop."
+        )
     prompt = (
         "You are CareerLoop Copilot, an evidence-grounded academic-growth and "
-        "early-career decision assistant for a GIU student. CareerLoop turns "
+        f"early-career decision assistant for a {university} student. "
+        "CareerLoop turns "
         "verified academic, learning, project, professional, and opportunity "
-        "signals into explainable next actions. In the current build GIU "
+        f"signals into explainable next actions. In the current build "
+        f"{university} "
         "portal, transcript, CMS, supplied video transcripts, local practice, "
         "real-time tech job postings (via swelist), "
         "and an optional user-imported LinkedIn profile PDF are supported; "
@@ -363,21 +370,21 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
     sources: list[str] = []
     source_map = {
         "get_advisory_context": "Advisory context",
-        "list_advisory_courses": "GIU detailed-grade seasons",
-        "get_advisory_course_grades": "GIU detailed grades",
-        "get_advisory_transcript": "GIU transcript",
-        "get_full_transcript": "GIU transcript",
+        "list_advisory_courses": "University detailed-grade seasons",
+        "get_advisory_course_grades": "University detailed grades",
+        "get_advisory_transcript": "University transcript",
+        "get_full_transcript": "University transcript",
         "get_linkedin_pdf_profile": "Imported LinkedIn profile PDF",
-        "list_grade_seasons": "GIU detailed-grade seasons",
-        "list_courses_in_season": "GIU detailed-grade seasons",
-        "get_course_grades": "GIU detailed grades",
-        "get_transcript": "GIU transcript",
-        "find_transcript_course": "GIU transcript",
-        "list_cms_courses": "Live GIU CMS",
-        "get_cms_course_content": "Live GIU CMS resources",
-        "search_cms_content": "Live GIU CMS search",
+        "list_grade_seasons": "University detailed-grade seasons",
+        "list_courses_in_season": "University detailed-grade seasons",
+        "get_course_grades": "University detailed grades",
+        "get_transcript": "University transcript",
+        "find_transcript_course": "University transcript",
+        "list_cms_courses": "Live university CMS",
+        "get_cms_course_content": "Live university CMS resources",
+        "search_cms_content": "Live university CMS search",
         "get_cms_video_transcript": "Supplemental video transcript",
-        "read_cms_pdf": "GIU CMS PDF",
+        "read_cms_pdf": "University CMS PDF",
         "create_practice_set": "Interactive practice set",
         "search_tech_jobs": "Tech job postings (swelist)",
     }

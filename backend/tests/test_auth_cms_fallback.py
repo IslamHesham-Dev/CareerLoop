@@ -20,6 +20,7 @@ class _FakePortalSession:
 
 class _FakePortal:
     def __init__(self, **kwargs) -> None:
+        self.site_name = kwargs.get("site", "giu")
         self.session = _FakePortalSession()
 
     def available_seasons(self, *, tries: int, delay: float):
@@ -29,8 +30,14 @@ class _FakePortal:
 class _RejectedCmsClient:
     closed = False
 
-    def __init__(self, username: str, password: str) -> None:
-        pass
+    def __init__(
+        self,
+        username: str,
+        password: str,
+        *,
+        site: str = "giu",
+    ) -> None:
+        self.site_name = site
 
     def list_courses(self, *, force: bool = False):
         raise requests.ConnectionError("CMS account is unavailable")
@@ -64,6 +71,7 @@ class _FakeSessionStore:
         student = SimpleNamespace(
             cms=cms,
             academic=_FakeAcademic(),
+            institution=portal.site_name,
             expires_in_seconds=2700,
         )
         return "test-token", student
@@ -98,3 +106,29 @@ def test_portal_login_survives_when_cms_access_is_unavailable(
         "courses": [],
         "message": response.cms_message,
     }
+
+
+def test_guc_login_selects_both_guc_connectors(monkeypatch) -> None:
+    store = _FakeSessionStore()
+    monkeypatch.setattr(auth_routes, "GucPortal", _FakePortal)
+    monkeypatch.setattr(auth_routes, "GiuCmsClient", _RejectedCmsClient)
+    monkeypatch.setattr(auth_routes, "session_store", store)
+
+    response = asyncio.run(
+        auth_routes.login(
+            LoginRequest(
+                username="student",
+                password="secret",
+                enrollment_year=2021,
+                institution="guc",
+            )
+        )
+    )
+
+    assert response.institution == "guc"
+    assert response.cms_connected is False
+    assert store.fallback is not None
+    assert store.fallback.institution == "guc"
+    assert store.fallback.list_courses(season="Winter 2025")["source"] == (
+        "GUC CMS"
+    )

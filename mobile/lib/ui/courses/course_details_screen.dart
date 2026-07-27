@@ -30,6 +30,9 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     final academic = context.watch<AcademicRepository>();
     final grades = academic.grades[widget.course.code];
     final loading = academic.loadingCourses.contains(widget.course.code);
+    final university =
+        context.watch<AuthRepository>().session?.universityLabel ??
+            'University';
     return Scaffold(
       body: AuroraBackground(
         child: SafeArea(
@@ -69,9 +72,10 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   style: Theme.of(context).textTheme.bodyMedium),
               const SizedBox(height: 24),
               if (loading && grades == null)
-                const LensCard(
-                  child:
-                      LensLoading(label: 'Reading detailed grades from GIU…'),
+                LensCard(
+                  child: LensLoading(
+                    label: 'Reading detailed grades from $university…',
+                  ),
                 )
               else if (academic.error != null && grades == null)
                 LensError(
@@ -82,7 +86,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   ),
                 )
               else if (grades != null) ...[
-                _CoursePulse(grades: grades),
+                _CoursePulse(grades: grades, university: university),
                 const SizedBox(height: 24),
                 Row(
                   children: [
@@ -134,8 +138,12 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
 
 class _CoursePulse extends StatelessWidget {
   final CourseGrades grades;
+  final String university;
 
-  const _CoursePulse({required this.grades});
+  const _CoursePulse({
+    required this.grades,
+    required this.university,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +202,7 @@ class _CoursePulse extends StatelessWidget {
                 const SizedBox(height: 7),
                 Text(
                   ratio == null
-                      ? 'Scores are shown exactly as GIU returned them.'
+                      ? 'Scores are shown exactly as $university returned them.'
                       : ratio < .65
                           ? 'This course has room for a focused recovery plan.'
                           : 'Use the detailed rows to protect your strongest work.',

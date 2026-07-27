@@ -22,7 +22,7 @@ app = FastAPI(
     version="0.1.0",
     description=(
         "Private, evidence-grounded academic growth and career momentum API "
-        "with read-only GIU records and live CMS resources "
+        "with read-only GUC/GIU records and live CMS resources "
         "and approved supplemental Google Drive learning videos."
     ),
     docs_url="/docs" if settings.environment != "production" else None,

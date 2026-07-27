@@ -47,6 +47,9 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
   @override
   Widget build(BuildContext context) {
     final cms = context.watch<CmsRepository>();
+    final university =
+        context.watch<AuthRepository>().session?.universityLabel ??
+            'University';
     final content = cms.content[widget.course.id];
     final course = content?.course ?? widget.course;
     final loading = cms.loadingContent.contains(widget.course.id);
@@ -96,8 +99,8 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                           icon: const Icon(Icons.arrow_back_rounded),
                         ),
                         const Spacer(),
-                        const GradientPill(
-                          label: 'Live GIU CMS',
+                        GradientPill(
+                          label: 'Live $university CMS',
                           icon: Icons.lock_outline_rounded,
                         ),
                         const SizedBox(width: 8),
@@ -424,6 +427,8 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
     CmsCourse course,
     List<CmsResource> resources,
   ) async {
+    final university =
+        context.read<AuthRepository>().session?.universityLabel ?? 'University';
     final pdfs = resources
         .where((resource) => resource.fileExtension.toLowerCase() == 'pdf')
         .toList();
@@ -437,7 +442,8 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
             icon: Icons.route_outlined,
             title: 'Plan my next study session',
             subtitle: 'Uses the live course catalogue and available metadata',
-            prompt: 'Use the live GIU CMS tools to inspect ${course.code} '
+            prompt:
+                'Use the live $university CMS tools to inspect ${course.code} '
                 '${course.title} in ${course.season}. Build a practical study '
                 'session from accessible evidence only, and explicitly state '
                 'that no readable PDFs were selected.',

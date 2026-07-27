@@ -26,6 +26,7 @@ void main() {
 
   test('keeps the CMS limited-access message without failing the session', () {
     final session = SessionInfo.fromJson({
+      'institution': 'guc',
       'current_season': 'Winter 2025',
       'advisory_year': '2024-2025',
       'enrollment_year': 2021,
@@ -37,6 +38,7 @@ void main() {
 
     expect(session.cmsConnected, isFalse);
     expect(session.cmsMessage, contains('graduation'));
+    expect(session.universityLabel, 'GUC');
   });
 
   test('extracts a GIU course code and title from its long portal label', () {

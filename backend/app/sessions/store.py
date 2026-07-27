@@ -45,6 +45,7 @@ class SessionStore:
         now = time.time()
         session = StudentSession(
             session_id=str(uuid.uuid4()),
+            institution=getattr(portal, "site_name", "giu"),
             portal=portal,
             cms=cms,
             academic=AcademicService(

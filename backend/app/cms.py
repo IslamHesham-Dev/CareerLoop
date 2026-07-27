@@ -210,7 +210,11 @@ class SupplementalVideoCatalog:
 
 
 class CmsService:
-    """Per-student view of live GIU CMS plus optional Drive videos."""
+    """Per-student view of live university CMS content.
+
+    The supplemental Drive catalog belongs to the GIU prototype dataset and is
+    deliberately not merged into GUC courses.
+    """
 
     connected = True
     unavailable_message: str | None = None
@@ -222,15 +226,21 @@ class CmsService:
     ) -> None:
         self.client = client
         self.supplemental = supplemental or supplemental_video_catalog
+        self.institution = getattr(client, "site_name", "giu")
+        self.university_label = self.institution.upper()
 
     def close(self) -> None:
         self.client.close()
 
     def _merge_summary(self, course: dict[str, Any]) -> dict[str, Any]:
-        supplement, videos = self.supplemental.videos_for(
-            code=course.get("code", ""),
-            title=course.get("title", ""),
-            label=course.get("cms_label", ""),
+        supplement, videos = (
+            self.supplemental.videos_for(
+                code=course.get("code", ""),
+                title=course.get("title", ""),
+                label=course.get("cms_label", ""),
+            )
+            if self.institution == "giu"
+            else (None, [])
         )
         return {
             **course,
@@ -260,7 +270,7 @@ class CmsService:
                 if _normalized(course.get("season", "")) == needle
             ]
         return {
-            "source": "GIU CMS",
+            "source": f"{self.university_label} CMS",
             "status": "live",
             "season": selected or "all",
             "courses": courses,
@@ -268,10 +278,14 @@ class CmsService:
 
     def course_content(self, course_id: str) -> dict[str, Any]:
         live = self.client.course_content(course_id)
-        supplement, videos = self.supplemental.videos_for(
-            code=live.get("code", ""),
-            title=live.get("title", ""),
-            label=live.get("cms_label", ""),
+        supplement, videos = (
+            self.supplemental.videos_for(
+                code=live.get("code", ""),
+                title=live.get("title", ""),
+                label=live.get("cms_label", ""),
+            )
+            if self.institution == "giu"
+            else (None, [])
         )
         course = self._merge_summary(live)
         return {
@@ -345,6 +359,11 @@ class CmsService:
         return {"query": query, "matches": matches[:limit]}
 
     def video_transcript(self, video_id: str) -> dict[str, Any]:
+        if self.institution != "giu":
+            raise ValueError(
+                "Supplemental Drive video transcripts are only configured "
+                "for the GIU prototype dataset."
+            )
         return self.supplemental.video_transcript(video_id)
 
     def resource_text(
@@ -368,7 +387,8 @@ class CmsService:
             data = download.response.content
             if not data.startswith(b"%PDF"):
                 raise RuntimeError(
-                    "GIU CMS did not return a valid PDF document."
+                    f"{self.university_label} CMS did not return a valid PDF "
+                    "document."
                 )
             reader = PdfReader(BytesIO(data))
             page_count = len(reader.pages)
@@ -406,8 +426,10 @@ class UnavailableCmsService:
 
     connected = False
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: str, *, institution: str = "giu") -> None:
         self.unavailable_message = message
+        self.institution = institution
+        self.university_label = institution.upper()
         self.client = self
         self.supplemental = supplemental_video_catalog
 
@@ -421,7 +443,7 @@ class UnavailableCmsService:
         season: str | None = None,
     ) -> dict[str, Any]:
         return {
-            "source": "GIU CMS",
+            "source": f"{self.university_label} CMS",
             "status": "unavailable",
             "season": (season or "all").strip() or "all",
             "courses": [],
@@ -445,6 +467,11 @@ class UnavailableCmsService:
         }
 
     def video_transcript(self, video_id: str) -> dict[str, Any]:
+        if self.institution != "giu":
+            raise ValueError(
+                "Supplemental Drive video transcripts are only configured "
+                "for the GIU prototype dataset."
+            )
         return self.supplemental.video_transcript(video_id)
 
     def resource_text(

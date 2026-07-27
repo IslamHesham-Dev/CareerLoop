@@ -3,16 +3,17 @@
 **Academic insight. Career momentum.**
 
 CareerLoop is a private academic and career advisory prototype. It currently
-combines GIU portal records, a Flutter mobile experience, and a
-FastAPI/LangChain backend. The same short-lived university login attempts to
-open a read-only GIU CMS session for the student's course and resource catalog;
-portal-only operation remains available when CMS access has ended.
+combines GUC or GIU portal records, a Flutter mobile experience, and a
+FastAPI/LangChain backend. The university selected at login controls both the
+portal and CMS connectors, and the same short-lived credentials open their
+read-only sessions. Portal-only operation remains available when CMS access has
+ended.
 
 ## Repository
 
 ```text
 mobile/       Flutter app for Android and iOS
-backend/      FastAPI API, agent, session isolation, and GIU portal client
+backend/      FastAPI API, agent, session isolation, and GUC/GIU clients
 notebooks/    Verified portal experiments kept as references
 docs/         Architecture, API, and security decisions
 scripts/      Local development helpers
@@ -31,7 +32,7 @@ DEGREELENS_CURRENT_SEASON=Winter 2024
 DEGREELENS_ADVISORY_YEAR=2024-2025
 ```
 
-Do not add GIU usernames or passwords to the backend environment. The login
+Do not add GUC/GIU usernames or passwords to the backend environment. The login
 screen sends credentials over HTTPS to establish a short-lived, isolated portal
 session and, when the account permits it, a CMS session. Credential material is
 retained only by the in-memory authentication objects and is destroyed at
@@ -86,14 +87,14 @@ strict per-student cache separation.
 
 ## CMS and supplemental videos
 
-The course list and official resources come from the authenticated GIU CMS at
-runtime and follow the selected advisory semester. PDFs open inside CareerLoop
-and can be read by the advisor through a bounded authenticated extraction tool.
-Five approved Drive collections are matched to their corresponding
-courses and shown under a separate **Available videos** section; they are not
-treated as the complete CMS. Drive videos play in an in-app viewer. Video
-substance is available to the advisor only after a transcript is added under
-`backend/content/transcripts/`.
+The course list and official resources come from the authenticated CMS selected
+at login and follow the advisory semester. PDFs open inside CareerLoop and can
+be read by the advisor through a bounded authenticated extraction tool. For the
+GIU prototype only, five approved Drive collections are matched to their
+corresponding courses and shown under a separate **Available videos** section;
+they are not treated as the complete CMS. Drive videos play in an in-app viewer.
+Video substance is available to the advisor only after a transcript is added
+under `backend/content/transcripts/`.
 
 The canonical transcript intake format is Markdown:
 `backend/content/transcript_intake_template.md`. Each video has immutable
@@ -134,7 +135,7 @@ NOTION_API_VERSION=2026-03-11
 
 The public connection must allow inserting content and its exact redirect URI
 must match the value configured in Notion. OAuth tokens currently live only for
-the short CareerLoop session, just like the GIU portal session. Use encrypted
+the short CareerLoop session, just like the university portal session. Use encrypted
 persistent user storage before supporting long-lived production accounts.
 
 ## LinkedIn PDF professional profile

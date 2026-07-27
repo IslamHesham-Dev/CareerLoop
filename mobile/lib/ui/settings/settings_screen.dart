@@ -28,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
     final auth = context.watch<AuthRepository>();
+    final university = auth.session?.universityLabel ?? 'University';
     return Scaffold(
       body: AuroraBackground(
         child: SafeArea(
@@ -66,10 +67,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           '2024-2025',
                     ),
                     const Divider(height: 25),
-                    const _SettingRow(
+                    _SettingRow(
                       icon: Icons.visibility_outlined,
                       title: 'Connected academic sources',
-                      value: 'GIU Portal + GIU CMS',
+                      value: '$university Portal + $university CMS',
                     ),
                   ],
                 ),
@@ -87,7 +88,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Cached data reduces repeated requests to GIU’s slow portal.',
+                      'Cached data reduces repeated requests to the $university portal.',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
@@ -123,8 +124,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   children: [
                     const Icon(Icons.shield_outlined, color: LensColors.aqua),
                     const SizedBox(height: 14),
-                    const Text(
-                      'Your GIU password is never sent to the AI.',
+                    Text(
+                      'Your $university password is never sent to the AI.',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w800,

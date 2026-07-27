@@ -14,6 +14,7 @@ from app.cms import CmsService, UnavailableCmsService
 @dataclass
 class StudentSession:
     session_id: str
+    institution: str
     portal: GucPortal
     academic: AcademicService
     cms: CmsService | UnavailableCmsService
@@ -32,6 +33,10 @@ class StudentSession:
     @property
     def expires_in_seconds(self) -> int:
         return max(0, int(self.expires_at - time.time()))
+
+    @property
+    def university_label(self) -> str:
+        return self.institution.upper()
 
     def close(self) -> None:
         self.conversation.clear()

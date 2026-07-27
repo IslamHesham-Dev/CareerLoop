@@ -46,6 +46,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
     final academic = context.watch<AcademicRepository>();
     final cms = context.watch<CmsRepository>();
     final session = context.watch<AuthRepository>().session;
+    final university = session?.universityLabel ?? 'University';
     final cmsConnected = session?.cmsConnected ?? false;
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final desiredSeason = academic.context?.currentSeason;
@@ -119,6 +120,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
               _CmsStatus(
                 courseCount: cms.courses.length,
                 loading: cms.loadingCourses,
+                university: university,
               )
             else
               CmsAccessNotice(message: session?.cmsMessage),
@@ -192,8 +194,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
               ),
               const SizedBox(height: 11),
               if (cms.loadingCourses && cms.courses.isEmpty)
-                const LensCard(
-                  child: LensLoading(label: 'Connecting to GIU CMS...'),
+                LensCard(
+                  child: LensLoading(
+                    label: 'Connecting to $university CMS...',
+                  ),
                 )
               else if (cms.error != null && cms.courses.isEmpty)
                 LensError(
@@ -228,8 +232,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
 class _CmsStatus extends StatelessWidget {
   final int courseCount;
   final bool loading;
+  final String university;
 
-  const _CmsStatus({required this.courseCount, required this.loading});
+  const _CmsStatus({
+    required this.courseCount,
+    required this.loading,
+    required this.university,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -262,7 +271,7 @@ class _CmsStatus extends StatelessWidget {
             child: Text(
               loading
                   ? 'Syncing verified learning evidence'
-                  : 'Official GIU CMS learning evidence connected',
+                  : 'Official $university CMS learning evidence connected',
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12,

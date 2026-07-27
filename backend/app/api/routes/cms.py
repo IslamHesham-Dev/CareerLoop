@@ -21,7 +21,11 @@ from app.sessions.models import StudentSession
 router = APIRouter(prefix="/cms", tags=["CMS learning content"])
 
 
-def _cms_call(callable_: Callable[[], Any]) -> Any:
+def _cms_call(
+    callable_: Callable[[], Any],
+    *,
+    university_label: str = "University",
+) -> Any:
     try:
         return callable_()
     except ValueError as exc:
@@ -35,18 +39,22 @@ def _cms_call(callable_: Callable[[], Any]) -> Any:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail=(
-                    "GIU CMS rejected this session. Sign out and sign in "
+                    f"{university_label} CMS rejected this session. "
+                    "Sign out and sign in "
                     "again with your university account."
                 ),
             ) from None
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="GIU CMS could not return this content right now.",
+            detail=(
+                f"{university_label} CMS could not return this content "
+                "right now."
+            ),
         ) from None
     except (requests.RequestException, RuntimeError):
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="GIU CMS is temporarily unavailable.",
+            detail=f"{university_label} CMS is temporarily unavailable.",
         ) from None
 
 
@@ -61,7 +69,8 @@ def courses(
         lambda: student.cms.list_courses(
             force=refresh,
             season=selected,
-        )
+        ),
+        university_label=student.university_label,
     )
 
 
@@ -74,7 +83,8 @@ def course_content(
     student: StudentSession = Depends(get_student_session),
 ) -> dict:
     return _cms_call(
-        lambda: student.cms.course_content(course)
+        lambda: student.cms.course_content(course),
+        university_label=student.university_label,
     )
 
 
@@ -85,7 +95,8 @@ def search(
     student: StudentSession = Depends(get_student_session),
 ) -> dict:
     return _cms_call(
-        lambda: student.cms.search(query, course_id=course_id)
+        lambda: student.cms.search(query, course_id=course_id),
+        university_label=student.university_label,
     )
 
 
@@ -97,7 +108,10 @@ def transcript(
     video_id: str,
     student: StudentSession = Depends(get_student_session),
 ) -> dict:
-    return _cms_call(lambda: student.cms.video_transcript(video_id))
+    return _cms_call(
+        lambda: student.cms.video_transcript(video_id),
+        university_label=student.university_label,
+    )
 
 
 @router.get("/resources/{resource_id}/download")
@@ -105,7 +119,10 @@ def download_resource(
     resource_id: str,
     student: StudentSession = Depends(get_student_session),
 ) -> StreamingResponse:
-    download = _cms_call(lambda: student.cms.client.open_resource(resource_id))
+    download = _cms_call(
+        lambda: student.cms.client.open_resource(resource_id),
+        university_label=student.university_label,
+    )
 
     def body():
         for chunk in download.response.iter_content(chunk_size=1024 * 128):

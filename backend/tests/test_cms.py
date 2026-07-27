@@ -59,6 +59,10 @@ class FakeLiveClient:
         pass
 
 
+class FakeGucLiveClient(FakeLiveClient):
+    site_name = "guc"
+
+
 def test_supplemental_catalog_contains_all_drive_videos() -> None:
     counts = {
         course["slug"]: len(course["items"])
@@ -95,6 +99,22 @@ def test_live_catalog_is_complete_and_videos_are_only_supplemental() -> None:
     assert len(dsa["available_videos"]) == 53
     assert len(ai["cms_resources"]) == 1
     assert ai["available_videos"] == []
+
+
+def test_guc_cms_uses_guc_paths_without_giu_drive_supplements() -> None:
+    client = GiuCmsClient("student", "secret", site="guc")
+
+    assert client.base_url == "https://cms.guc.edu.eg"
+    assert client.course_list_path == "/apps/student/ViewAllCourseStn"
+    assert client.course_view_path == "/apps/student/CourseViewStn.aspx"
+
+    service = CmsService(FakeGucLiveClient())
+    listing = service.list_courses(season="Winter 2024")
+    assert listing["source"] == "GUC CMS"
+    assert listing["courses"][0]["has_supplemental_videos"] is False
+    assert listing["courses"][0]["video_count"] == 0
+    assert service.course_content("course_dsa")["available_videos"] == []
+    client.close()
 
 
 def test_live_cms_html_parsers_cover_course_links_and_resources() -> None:

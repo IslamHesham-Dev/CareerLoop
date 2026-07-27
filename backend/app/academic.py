@@ -19,6 +19,8 @@ class AcademicService:
         enrollment_year: int | None = None,
     ) -> None:
         self.portal = portal
+        self.institution = getattr(portal, "site_name", "giu")
+        self.university_label = self.institution.upper()
         self.current_season = current_season
         fallback_start = self._academic_year_start(advisory_year)
         self.enrollment_year = enrollment_year or max(2000, fallback_start - 3)
@@ -51,7 +53,7 @@ class AcademicService:
         )
         if not match:
             return (0, 0)
-        # GIU's sequence inside a labeled year is Spring, Summer, then Winter.
+        # The portals label the annual sequence Spring, Summer, then Winter.
         term_rank = {"spring": 1, "summer": 2, "winter": 3}
         return (int(match.group(2)), term_rank[match.group(1).casefold()])
 
@@ -107,17 +109,21 @@ class AcademicService:
             return self.cache["years"]
 
     def context(self) -> dict[str, Any]:
+        sources = [
+            f"{self.university_label} portal detailed grades",
+            f"{self.university_label} transcript",
+            f"live {self.university_label} CMS course resources",
+        ]
+        if self.institution == "giu":
+            sources.append(
+                "CareerLoop supplemental Drive videos for matched courses"
+            )
         return {
             "simulated_current_season": self.current_season,
             "transcript_year": self.advisory_year,
             "enrollment_year": self.enrollment_year,
             "transcript_years": self.transcript_window_years,
-            "data_sources": [
-                "GIU portal detailed grades",
-                "GIU transcript",
-                "live GIU CMS course resources",
-                "CareerLoop supplemental Drive videos for matched courses",
-            ],
+            "data_sources": sources,
             "excluded_sources": ["live current-course page"],
         }
 

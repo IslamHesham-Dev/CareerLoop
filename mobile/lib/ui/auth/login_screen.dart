@@ -17,6 +17,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _username = TextEditingController();
   final _password = TextEditingController();
   int? _enrollmentYear;
+  String _institution = 'giu';
   bool _obscure = true;
 
   @override
@@ -34,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _username.text,
       _password.text,
       _enrollmentYear!,
+      _institution,
     );
     if (signedIn && mounted) {
       context.read<AcademicRepository>().loadDashboard();
@@ -43,6 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthRepository>();
+    final university = _institution.toUpperCase();
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FC),
       body: SafeArea(
@@ -74,8 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ?.copyWith(fontSize: 34),
                         ),
                         const SizedBox(height: 10),
-                        const Text(
-                          'Connect verified GIU academic evidence now. Career signals join the same private profile as you add them.',
+                        Text(
+                          'Connect verified $university academic evidence now. Career signals join the same private profile as you add them.',
                           style: TextStyle(
                             color: LensColors.muted,
                             fontSize: 15,
@@ -111,7 +114,36 @@ class _LoginScreenState extends State<LoginScreen> {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  const SizedBox(height: 20),
+                                  const SizedBox(height: 16),
+                                  SegmentedButton<String>(
+                                    segments: const [
+                                      ButtonSegment(
+                                        value: 'giu',
+                                        label: Text('GIU'),
+                                        icon: Icon(
+                                          Icons.school_outlined,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      ButtonSegment(
+                                        value: 'guc',
+                                        label: Text('GUC'),
+                                        icon: Icon(
+                                          Icons.account_balance_outlined,
+                                          size: 18,
+                                        ),
+                                      ),
+                                    ],
+                                    selected: {_institution},
+                                    showSelectedIcon: false,
+                                    onSelectionChanged: auth.isBusy
+                                        ? null
+                                        : (selection) => setState(
+                                              () => _institution =
+                                                  selection.first,
+                                            ),
+                                  ),
+                                  const SizedBox(height: 18),
                                   TextFormField(
                                     controller: _username,
                                     autofillHints: const [
@@ -125,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     validator: (value) =>
                                         value == null || value.trim().isEmpty
-                                            ? 'Enter your GIU username'
+                                            ? 'Enter your $university username'
                                             : null,
                                   ),
                                   const SizedBox(height: 14),
@@ -187,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     validator: (value) =>
                                         value == null || value.isEmpty
-                                            ? 'Enter your GIU password'
+                                            ? 'Enter your $university password'
                                             : null,
                                   ),
                                   if (auth.error != null) ...[
@@ -271,8 +303,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
                         const Divider(color: LensColors.line),
                         const SizedBox(height: 14),
-                        const Text(
-                          'Your first CareerLoop evidence source is the GIU Student Portal.',
+                        Text(
+                          'Your first CareerLoop evidence source is the $university Student Portal.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: LensColors.muted,

@@ -1,4 +1,5 @@
 class SessionInfo {
+  final String institution;
   final String currentSeason;
   final String advisoryYear;
   final int enrollmentYear;
@@ -8,6 +9,7 @@ class SessionInfo {
   final String? cmsMessage;
 
   const SessionInfo({
+    required this.institution,
     required this.currentSeason,
     required this.advisoryYear,
     required this.enrollmentYear,
@@ -18,6 +20,7 @@ class SessionInfo {
   });
 
   factory SessionInfo.fromJson(Map<String, dynamic> json) => SessionInfo(
+        institution: json['institution'] as String? ?? 'giu',
         currentSeason: json['current_season'] as String? ?? 'Winter 2024',
         advisoryYear: json['advisory_year'] as String? ?? '2024-2025',
         enrollmentYear: json['enrollment_year'] as int? ?? 2021,
@@ -27,6 +30,8 @@ class SessionInfo {
         cmsConnected: json['cms_connected'] as bool? ?? false,
         cmsMessage: json['cms_message'] as String?,
       );
+
+  String get universityLabel => institution.toUpperCase();
 }
 
 class AdvisoryContext {
@@ -93,7 +98,7 @@ class CourseSummary {
       label: label,
       code: code,
       title: afterCode.isEmpty ? label : afterCode,
-      track: track ?? 'GIU',
+      track: track ?? 'University',
     );
   }
 }

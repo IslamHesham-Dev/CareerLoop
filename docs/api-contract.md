@@ -9,14 +9,15 @@ Authorization: Bearer <opaque-session-token>
 ## Authentication
 
 - `POST /v1/auth/login` with
-  `{"username": "...", "password": "...", "enrollment_year": 2021}`
+  `{"username": "...", "password": "...", "enrollment_year": 2021, "institution": "guc"}`
 - `GET /v1/auth/session`
 - `POST /v1/auth/logout`
 
-Login requires a valid GIU portal session and attempts CMS with the same
-credentials. Successful login/session responses include `cms_connected`; when
-it is `false`, `cms_message` explains the limited CMS access while the remaining
-portal and advisory features continue to work.
+`institution` accepts `guc` or `giu` and defaults to `giu` for older clients.
+Login requires a valid portal session for that institution and attempts its CMS
+with the same credentials. Successful login/session responses include
+`institution` and `cms_connected`; when CMS is unavailable, `cms_message`
+explains the limitation while the remaining portal and advisory features work.
 
 ## Academic data
 
@@ -49,9 +50,10 @@ source labels so the mobile interface can distinguish portal facts from advice.
 - `GET /v1/cms/resources/{opaque_resource_id}/download`
 - `GET /v1/cms/items/{drive_file_id}/transcript`
 
-Courses and `cms_resources` are read live from the authenticated GIU CMS.
-`available_videos` is populated only when a live course matches one of the five
-approved Drive collections. Video transcripts return `pending` until a matching
+Courses and `cms_resources` are read live from the authenticated GUC or GIU CMS.
+`available_videos` is a GIU-only prototype supplement populated when a live
+course matches one of the five approved Drive collections. Video transcripts
+return `pending` until a matching
 `backend/content/transcripts/{drive_file_id}.md` file is added.
 
 The advisor also exposes `read_cms_pdf(resource_id)`, which extracts bounded

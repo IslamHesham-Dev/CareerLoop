@@ -38,6 +38,7 @@ class AuthRepository extends ChangeNotifier {
     String username,
     String password,
     int enrollmentYear,
+    String institution,
   ) async {
     isBusy = true;
     error = null;
@@ -50,6 +51,7 @@ class AuthRepository extends ChangeNotifier {
           'username': username.trim(),
           'password': password,
           'enrollment_year': enrollmentYear,
+          'institution': institution,
         },
       );
       final token = json['access_token'] as String;

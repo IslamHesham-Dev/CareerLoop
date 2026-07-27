@@ -11,6 +11,8 @@ import requests
 from bs4 import BeautifulSoup, Tag
 from requests_ntlm import HttpNtlmAuth
 
+from guc_cms._sites import CMS_SITES
+
 
 CMS_BASE_URL = "https://cms.giu-uni.de"
 CMS_STUDENT_PATH = "/apps/student/"
@@ -57,7 +59,7 @@ class CmsDownload:
 
 
 class GiuCmsClient:
-    """Authenticated, read-only client for the GIU course-management system.
+    """Authenticated, read-only client for the GUC/GIU course-management system.
 
     The CMS uses the same NTLM credentials as the student portal. Course URLs
     and download URLs remain server-side and are represented by opaque IDs in
@@ -69,17 +71,33 @@ class GiuCmsClient:
         username: str,
         password: str,
         *,
-        base_url: str = CMS_BASE_URL,
+        site: str = "giu",
+        base_url: str | None = None,
         timeout: int = 60,
         verify: bool = True,
     ) -> None:
-        self.base_url = base_url.rstrip("/")
+        site_name = site.strip().casefold()
+        if site_name not in CMS_SITES:
+            raise ValueError(
+                f"Unknown CMS site {site!r}. Known sites: {list(CMS_SITES)}."
+            )
+        self.site_name = site_name
+        self.site = CMS_SITES[site_name]
+        self.university_label = site_name.upper()
+        self.base_url = (base_url or self.site.base_url).rstrip("/")
+        self.course_list_path = self.site.course_list_path
+        self.course_view_path = self.site.course_view_path
+        self.course_home_path = CMS_COURSE_HOME_PATH
         self.timeout = timeout
         self.session = requests.Session()
         self.session.auth = HttpNtlmAuth(username, password)
         self.session.verify = verify
         self.session.headers.update(
-            {"User-Agent": "CareerLoop/1.0 (read-only GIU CMS client)"}
+            {
+                "User-Agent": (
+                    f"CareerLoop/1.0 (read-only {self.university_label} CMS client)"
+                )
+            }
         )
         self._course_urls: dict[str, str] = {}
         self._resource_urls: dict[str, tuple[str, str]] = {}
@@ -119,7 +137,10 @@ class GiuCmsClient:
         expected = urlparse(self.base_url)
         if final.scheme != "https" or final.netloc != expected.netloc:
             response.close()
-            raise RuntimeError("GIU CMS redirected outside its authenticated host.")
+            raise RuntimeError(
+                f"{self.university_label} CMS redirected outside its "
+                "authenticated host."
+            )
         return response
 
     @staticmethod
@@ -254,7 +275,7 @@ class GiuCmsClient:
                 label = cells[name_index]
                 code = _course_code(label)
                 url = self._safe_url(
-                    f"{CMS_COURSE_VIEW_PATH}?id={course_number}"
+                    f"{self.course_view_path}?id={course_number}"
                     f"&sid={season_number}"
                 )
                 course_id = _stable_id("course", url)
@@ -372,7 +393,7 @@ class GiuCmsClient:
                     continue
 
                 url = self._safe_url(
-                    f"{CMS_COURSE_VIEW_PATH}?id={course_number}"
+                    f"{self.course_view_path}?id={course_number}"
                     f"&sid={season_number}"
                 )
                 course_id = _stable_id("course", url)
@@ -431,7 +452,7 @@ class GiuCmsClient:
             # ViewAllCourseStn is the season-aware source. HomePageStn exposes
             # only the current subset and therefore cannot answer historical
             # advisory-semester requests.
-            landing = self._get(CMS_COURSE_LIST_PATH)
+            landing = self._get(self.course_list_path)
             html = landing.text
             courses = self._parse_all_course_seasons(
                 html,
@@ -448,7 +469,7 @@ class GiuCmsClient:
             # Retain the current-course page as a compatibility fallback for a
             # CMS deployment that does not expose the historical table.
             if not courses:
-                home = self._get(CMS_COURSE_HOME_PATH)
+                home = self._get(self.course_home_path)
                 courses = self._parse_course_table(home.text)
                 if not courses:
                     courses = self._parse_course_links(
@@ -474,8 +495,8 @@ class GiuCmsClient:
             )
             if not courses:
                 raise RuntimeError(
-                    "GIU CMS authenticated successfully, but no course links "
-                    "were found on the student pages."
+                    f"{self.university_label} CMS authenticated successfully, "
+                    "but no course links were found on the student pages."
                 )
             self._courses_cache = courses
             return [dict(course) for course in courses]

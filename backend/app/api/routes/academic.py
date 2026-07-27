@@ -33,7 +33,10 @@ async def _portal_call(callable_: Callable[[], Any]) -> Any:
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="GIU portal is temporarily unavailable. Try again shortly.",
+            detail=(
+                "The university portal is temporarily unavailable. "
+                "Try again shortly."
+            ),
         ) from None
 
 
