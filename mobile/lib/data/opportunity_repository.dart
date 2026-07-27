@@ -10,7 +10,7 @@ class OpportunityRepository extends ChangeNotifier {
 
   OpportunitySearchResult? result;
   String roleType = 'newgrad';
-  String timeframe = 'lastweek';
+  String timeframe = 'all';
   String targetMarket = 'europe';
   List<String> locations = const ['Berlin', 'Germany'];
   List<String> keywords = const ['software engineer', 'backend'];

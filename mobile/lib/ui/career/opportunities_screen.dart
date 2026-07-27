@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:simple_icons/simple_icons.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
@@ -10,6 +8,39 @@ import '../../data/models.dart';
 import '../../data/opportunity_repository.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
+import 'opportunity_detail_screen.dart';
+
+const _roleChoices = <String, String>{
+  'software engineer': 'Software engineering',
+  'backend': 'Backend',
+  'mobile': 'Mobile',
+  'data engineer': 'Data',
+  'machine learning': 'AI / ML',
+  'cybersecurity': 'Cybersecurity',
+  'cloud': 'Cloud / DevOps',
+  'business analyst': 'Product / business',
+};
+
+const _technologyChoices = <String, String>{
+  'Python': 'Python',
+  'Java': 'Java',
+  'Flutter': 'Flutter',
+  'React': 'React',
+  'SQL': 'SQL',
+  'machine learning': 'Machine learning',
+  'Docker': 'Docker',
+  'AWS': 'AWS',
+};
+
+const _locationChoices = <String>[
+  'Berlin',
+  'Germany',
+  'Amsterdam',
+  'London',
+  'Remote',
+  'Cairo',
+  'Egypt',
+];
 
 class OpportunitiesScreen extends StatefulWidget {
   const OpportunitiesScreen({super.key});
@@ -19,25 +50,43 @@ class OpportunitiesScreen extends StatefulWidget {
 }
 
 class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
-  final _keywords = TextEditingController(text: 'software engineer, backend');
-  final _locations = TextEditingController(text: 'Berlin, Germany');
+  final _keywords = TextEditingController();
+  final _locations = TextEditingController();
   String _roleType = 'newgrad';
-  String _timeframe = 'lastweek';
   String _targetMarket = 'europe';
   final Set<String> _workModes = {'remote', 'hybrid'};
+  final Set<String> _roleInterests = {'software engineer', 'backend'};
+  final Set<String> _technologies = {};
+  final Set<String> _preferredLocations = {'Berlin', 'Germany'};
 
   @override
   void initState() {
     super.initState();
     final saved = context.read<OpportunityRepository>();
     _roleType = saved.roleType;
-    _timeframe = saved.timeframe;
     _targetMarket = saved.targetMarket;
     _workModes
       ..clear()
       ..addAll(saved.workModes);
-    _keywords.text = saved.keywords.join(', ');
-    _locations.text = saved.locations.join(', ');
+    _roleInterests
+      ..clear()
+      ..addAll(saved.keywords.where(_roleChoices.containsKey));
+    _technologies
+      ..clear()
+      ..addAll(saved.keywords.where(_technologyChoices.containsKey));
+    _keywords.text = saved.keywords
+        .where(
+          (value) =>
+              !_roleChoices.containsKey(value) &&
+              !_technologyChoices.containsKey(value),
+        )
+        .join(', ');
+    _preferredLocations
+      ..clear()
+      ..addAll(saved.locations.where(_locationChoices.contains));
+    _locations.text = saved.locations
+        .where((value) => !_locationChoices.contains(value))
+        .join(', ');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AcademicRepository>().loadDashboard();
     });
@@ -71,17 +120,32 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                 const SizedBox(height: 24),
                 _SearchPanel(
                   roleType: _roleType,
-                  timeframe: _timeframe,
                   targetMarket: _targetMarket,
                   workModes: _workModes,
+                  roleInterests: _roleInterests,
+                  technologies: _technologies,
+                  preferredLocations: _preferredLocations,
                   keywords: _keywords,
                   locations: _locations,
                   loading: opportunities.loading,
                   onRoleChanged: (value) => setState(() => _roleType = value),
-                  onTimeframeChanged: (value) =>
-                      setState(() => _timeframe = value),
                   onMarketChanged: (value) =>
                       setState(() => _targetMarket = value),
+                  onRoleInterestChanged: (value, selected) => setState(() {
+                    selected
+                        ? _roleInterests.add(value)
+                        : _roleInterests.remove(value);
+                  }),
+                  onTechnologyChanged: (value, selected) => setState(() {
+                    selected
+                        ? _technologies.add(value)
+                        : _technologies.remove(value);
+                  }),
+                  onLocationChanged: (value, selected) => setState(() {
+                    selected
+                        ? _preferredLocations.add(value)
+                        : _preferredLocations.remove(value);
+                  }),
                   onWorkModeChanged: (value, selected) => setState(() {
                     selected ? _workModes.add(value) : _workModes.remove(value);
                   }),
@@ -129,29 +193,18 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: _JobCard(
                           job: job,
-                          courses: result.courses,
-                          onAskAi: () => _askAi(job),
+                          onOpen: () => context.push(
+                            '/opportunities/job/${Uri.encodeComponent(job.id)}',
+                            extra: OpportunityDetailArgs(
+                              job: job,
+                              evidence: result.evidence,
+                              courses: result.courses,
+                              limitations: result.limitations,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  if (result.courses.isNotEmpty) ...[
-                    const SizedBox(height: 18),
-                    const _SectionHeading(
-                      eyebrow: 'CURATED NEXT STEP',
-                      title: 'Close the highest-impact gaps',
-                      subtitle:
-                          'Courses are selected from your supplied CareerLoop catalogue.',
-                    ),
-                    const SizedBox(height: 12),
-                    ...result.courses.map(
-                      (course) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _CourseCard(course: course),
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  _Limitations(items: result.limitations),
                 ],
               ],
             ),
@@ -165,23 +218,19 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
     return context.read<OpportunityRepository>().search(
           roleType: _roleType,
-          timeframe: _timeframe,
+          timeframe: 'all',
           targetMarket: _targetMarket,
-          locations: _csv(_locations.text),
-          keywords: _csv(_keywords.text),
+          locations: [
+            ..._preferredLocations,
+            ..._csv(_locations.text),
+          ],
+          keywords: [
+            ..._roleInterests,
+            ..._technologies,
+            ..._csv(_keywords.text),
+          ],
           workModes: _workModes.toList(),
         );
-  }
-
-  void _askAi(JobOpportunity job) {
-    context.read<AdvisorRepository>().send(
-          'Evaluate my fit for ${job.title} at ${job.company}. Use my full '
-          'transcript and imported LinkedIn PDF. The live Swelist role is '
-          '${job.url}. Explain the evidence for the match, verify the inferred '
-          'skill gaps against what is actually known, and make a focused '
-          'preparation plan without inventing job-description requirements.',
-        );
-    context.go('/advisor');
   }
 
   static List<String> _csv(String value) => value
@@ -227,7 +276,7 @@ class _TopBar extends StatelessWidget {
               Icon(Icons.radar_rounded, size: 14, color: LensColors.aqua),
               SizedBox(width: 5),
               Text(
-                'SWElist live',
+                'Live market',
                 style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
               ),
             ],
@@ -392,29 +441,37 @@ class _EvidenceCell extends StatelessWidget {
 
 class _SearchPanel extends StatelessWidget {
   final String roleType;
-  final String timeframe;
   final String targetMarket;
   final Set<String> workModes;
+  final Set<String> roleInterests;
+  final Set<String> technologies;
+  final Set<String> preferredLocations;
   final TextEditingController keywords;
   final TextEditingController locations;
   final bool loading;
   final ValueChanged<String> onRoleChanged;
-  final ValueChanged<String> onTimeframeChanged;
   final ValueChanged<String> onMarketChanged;
+  final void Function(String, bool) onRoleInterestChanged;
+  final void Function(String, bool) onTechnologyChanged;
+  final void Function(String, bool) onLocationChanged;
   final void Function(String, bool) onWorkModeChanged;
   final VoidCallback onSearch;
 
   const _SearchPanel({
     required this.roleType,
-    required this.timeframe,
     required this.targetMarket,
     required this.workModes,
+    required this.roleInterests,
+    required this.technologies,
+    required this.preferredLocations,
     required this.keywords,
     required this.locations,
     required this.loading,
     required this.onRoleChanged,
-    required this.onTimeframeChanged,
     required this.onMarketChanged,
+    required this.onRoleInterestChanged,
+    required this.onTechnologyChanged,
+    required this.onLocationChanged,
     required this.onWorkModeChanged,
     required this.onSearch,
   });
@@ -455,6 +512,59 @@ class _SearchPanel extends StatelessWidget {
             onSelectionChanged: (value) => onRoleChanged(value.first),
           ),
           const SizedBox(height: 17),
+          const _FieldLabel('Role interests'),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: _roleChoices.entries
+                .map(
+                  (entry) => FilterChip(
+                    label: Text(entry.value),
+                    selected: roleInterests.contains(entry.key),
+                    onSelected: (selected) =>
+                        onRoleInterestChanged(entry.key, selected),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 15),
+          const _FieldLabel('Technologies'),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: _technologyChoices.entries
+                .map(
+                  (entry) => FilterChip(
+                    label: Text(entry.value),
+                    selected: technologies.contains(entry.key),
+                    onSelected: (selected) =>
+                        onTechnologyChanged(entry.key, selected),
+                  ),
+                )
+                .toList(),
+          ),
+          const SizedBox(height: 15),
+          TextField(
+            controller: keywords,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: 'Add custom role or skill',
+              hintText: 'e.g. LangGraph, fintech, iOS',
+              prefixIcon: const Icon(Icons.add_circle_outline_rounded),
+              helperText: 'Optional · separate multiple terms with commas.',
+              suffixIcon: keyboardVisible
+                  ? IconButton(
+                      tooltip: 'Hide keyboard',
+                      onPressed: () =>
+                          FocusManager.instance.primaryFocus?.unfocus(),
+                      icon: const Icon(Icons.keyboard_hide_rounded),
+                    )
+                  : null,
+            ),
+          ),
+          const SizedBox(height: 17),
           const _FieldLabel('Target market'),
           const SizedBox(height: 7),
           Wrap(
@@ -477,23 +587,21 @@ class _SearchPanel extends StatelessWidget {
                 .toList(),
           ),
           const SizedBox(height: 15),
-          TextField(
-            controller: keywords,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: 'Keywords and role interests',
-              hintText: 'backend, Flutter, machine learning',
-              prefixIcon: const Icon(Icons.tune_rounded),
-              helperText: 'Separate preferences with commas.',
-              suffixIcon: keyboardVisible
-                  ? IconButton(
-                      tooltip: 'Hide keyboard',
-                      onPressed: () =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      icon: const Icon(Icons.keyboard_hide_rounded),
-                    )
-                  : null,
-            ),
+          const _FieldLabel('Preferred locations'),
+          const SizedBox(height: 7),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: _locationChoices
+                .map(
+                  (value) => FilterChip(
+                    label: Text(value),
+                    selected: preferredLocations.contains(value),
+                    onSelected: (selected) =>
+                        onLocationChanged(value, selected),
+                  ),
+                )
+                .toList(),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -501,11 +609,10 @@ class _SearchPanel extends StatelessWidget {
             textInputAction: TextInputAction.done,
             onSubmitted: (_) => onSearch(),
             decoration: InputDecoration(
-              labelText: 'Preferred locations',
-              hintText: 'Berlin, Amsterdam, Remote',
+              labelText: 'Add another location',
+              hintText: 'e.g. Munich, Stockholm',
               prefixIcon: const Icon(Icons.location_on_outlined),
-              helperText:
-                  'Leave blank to use the selected market automatically.',
+              helperText: 'Optional · separate multiple places with commas.',
               suffixIcon: keyboardVisible
                   ? IconButton(
                       tooltip: 'Hide keyboard',
@@ -536,19 +643,6 @@ class _SearchPanel extends StatelessWidget {
                   ),
                 )
                 .toList(),
-          ),
-          const SizedBox(height: 15),
-          const _FieldLabel('Freshness'),
-          const SizedBox(height: 7),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'lastday', label: Text('24h')),
-              ButtonSegment(value: 'lastweek', label: Text('7 days')),
-              ButtonSegment(value: 'lastmonth', label: Text('30 days')),
-            ],
-            selected: {timeframe},
-            showSelectedIcon: false,
-            onSelectionChanged: (value) => onTimeframeChanged(value.first),
           ),
           const SizedBox(height: 18),
           SizedBox(
@@ -608,13 +702,10 @@ class _ResultHeader extends StatelessWidget {
             ],
           ),
         ),
-        Text(
-          'via ${result.source}',
-          style: const TextStyle(
-            color: LensColors.muted,
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-          ),
+        const Icon(
+          Icons.arrow_downward_rounded,
+          color: LensColors.muted,
+          size: 18,
         ),
       ],
     );
@@ -623,21 +714,17 @@ class _ResultHeader extends StatelessWidget {
 
 class _JobCard extends StatelessWidget {
   final JobOpportunity job;
-  final List<CareerCourseRecommendation> courses;
-  final VoidCallback onAskAi;
+  final VoidCallback onOpen;
 
   const _JobCard({
     required this.job,
-    required this.courses,
-    required this.onAskAi,
+    required this.onOpen,
   });
 
   @override
   Widget build(BuildContext context) {
-    final linkedCourses = courses
-        .where((course) => job.recommendedCourseIds.contains(course.id))
-        .toList();
     return LensCard(
+      onTap: onOpen,
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -645,7 +732,11 @@ class _JobCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _CompanyMark(company: job.company),
+              CompanyLogo(
+                company: job.company,
+                logoUrl: job.companyLogoUrl,
+                size: 46,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -698,24 +789,29 @@ class _JobCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
             children: [
-              const Icon(
-                Icons.location_on_outlined,
-                size: 15,
-                color: LensColors.muted,
+              _JobFact(
+                icon: Icons.location_on_outlined,
+                label: job.location,
               ),
-              const SizedBox(width: 5),
-              Expanded(
-                child: Text(
-                  job.location,
-                  maxLines: 2,
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 10.5,
-                  ),
+              if ((job.category ?? '').isNotEmpty)
+                _JobFact(
+                  icon: Icons.work_outline_rounded,
+                  label: job.category!,
                 ),
-              ),
+              if ((job.sponsorship ?? '').isNotEmpty)
+                _JobFact(
+                  icon: Icons.public_rounded,
+                  label: 'Sponsorship: ${job.sponsorship}',
+                ),
+              if (job.postedAt != null)
+                _JobFact(
+                  icon: Icons.schedule_rounded,
+                  label: _shortDate(job.postedAt!),
+                ),
             ],
           ),
           const SizedBox(height: 12),
@@ -741,252 +837,94 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
               ),
-          if (job.inferredSkillGaps.isNotEmpty) ...[
-            const SizedBox(height: 6),
-            const Text(
-              'INFERRED GAPS TO VERIFY',
-              style: TextStyle(
-                color: LensColors.amber,
-                fontSize: 8.5,
-                letterSpacing: .9,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 7),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: job.inferredSkillGaps
-                  .take(5)
-                  .map(
-                    (gap) => Chip(
-                      visualDensity: VisualDensity.compact,
-                      avatar: const Icon(Icons.add_rounded, size: 13),
-                      label: Text(gap),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ],
-          if (linkedCourses.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              '${linkedCourses.length} learning paths mapped below',
-              style: const TextStyle(color: LensColors.muted, fontSize: 9.5),
-            ),
-          ],
           const SizedBox(height: 13),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onAskAi,
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 17),
-                  label: const Text('Evaluate with AI'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: () => launchUrl(
-                    job.url,
-                    mode: LaunchMode.externalApplication,
-                  ),
-                  icon: const Icon(Icons.open_in_new_rounded, size: 17),
-                  label: const Text('Employer page'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CompanyMark extends StatelessWidget {
-  final String company;
-
-  const _CompanyMark({required this.company});
-
-  @override
-  Widget build(BuildContext context) {
-    final letters = company
-        .split(RegExp(r'\s+'))
-        .where((word) => word.isNotEmpty)
-        .take(2)
-        .map((word) => word[0].toUpperCase())
-        .join();
-    return Container(
-      width: 43,
-      height: 43,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [LensColors.indigo, LensColors.violet],
-        ),
-        borderRadius: BorderRadius.circular(13),
-      ),
-      child: Text(
-        letters.isEmpty ? 'CL' : letters,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w900,
-        ),
-      ),
-    );
-  }
-}
-
-class _CourseCard extends StatelessWidget {
-  final CareerCourseRecommendation course;
-
-  const _CourseCard({required this.course});
-
-  @override
-  Widget build(BuildContext context) {
-    return LensCard(
-      onTap: () => launchUrl(
-        course.url,
-        mode: LaunchMode.externalApplication,
-      ),
-      padding: const EdgeInsets.all(15),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
           Container(
-            width: 43,
-            height: 43,
-            alignment: Alignment.center,
+            padding: const EdgeInsets.fromLTRB(11, 9, 8, 9),
             decoration: BoxDecoration(
-              color: const Color(0xFF0056D2).withValues(alpha: .09),
-              borderRadius: BorderRadius.circular(13),
+              color: LensColors.indigo.withValues(alpha: .055),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
-              SimpleIcons.coursera,
-              color: Color(0xFF0056D2),
-              size: 23,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                Text(
-                  course.provider,
-                  style: const TextStyle(
-                    color: LensColors.indigo,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                  ),
+                const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: LensColors.indigo,
+                  size: 16,
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  course.title,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    height: 1.25,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${course.level} · ${course.duration}',
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 9.5,
-                  ),
-                ),
-                if (course.addressesSkills.isNotEmpty) ...[
-                  const SizedBox(height: 7),
-                  Text(
-                    'Closes: ${course.addressesSkills.join(' · ')}',
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${job.inferredSkillGaps.length} gaps to verify · '
+                    '${job.recommendedCourseIds.length} targeted courses',
                     style: const TextStyle(
-                      color: LensColors.aqua,
+                      color: LensColors.indigo,
                       fontSize: 9.5,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                ],
+                ),
+                const Icon(Icons.chevron_right_rounded, size: 20),
               ],
             ),
           ),
-          const Icon(Icons.open_in_new_rounded, size: 17),
         ],
       ),
     );
   }
-}
 
-class _SectionHeading extends StatelessWidget {
-  final String eyebrow;
-  final String title;
-  final String subtitle;
-
-  const _SectionHeading({
-    required this.eyebrow,
-    required this.title,
-    required this.subtitle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          eyebrow,
-          style: const TextStyle(
-            color: LensColors.indigo,
-            fontSize: 9,
-            letterSpacing: 1.25,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(title, style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 3),
-        Text(
-          subtitle,
-          style: const TextStyle(color: LensColors.muted, fontSize: 10.5),
-        ),
-      ],
-    );
+  static String _shortDate(DateTime value) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return 'Posted ${months[value.month - 1]} ${value.day}';
   }
 }
 
-class _Limitations extends StatelessWidget {
-  final List<String> items;
+class _JobFact extends StatelessWidget {
+  final IconData icon;
+  final String label;
 
-  const _Limitations({required this.items});
+  const _JobFact({required this.icon, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      tilePadding: const EdgeInsets.symmetric(horizontal: 4),
-      childrenPadding: const EdgeInsets.fromLTRB(4, 0, 4, 14),
-      leading: const Icon(Icons.info_outline_rounded, size: 19),
-      title: const Text(
-        'How this match was calculated',
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: LensColors.canvas,
+        borderRadius: BorderRadius.circular(999),
       ),
-      children: items
-          .map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 7),
-              child: Text(
-                item,
-                style: const TextStyle(
-                  color: LensColors.muted,
-                  fontSize: 10,
-                  height: 1.4,
-                ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: LensColors.muted),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: LensColors.muted,
+                fontSize: 8.8,
+                fontWeight: FontWeight.w700,
               ),
             ),
-          )
-          .toList(),
+          ),
+        ],
+      ),
     );
   }
 }

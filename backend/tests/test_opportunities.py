@@ -52,7 +52,7 @@ def test_profile_aware_swelist_search_returns_gaps_and_courses() -> None:
     assert connector.request == {
         "role": "newgrad",
         "timeframe": "lastweek",
-        "location": "Berlin, Remote",
+        "location": "Berlin",
     }
     assert [job["title"] for job in result["jobs"]] == [
         "Junior Backend Software Engineer"
@@ -93,6 +93,11 @@ def test_swelist_connector_uses_the_active_python_environment(
         )
 
     monkeypatch.setattr(client_module.subprocess, "run", fake_run)
+    monkeypatch.setattr(
+        client_module.SwelistConnector,
+        "_load_metadata",
+        lambda self, role: {},
+    )
     jobs = client_module.SwelistConnector().get_postings(
         role="newgrad",
         timeframe="lastweek",
@@ -106,6 +111,42 @@ def test_swelist_connector_uses_the_active_python_environment(
     ]
     assert len(jobs) == 1
     assert jobs[0].link == "https://example.com/job"
+    assert jobs[0].company_logo_url
+
+
+def test_swelist_structured_feed_keeps_listing_metadata() -> None:
+    from swelist_connector.client import SwelistConnector
+
+    item = {
+        "source": "Simplify",
+        "category": "Software",
+        "company_name": "Example Labs",
+        "id": "listing-123",
+        "title": "Graduate Software Engineer",
+        "active": True,
+        "is_visible": True,
+        "date_posted": 1_700_000_000,
+        "date_updated": 1_700_000_100,
+        "url": "https://jobs.lever.co/examplelabs/123",
+        "locations": ["Berlin, Germany", "Remote"],
+        "company_url": "https://simplify.jobs/c/Example-Labs",
+        "sponsorship": "Does Not Offer Sponsorship",
+        "degrees": ["Bachelors"],
+    }
+    connector = SwelistConnector()
+    jobs = connector._structured_postings(  # noqa: SLF001
+        {item["url"]: item},
+        location="Berlin",
+    )
+
+    assert len(jobs) == 1
+    assert jobs[0].external_id == "listing-123"
+    assert jobs[0].locations == ("Berlin, Germany", "Remote")
+    assert jobs[0].category == "Software"
+    assert jobs[0].sponsorship == "Does Not Offer Sponsorship"
+    assert jobs[0].degrees == ("Bachelors",)
+    assert jobs[0].posted_at is not None
+    assert jobs[0].company_logo_url is not None
 
 
 def test_curated_course_catalog_has_unique_secure_links() -> None:

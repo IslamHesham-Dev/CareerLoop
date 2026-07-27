@@ -199,7 +199,7 @@ def build_agent(student: StudentSession, settings: Settings):
     @tool
     def search_tech_jobs(
         role: str = "internship",
-        timeframe: str = "lastweek",
+        timeframe: str = "all",
         location: str = "",
         keywords: str = "",
         target_market: str = "europe",
@@ -210,7 +210,7 @@ def build_agent(student: StudentSession, settings: Settings):
         It also returns inferred skill gaps and relevant curated courses.
         Arguments:
         - role: "internship" (default) or "newgrad"
-        - timeframe: "lastday", "lastweek" (default), or "lastmonth"
+        - timeframe: "all" (default), "lastday", "lastweek", or "lastmonth"
         - location: comma-separated places, or blank to use target_market
         - keywords: comma-separated role or technology preferences
         - target_market: "europe", "local", "remote", or "global"
@@ -220,8 +220,8 @@ def build_agent(student: StudentSession, settings: Settings):
             r = role if role in ["internship", "newgrad"] else "internship"
             t = (
                 timeframe
-                if timeframe in ["lastday", "lastweek", "lastmonth"]
-                else "lastweek"
+                if timeframe in ["all", "lastday", "lastweek", "lastmonth"]
+                else "all"
             )
             market = (
                 target_market

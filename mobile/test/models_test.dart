@@ -148,8 +148,15 @@ void main() {
           'company': 'Example',
           'title': 'Backend Engineer',
           'location': 'Berlin, Germany',
+          'locations': ['Berlin, Germany', 'Remote'],
           'url': 'https://example.com/job',
           'source': 'Swelist',
+          'category': 'Software Engineering',
+          'posted_at': '2026-07-26T12:00:00Z',
+          'sponsorship': 'Offers Sponsorship',
+          'degrees': ['Bachelors'],
+          'company_logo_url':
+              'https://www.google.com/s2/favicons?domain_url=example.com',
           'role_family': 'backend',
           'match_score': 82,
           'match_reasons': ['Profile evidence: python'],
@@ -179,6 +186,9 @@ void main() {
 
     expect(result.jobs.single.matchScore, 82);
     expect(result.jobs.single.inferredSkillGaps, ['docker']);
+    expect(result.jobs.single.category, 'Software Engineering');
+    expect(result.jobs.single.locations, ['Berlin, Germany', 'Remote']);
+    expect(result.jobs.single.companyLogoUrl?.host, 'www.google.com');
     expect(result.evidence.linkedInPdf, isTrue);
     expect(result.courses.single.platform, 'Coursera');
     expect(result.courses.single.url.host, 'www.coursera.org');

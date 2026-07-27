@@ -567,8 +567,17 @@ class JobOpportunity {
   final String company;
   final String title;
   final String location;
+  final List<String> locations;
   final Uri url;
   final String source;
+  final String? category;
+  final DateTime? postedAt;
+  final DateTime? updatedAt;
+  final String? sponsorship;
+  final List<String> degrees;
+  final Uri? companyProfileUrl;
+  final Uri? companyLogoUrl;
+  final bool active;
   final String roleFamily;
   final int matchScore;
   final List<String> matchReasons;
@@ -582,8 +591,17 @@ class JobOpportunity {
     required this.company,
     required this.title,
     required this.location,
+    this.locations = const [],
     required this.url,
     required this.source,
+    this.category,
+    this.postedAt,
+    this.updatedAt,
+    this.sponsorship,
+    this.degrees = const [],
+    this.companyProfileUrl,
+    this.companyLogoUrl,
+    this.active = true,
     required this.roleFamily,
     required this.matchScore,
     required this.matchReasons,
@@ -598,8 +616,23 @@ class JobOpportunity {
         company: json['company'] as String? ?? 'Company',
         title: json['title'] as String? ?? 'Open position',
         location: json['location'] as String? ?? 'Location not specified',
+        locations: List<String>.from(
+          json['locations'] as List? ?? const [],
+        ),
         url: Uri.tryParse(json['url'] as String? ?? '') ?? Uri(),
         source: json['source'] as String? ?? 'Swelist',
+        category: json['category'] as String?,
+        postedAt: DateTime.tryParse(json['posted_at'] as String? ?? ''),
+        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? ''),
+        sponsorship: json['sponsorship'] as String?,
+        degrees: List<String>.from(json['degrees'] as List? ?? const []),
+        companyProfileUrl: Uri.tryParse(
+          json['company_profile_url'] as String? ?? '',
+        ),
+        companyLogoUrl: Uri.tryParse(
+          json['company_logo_url'] as String? ?? '',
+        ),
+        active: json['active'] as bool? ?? true,
         roleFamily: json['role_family'] as String? ?? 'general',
         matchScore: json['match_score'] as int? ?? 0,
         matchReasons:

@@ -31,7 +31,7 @@ class LinkedInProfileMessage(BaseModel):
 
 class OpportunityPreferences(BaseModel):
     role_type: Literal["internship", "newgrad"] = "newgrad"
-    timeframe: Literal["lastday", "lastweek", "lastmonth"] = "lastweek"
+    timeframe: Literal["all", "lastday", "lastweek", "lastmonth"] = "all"
     target_market: Literal["europe", "local", "remote", "global"] = "europe"
     locations: list[str] = Field(default_factory=list, max_length=12)
     keywords: list[str] = Field(default_factory=list, max_length=16)
@@ -56,8 +56,17 @@ class JobMatch(BaseModel):
     company: str
     title: str
     location: str
+    locations: list[str]
     url: str
     source: str
+    category: str | None = None
+    posted_at: str | None = None
+    updated_at: str | None = None
+    sponsorship: str | None = None
+    degrees: list[str] = Field(default_factory=list)
+    company_profile_url: str | None = None
+    company_logo_url: str | None = None
+    active: bool = True
     role_family: str
     match_score: int = Field(ge=0, le=100)
     match_reasons: list[str]

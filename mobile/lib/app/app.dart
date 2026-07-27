@@ -9,6 +9,7 @@ import '../ui/auth/login_screen.dart';
 import '../ui/career/career_hub_screen.dart';
 import '../ui/career/linkedin_import_screen.dart';
 import '../ui/career/opportunities_screen.dart';
+import '../ui/career/opportunity_detail_screen.dart';
 import '../ui/core/app_shell.dart';
 import '../ui/core/lens_components.dart';
 import '../ui/courses/course_details_screen.dart';
@@ -140,6 +141,18 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         GoRoute(
           path: '/opportunities',
           builder: (context, state) => const OpportunitiesScreen(),
+          routes: [
+            GoRoute(
+              path: 'job/:id',
+              builder: (context, state) {
+                final extra = state.extra;
+                if (extra is! OpportunityDetailArgs) {
+                  return const OpportunitiesScreen();
+                }
+                return OpportunityDetailScreen(args: extra);
+              },
+            ),
+          ],
         ),
         GoRoute(
           path: '/settings',

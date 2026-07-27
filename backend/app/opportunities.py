@@ -362,8 +362,8 @@ class OpportunityService:
         message = None
         if not matches:
             message = (
-                "Swelist returned no matching openings for these filters. "
-                "Try a broader location, a longer timeframe, or fewer keywords."
+                "No openings matched these filters. Try a broader location "
+                "or fewer role and technology preferences."
             )
         return {
             "source": "Swelist",
@@ -391,7 +391,7 @@ class OpportunityService:
             "message": message,
             "limitations": [
                 (
-                    "Swelist supplies listing metadata, not the complete job "
+                    "The live feed supplies listing metadata, not the complete job "
                     "description. Skill gaps are role-family inferences and "
                     "must be confirmed on the employer application page."
                 ),
@@ -414,10 +414,6 @@ class OpportunityService:
     ) -> str:
         values = [value.strip() for value in locations if value.strip()]
         if values:
-            if "remote" in work_modes and not any(
-                value.casefold() == "remote" for value in values
-            ):
-                values.append("Remote")
             return ", ".join(values)
         return MARKET_LOCATIONS.get(target_market, "")
 
@@ -529,8 +525,17 @@ class OpportunityService:
             "company": posting.company,
             "title": posting.title,
             "location": posting.location or "Location not specified",
+            "locations": list(posting.locations),
             "url": posting.link,
             "source": "Swelist",
+            "category": posting.category,
+            "posted_at": posting.posted_at,
+            "updated_at": posting.updated_at,
+            "sponsorship": posting.sponsorship,
+            "degrees": list(posting.degrees),
+            "company_profile_url": posting.company_profile_url,
+            "company_logo_url": posting.company_logo_url,
+            "active": posting.active,
             "role_family": family,
             "match_score": score,
             "match_reasons": reasons,
