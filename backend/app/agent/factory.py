@@ -101,6 +101,25 @@ def build_agent(student: StudentSession, settings: Settings):
         }
 
     @tool
+    def extract_cv_pdf_profile(pdf_text: str, file_name: str = "cv.pdf") -> dict:
+        """Parse a CV PDF's extracted text and return structured profile JSON.
+        Use this when the student uploads a CV PDF and asks for summary,
+        skills, experience, education, contact details, or role matching."""
+        from cv_connector import extract_cv_profile_from_text
+
+        try:
+            profile = extract_cv_profile_from_text(pdf_text, file_name=file_name)
+            return {
+                "status": "success",
+                "profile": profile.to_dict(),
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": str(exc),
+            }
+
+    @tool
     def get_github_project_profile() -> dict:
         """Read the student's connected GitHub portfolio evidence: public
         repository metadata, languages, dependency-derived technologies,
@@ -324,6 +343,7 @@ def build_agent(student: StudentSession, settings: Settings):
         get_advisory_transcript,
         get_full_transcript,
         get_linkedin_pdf_profile,
+        extract_cv_pdf_profile,
         get_github_project_profile,
         list_grade_seasons,
         list_courses_in_season,
@@ -488,6 +508,7 @@ def tool_events(
         "get_advisory_transcript": f"{university_label} transcript",
         "get_full_transcript": f"{university_label} transcript",
         "get_linkedin_pdf_profile": "Imported LinkedIn profile PDF",
+        "extract_cv_pdf_profile": "Uploaded CV PDF profile",
         "get_github_project_profile": "Connected GitHub project evidence",
         "list_grade_seasons": (
             f"{university_label} detailed-grade seasons"
