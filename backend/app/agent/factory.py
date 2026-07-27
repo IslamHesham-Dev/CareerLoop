@@ -327,6 +327,56 @@ def build_agent(student: StudentSession, settings: Settings):
         except Exception as e:
             return {"error": str(e)}
 
+    @tool
+    def generate_cover_letter_for_job(
+        job_title: str,
+        company_name: str,
+        custom_input: str = "",
+    ) -> dict:
+        """Generate a personalized cover letter for a job opportunity.
+        Use this when the student wants to create a cover letter for a specific job.
+        Combines extracted CV/LinkedIn data with job posting details."""
+        from cover_letter_generator import CoverLetterGenerator
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+
+        try:
+            career_data = student.linkedin_profile or {}
+            if not career_data and student.cv_profile:
+                career_data = student.cv_profile
+
+            if not career_data:
+                return {
+                    "status": "error",
+                    "message": "No CV or LinkedIn profile loaded. Import a CV or LinkedIn PDF first.",
+                }
+
+            job_posting = {
+                "title": job_title,
+                "company": company_name,
+            }
+
+            generator = CoverLetterGenerator(anthropic_api_key=api_key)
+            cover_letter = generator.generate_cover_letter(
+                career_data=career_data,
+                job_posting=job_posting,
+                custom_input=custom_input,
+            )
+
+            return {
+                "status": "success",
+                "cover_letter": cover_letter,
+                "job_title": job_title,
+                "company_name": company_name,
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": str(exc),
+            }
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -358,6 +408,7 @@ def build_agent(student: StudentSession, settings: Settings):
         create_practice_set,
         search_tech_jobs,
         get_company_jobs,
+        generate_cover_letter_for_job,
     ]
     if cms.connected:
         cms_context = (
@@ -530,6 +581,7 @@ def tool_events(
             "Coursera course catalogue",
         ],
         "get_company_jobs": "Company career page (LLM Extracted)",
+        "generate_cover_letter_for_job": "Generated cover letter (AI)",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:
