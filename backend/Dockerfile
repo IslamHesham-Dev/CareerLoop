@@ -12,7 +12,11 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --frozen --no-dev || uv sync --no-dev
 
 COPY app ./app
+COPY guc_cms ./guc_cms
 COPY guc_portal ./guc_portal
+COPY swelist_connector ./swelist_connector
+COPY company_jobs_connector ./company_jobs_connector
+COPY github_connector ./github_connector
 COPY content ./content
 
 EXPOSE 8000
