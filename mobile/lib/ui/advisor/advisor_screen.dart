@@ -21,6 +21,8 @@ class AdvisorScreen extends StatefulWidget {
 class _AdvisorScreenState extends State<AdvisorScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  ChatMessage? _messageToReveal;
+  GlobalKey? _messageToRevealKey;
 
   static const _suggestions = [
     'Turn my academic strengths into career evidence',
@@ -41,16 +43,44 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
     final text = suggestion ?? _controller.text;
     if (text.trim().isEmpty) return;
     _controller.clear();
-    await context.read<AdvisorRepository>().send(text);
+    final request = context.read<AdvisorRepository>().send(text);
+    _scrollToEnd();
+    final response = await request;
     if (!mounted) return;
-    await Future<void>.delayed(const Duration(milliseconds: 80));
-    if (_scrollController.hasClients) {
+    if (response == null) {
+      _scrollToEnd();
+      return;
+    }
+    setState(() {
+      _messageToReveal = response;
+      _messageToRevealKey = GlobalKey();
+    });
+    _scrollToResponseStart();
+  }
+
+  void _scrollToEnd() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  void _scrollToResponseStart() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final responseContext = _messageToRevealKey?.currentContext;
+      if (responseContext == null) return;
+      Scrollable.ensureVisible(
+        responseContext,
+        alignment: 0,
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeOutCubic,
       );
-    }
+    });
   }
 
   @override
@@ -126,6 +156,8 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 ? _AdvisorWelcome(onPrompt: _send)
                 : ListView.builder(
                     controller: _scrollController,
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
                     padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
                     itemCount:
                         advisor.messages.length + (advisor.isSending ? 1 : 0),
@@ -133,7 +165,15 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                       if (index == advisor.messages.length) {
                         return const _ThinkingBubble();
                       }
-                      return _MessageBubble(message: advisor.messages[index]);
+                      final message = advisor.messages[index];
+                      final bubble = _MessageBubble(message: message);
+                      if (identical(message, _messageToReveal)) {
+                        return KeyedSubtree(
+                          key: _messageToRevealKey,
+                          child: bubble,
+                        );
+                      }
+                      return bubble;
                     },
                   ),
           ),
@@ -497,6 +537,8 @@ class _Composer extends StatelessWidget {
                     : null,
               ),
               onSubmitted: (_) => onSend(),
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
             ),
           ),
           const SizedBox(width: 9),

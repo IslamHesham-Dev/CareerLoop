@@ -56,6 +56,8 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
+  ChatMessage? _messageToReveal;
+  GlobalKey? _messageToRevealKey;
   Offset? _bubblePosition;
   bool _expanded = false;
   bool _sending = false;
@@ -106,6 +108,8 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                   quickActions: widget.quickActions,
                   controller: _controller,
                   scrollController: _scrollController,
+                  messageToReveal: _messageToReveal,
+                  messageToRevealKey: _messageToRevealKey,
                   sending: _sending,
                   error: _error,
                   onMinimize: () {
@@ -211,12 +215,18 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
     setState(() {
       if (response != null) {
         _messages.add(response);
+        _messageToReveal = response;
+        _messageToRevealKey = GlobalKey();
       } else {
         _error = advisor.error ?? 'The assistant could not respond right now.';
       }
       _sending = false;
     });
-    _scrollToEnd();
+    if (response != null) {
+      _scrollToResponseStart();
+    } else {
+      _scrollToEnd();
+    }
   }
 
   void _openFromController(String? prompt) {
@@ -237,6 +247,20 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
       );
     });
   }
+
+  void _scrollToResponseStart() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final responseContext = _messageToRevealKey?.currentContext;
+      if (responseContext == null) return;
+      Scrollable.ensureVisible(
+        responseContext,
+        alignment: 0,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
 }
 
 class _ChatPanel extends StatelessWidget {
@@ -246,6 +270,8 @@ class _ChatPanel extends StatelessWidget {
   final List<ContentAiQuickAction> quickActions;
   final TextEditingController controller;
   final ScrollController scrollController;
+  final ChatMessage? messageToReveal;
+  final GlobalKey? messageToRevealKey;
   final bool sending;
   final String? error;
   final VoidCallback onMinimize;
@@ -258,6 +284,8 @@ class _ChatPanel extends StatelessWidget {
     required this.quickActions,
     required this.controller,
     required this.scrollController,
+    required this.messageToReveal,
+    required this.messageToRevealKey,
     required this.sending,
     required this.error,
     required this.onMinimize,
@@ -266,6 +294,7 @@ class _ChatPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return ColoredBox(
       color: Colors.black.withValues(alpha: .26),
       child: SafeArea(
@@ -350,15 +379,25 @@ class _ChatPanel extends StatelessWidget {
                           )
                         : ListView.builder(
                             controller: scrollController,
+                            keyboardDismissBehavior:
+                                ScrollViewKeyboardDismissBehavior.onDrag,
                             padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
                             itemCount: messages.length + (sending ? 1 : 0),
                             itemBuilder: (context, index) {
                               if (index == messages.length) {
                                 return const _ContentThinkingBubble();
                               }
-                              return _ContentMessageBubble(
-                                message: messages[index],
+                              final message = messages[index];
+                              final bubble = _ContentMessageBubble(
+                                message: message,
                               );
+                              if (identical(message, messageToReveal)) {
+                                return KeyedSubtree(
+                                  key: messageToRevealKey,
+                                  child: bubble,
+                                );
+                              }
+                              return bubble;
                             },
                           ),
                   ),
@@ -388,11 +427,24 @@ class _ChatPanel extends StatelessWidget {
                             minLines: 1,
                             maxLines: 3,
                             textCapitalization: TextCapitalization.sentences,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               hintText: 'Ask about what you are viewing...',
                               isDense: true,
+                              suffixIcon: keyboardVisible
+                                  ? IconButton(
+                                      tooltip: 'Hide keyboard',
+                                      onPressed: () => FocusManager
+                                          .instance.primaryFocus
+                                          ?.unfocus(),
+                                      icon: const Icon(
+                                        Icons.keyboard_hide_rounded,
+                                      ),
+                                    )
+                                  : null,
                             ),
                             onSubmitted: onPrompt,
+                            onTapOutside: (_) =>
+                                FocusManager.instance.primaryFocus?.unfocus(),
                           ),
                         ),
                         PopupMenuButton<String>(
