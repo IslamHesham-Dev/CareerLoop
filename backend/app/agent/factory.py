@@ -12,6 +12,7 @@ from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel, Field
 
 from app.config import Settings
+from app.opportunities import OpportunityService
 from app.sessions.models import StudentSession
 
 
@@ -50,6 +51,7 @@ def build_agent(student: StudentSession, settings: Settings):
     academic = student.academic
     cms = student.cms
     university = student.university_label
+    opportunities = OpportunityService()
 
     @tool
     def get_advisory_context() -> dict:
@@ -197,29 +199,64 @@ def build_agent(student: StudentSession, settings: Settings):
     @tool
     def search_tech_jobs(
         role: str = "internship",
-        timeframe: str = "lastday",
+        timeframe: str = "lastweek",
         location: str = "",
+        keywords: str = "",
+        target_market: str = "europe",
+        work_modes: str = "",
     ) -> dict:
-        """Search for real-time tech internships or new-grad roles.
+        """Find and rank live Swelist internships or new-grad roles using the
+        student's transcript, imported LinkedIn PDF, and stated preferences.
+        It also returns inferred skill gaps and relevant curated courses.
         Arguments:
         - role: "internship" (default) or "newgrad"
-        - timeframe: "lastday" (default), "lastweek", or "lastmonth"
-        - location: Filter by giving a single location like "Canada" or multiple locations like "Boston, Toronto"
+        - timeframe: "lastday", "lastweek" (default), or "lastmonth"
+        - location: comma-separated places, or blank to use target_market
+        - keywords: comma-separated role or technology preferences
+        - target_market: "europe", "local", "remote", or "global"
+        - work_modes: comma-separated "remote", "hybrid", or "onsite"
         """
-        import dataclasses
-        from swelist_connector import SwelistConnector
-
-        connector = SwelistConnector()
         try:
             r = role if role in ["internship", "newgrad"] else "internship"
-            t = timeframe if timeframe in ["lastday", "lastweek", "lastmonth"] else "lastday"
-            loc = location if location else None
-            jobs = connector.get_postings(role=r, timeframe=t, location=loc)
-            return {
-                "status": "success",
-                "count": len(jobs),
-                "jobs": [dataclasses.asdict(j) for j in jobs],
-            }
+            t = (
+                timeframe
+                if timeframe in ["lastday", "lastweek", "lastmonth"]
+                else "lastweek"
+            )
+            market = (
+                target_market
+                if target_market in ["europe", "local", "remote", "global"]
+                else "europe"
+            )
+            modes = [
+                value.strip().casefold()
+                for value in work_modes.split(",")
+                if value.strip().casefold()
+                in {"remote", "hybrid", "onsite"}
+            ]
+            try:
+                transcript = academic.full_transcript()
+            except Exception:
+                transcript = None
+            return opportunities.search(
+                role_type=r,
+                timeframe=t,
+                target_market=market,
+                locations=[
+                    value.strip()
+                    for value in location.split(",")
+                    if value.strip()
+                ],
+                keywords=[
+                    value.strip()
+                    for value in keywords.split(",")
+                    if value.strip()
+                ],
+                work_modes=modes,
+                transcript=transcript,
+                linkedin_profile=student.linkedin_profile,
+                limit=20,
+            )
         except Exception as e:
             return {"error": str(e)}
 
@@ -308,6 +345,8 @@ def build_agent(student: StudentSession, settings: Settings):
         f"{university} "
         "portal, transcript, CMS, supplied video transcripts, local practice, "
         "real-time tech job postings (via swelist), dynamic company job search, "
+        "a curated Coursera skill-gap catalogue sourced from the provided "
+        "CareerLoop course resource list, "
         "and an optional user-imported LinkedIn profile PDF are supported; "
         "GitHub, live LinkedIn APIs, CV, email, and "
         "course-provider connectors are not connected yet. Never "
@@ -341,6 +380,12 @@ def build_agent(student: StudentSession, settings: Settings):
         "are missing. Separate evidence, "
         "inference, and recommendation so the student can reuse only defensible "
         "claims in a future CV or application. "
+        "For opportunity requests, call search_tech_jobs with the student's "
+        "stated role, market, location, work-mode, recency, and keyword "
+        "preferences. Its ranking uses the full transcript and imported "
+        "LinkedIn PDF when available. Present skill gaps as title/role-family "
+        "inferences, not requirements from a full job description, and include "
+        "the supplied course links when recommending how to close a gap. "
         f"{cms_context} A resource or video "
         "title is metadata, not evidence of everything taught in it. "
         "For a CMS PDF, call read_cms_pdf before discussing its substance. "
@@ -426,7 +471,10 @@ def tool_events(
         "get_cms_video_transcript": "Supplemental video transcript",
         "read_cms_pdf": f"{university_label} CMS PDF",
         "create_practice_set": "Interactive practice set",
-        "search_tech_jobs": "Tech job postings (swelist)",
+        "search_tech_jobs": [
+            "Swelist live jobs",
+            "Coursera course catalogue",
+        ],
         "get_company_jobs": "Company career page (LLM Extracted)",
     }
     seen_events: set[tuple[str, str]] = set()
@@ -447,7 +495,10 @@ def tool_events(
         if event_key not in seen_events:
             events.append({"name": name, "status": status})
             seen_events.add(event_key)
-        source = source_map.get(name)
-        if source and source not in sources:
-            sources.append(source)
+        mapped_sources = source_map.get(name)
+        if isinstance(mapped_sources, str):
+            mapped_sources = [mapped_sources]
+        for source in mapped_sources or []:
+            if source not in sources:
+                sources.append(source)
     return events, sources

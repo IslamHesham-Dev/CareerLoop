@@ -41,6 +41,31 @@ explains the limitation while the remaining portal and advisory features work.
 Chat responses include the answer, completed tool names, and human-readable
 source labels so the mobile interface can distinguish portal facts from advice.
 
+## Career opportunities
+
+- `GET /v1/career/opportunities/status`
+- `POST /v1/career/opportunities/search` with:
+
+```json
+{
+  "role_type": "newgrad",
+  "timeframe": "lastweek",
+  "target_market": "europe",
+  "locations": ["Berlin", "Remote"],
+  "keywords": ["backend", "python"],
+  "work_modes": ["remote", "hybrid"],
+  "limit": 24
+}
+```
+
+The endpoint reads live Swelist metadata, ranks openings against the student's
+four-year transcript and imported LinkedIn PDF when available, and returns
+explainable match signals. Skill gaps are explicitly marked as role-family
+inferences because Swelist does not provide complete job descriptions. Course
+recommendations come from the structured catalogue derived from
+`docs/Courses resources.txt`. GitHub, resume, and Adzuna are reported as
+unconnected until their integrations are implemented.
+
 ## CMS learning content
 
 - `GET /v1/cms/courses?refresh=false&season=Winter%202024` (defaults to the

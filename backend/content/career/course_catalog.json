@@ -1,0 +1,215 @@
+{
+  "source": "Courses resources.txt",
+  "platform": "Coursera",
+  "courses": [
+    {
+      "id": "meta-backend",
+      "title": "Meta Back-End Developer Professional Certificate",
+      "provider": "Meta",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/meta-back-end-developer",
+      "level": "Beginner",
+      "duration": "9 courses",
+      "skills": ["python", "django", "mysql", "rest api", "git", "linux"],
+      "roles": ["backend", "software"]
+    },
+    {
+      "id": "meta-ios",
+      "title": "Meta iOS Developer Professional Certificate",
+      "provider": "Meta",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/meta-ios-developer",
+      "level": "Beginner",
+      "duration": "12 courses",
+      "skills": ["swift", "swiftui", "mobile", "git", "ux"],
+      "roles": ["mobile", "software"]
+    },
+    {
+      "id": "microsoft-fullstack",
+      "title": "Microsoft Full-Stack Developer Professional Certificate",
+      "provider": "Microsoft",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/microsoft-full-stack-developer",
+      "level": "Beginner",
+      "duration": "12 courses",
+      "skills": ["c#", ".net", "blazor", "databases", "azure", "web"],
+      "roles": ["fullstack", "backend", "software"]
+    },
+    {
+      "id": "ibm-ai-developer",
+      "title": "IBM Applied AI Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/applied-artifical-intelligence-ibm-watson-ai",
+      "level": "Beginner",
+      "duration": "Applied pathway",
+      "skills": ["python", "flask", "generative ai", "chatbots", "cloud"],
+      "roles": ["ai", "software"]
+    },
+    {
+      "id": "ibm-generative-ai",
+      "title": "IBM Generative AI Engineering Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/ibm-generative-ai-engineering",
+      "level": "Intermediate",
+      "duration": "16 courses",
+      "skills": ["python", "pytorch", "llm", "rag", "langchain", "vector database"],
+      "roles": ["ai", "machine-learning", "software"]
+    },
+    {
+      "id": "deeplearning-generative-swd",
+      "title": "Generative AI for Software Development",
+      "provider": "DeepLearning.AI",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/generative-ai-for-software-development",
+      "level": "Intermediate",
+      "duration": "3 courses",
+      "skills": ["generative ai", "prompt engineering", "llm", "software testing"],
+      "roles": ["ai", "software"]
+    },
+    {
+      "id": "ibm-devops",
+      "title": "IBM DevOps and Software Engineering Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/devops-and-software-engineering",
+      "level": "Beginner",
+      "duration": "15 courses",
+      "skills": ["docker", "kubernetes", "python", "ci/cd", "microservices", "linux"],
+      "roles": ["devops", "cloud", "software"]
+    },
+    {
+      "id": "microsoft-devops",
+      "title": "Microsoft DevOps Engineering Professional Certificate",
+      "provider": "Microsoft",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/devops-engineering",
+      "level": "Advanced",
+      "duration": "5 courses",
+      "skills": ["azure devops", "github actions", "terraform", "kubernetes", "grafana"],
+      "roles": ["devops", "cloud"]
+    },
+    {
+      "id": "aws-solutions-architect",
+      "title": "AWS Cloud Solutions Architect Professional Certificate",
+      "provider": "AWS",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/aws-cloud-solutions-architect",
+      "level": "Intermediate",
+      "duration": "4 courses",
+      "skills": ["aws", "ec2", "s3", "iam", "cloud architecture", "data lakes"],
+      "roles": ["cloud", "devops"]
+    },
+    {
+      "id": "aws-cloud-support",
+      "title": "AWS Cloud Support Associate Professional Certificate",
+      "provider": "AWS",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/aws-cloud-support-associate",
+      "level": "Beginner",
+      "duration": "7 courses",
+      "skills": ["aws", "iam", "ec2", "cloudwatch", "python", "troubleshooting"],
+      "roles": ["cloud", "it-support"]
+    },
+    {
+      "id": "akamai-networking",
+      "title": "Akamai Network Engineering Professional Certificate",
+      "provider": "Akamai",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/akamai-network-engineering",
+      "level": "Beginner",
+      "duration": "5 courses",
+      "skills": ["networking", "linux", "python", "tcp/ip", "databases"],
+      "roles": ["networking", "it-support"]
+    },
+    {
+      "id": "google-cybersecurity",
+      "title": "Google Cybersecurity Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-cybersecurity",
+      "level": "Beginner",
+      "duration": "9 courses",
+      "skills": ["cybersecurity", "python", "sql", "linux", "siem", "network security"],
+      "roles": ["security"]
+    },
+    {
+      "id": "microsoft-cybersecurity",
+      "title": "Microsoft Cybersecurity Analyst Professional Certificate",
+      "provider": "Microsoft",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/microsoft-cybersecurity-analyst",
+      "level": "Beginner",
+      "duration": "9 courses",
+      "skills": ["cybersecurity", "azure ad", "microsoft defender", "mitre attack", "iam"],
+      "roles": ["security", "cloud"]
+    },
+    {
+      "id": "google-data-analytics",
+      "title": "Google Data Analytics Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-data-analytics",
+      "level": "Beginner",
+      "duration": "9 courses",
+      "skills": ["sql", "spreadsheets", "tableau", "python", "data visualization"],
+      "roles": ["data"]
+    },
+    {
+      "id": "google-advanced-data",
+      "title": "Google Advanced Data Analytics Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-advanced-data-analytics",
+      "level": "Advanced",
+      "duration": "7 courses",
+      "skills": ["python", "pandas", "numpy", "machine learning", "statistics", "tableau"],
+      "roles": ["data", "machine-learning"]
+    },
+    {
+      "id": "google-business-intelligence",
+      "title": "Google Business Intelligence Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-business-intelligence",
+      "level": "Intermediate",
+      "duration": "4 courses",
+      "skills": ["sql", "etl", "bigquery", "tableau", "data modeling"],
+      "roles": ["data", "business"]
+    },
+    {
+      "id": "ibm-machine-learning",
+      "title": "IBM Machine Learning Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/ibm-machine-learning",
+      "level": "Intermediate",
+      "duration": "Multi-course",
+      "skills": ["python", "machine learning", "feature engineering", "time series", "statistics"],
+      "roles": ["machine-learning", "data"]
+    },
+    {
+      "id": "google-it-automation",
+      "title": "Google IT Automation with Python Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-it-automation",
+      "level": "Intermediate",
+      "duration": "7 courses",
+      "skills": ["python", "git", "github", "automation", "linux", "cloud"],
+      "roles": ["it-support", "devops"]
+    },
+    {
+      "id": "boulder-algorithms",
+      "title": "Data Structures and Algorithms Specialization",
+      "provider": "University of Colorado Boulder",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/specializations/boulder-data-structures-algorithms",
+      "level": "Advanced",
+      "duration": "5 courses",
+      "skills": ["algorithms", "data structures", "graphs", "dynamic programming", "complexity"],
+      "roles": ["software", "backend"]
+    }
+  ]
+}

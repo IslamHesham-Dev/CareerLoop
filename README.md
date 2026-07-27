@@ -108,6 +108,20 @@ uv run python scripts/import_transcript_intake.py `
   content/transcript_intake_template.md
 ```
 
+## Opportunity matching
+
+The Career Studio includes a live **Opportunity Match** workspace backed by
+Swelist. Students can filter internships or new-graduate roles by recency,
+market, location, work mode, and keywords. CareerLoop ranks the returned
+listing metadata against the four-year transcript and imported LinkedIn PDF,
+shows the evidence behind each match, and labels role-family skill gaps as
+inferences that must be confirmed on the employer page.
+
+Recommended learning paths come from
+`backend/content/career/course_catalog.json`, the deployable structured subset
+of `docs/Courses resources.txt`. GitHub, resume, and Adzuna are intentionally
+shown as upcoming evidence/connectors rather than being implied as live.
+
 ## Notion response export
 
 Every Copilot answer, including answers from the floating content assistant,

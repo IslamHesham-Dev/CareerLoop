@@ -5,6 +5,7 @@ import 'app/app.dart';
 import 'core/environment.dart';
 import 'data/api_client.dart';
 import 'data/career_profile_repository.dart';
+import 'data/opportunity_repository.dart';
 import 'data/repositories.dart';
 import 'data/practice_repository.dart';
 import 'data/session_storage.dart';
@@ -30,6 +31,10 @@ Future<void> main() async {
     careerProfileRepository: careerProfile,
   );
   final notion = NotionRepository(api: api);
+  final opportunities = OpportunityRepository(
+    api: api,
+    careerProfileRepository: careerProfile,
+  );
 
   await auth.restoreSession();
 
@@ -43,6 +48,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: practice),
         ChangeNotifierProvider.value(value: notion),
         ChangeNotifierProvider.value(value: careerProfile),
+        ChangeNotifierProvider.value(value: opportunities),
       ],
       child: const CareerLoopApp(),
     ),

@@ -99,6 +99,7 @@ class CapabilityFooter extends StatelessWidget {
     if (value.contains('swelist') || value.contains('job posting')) {
       return 'SweList Jobs';
     }
+    if (value.contains('coursera')) return 'Coursera';
     if (value.contains('company career')) return 'Company Careers';
     if (value.contains('practice set')) return 'Quiz Builder';
     if (value.contains('cms')) {
@@ -121,6 +122,7 @@ class CapabilityFooter extends StatelessWidget {
   static IconData _sourceIcon(String source) {
     final value = source.toLowerCase();
     if (value.contains('linkedin')) return Icons.badge_outlined;
+    if (value.contains('coursera')) return Icons.school_outlined;
     if (value.contains('job') || value.contains('career')) {
       return Icons.work_outline_rounded;
     }

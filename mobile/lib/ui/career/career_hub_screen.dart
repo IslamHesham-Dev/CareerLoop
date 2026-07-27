@@ -85,24 +85,10 @@ class CareerHubScreen extends StatelessWidget {
               _StudioCard(
                 icon: Icons.radar_rounded,
                 title: 'Opportunity Match',
-                subtitle: 'Jobs and career-fair roles ranked with evidence.',
+                subtitle: 'Live roles ranked against your verified evidence.',
                 accent: LensColors.aqua,
-                status: 'Connector next',
-                onTap: () => _showWorkflow(
-                  context,
-                  title: 'Opportunity Match',
-                  outcome:
-                      'Explainable matches instead of an unexplained percentage',
-                  evidence: const [
-                    'Career intent',
-                    'Verified skills',
-                    'Company websites',
-                    'GIU/GUC career fair',
-                    'Course history',
-                  ],
-                  checkpoint:
-                      'You choose which opportunities enter your application pipeline.',
-                ),
+                status: 'SWElist live',
+                onTap: () => context.push('/opportunities'),
               ),
               _StudioCard(
                 icon: Icons.mark_email_read_outlined,

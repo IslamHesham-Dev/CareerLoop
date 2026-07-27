@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import importlib.util
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 
@@ -9,7 +11,12 @@ from app.linkedin_pdf import (
     LinkedInPdfError,
     extract_linkedin_profile,
 )
+from app.opportunities import OpportunityService
 from app.schemas.career import (
+    OpportunityPreferences,
+    OpportunitySearchRequest,
+    OpportunitySearchResponse,
+    OpportunityStatusResponse,
     LinkedInProfile,
     LinkedInProfileMessage,
     LinkedInProfileStatus,
@@ -17,6 +24,7 @@ from app.schemas.career import (
 from app.sessions.models import StudentSession
 
 router = APIRouter(prefix="/career", tags=["career evidence"])
+opportunity_service = OpportunityService()
 
 
 @router.get(
@@ -86,6 +94,60 @@ def remove_linkedin_profile(
 ) -> LinkedInProfileMessage:
     _replace_profile(student, None)
     return LinkedInProfileMessage(message="LinkedIn PDF profile removed.")
+
+
+@router.get(
+    "/opportunities/status",
+    response_model=OpportunityStatusResponse,
+)
+def opportunity_status(
+    student: StudentSession = Depends(get_student_session),
+) -> OpportunityStatusResponse:
+    preferences = (
+        OpportunityPreferences.model_validate(student.career_preferences)
+        if student.career_preferences
+        else None
+    )
+    return OpportunityStatusResponse(
+        source="Swelist",
+        connected=importlib.util.find_spec("swelist") is not None,
+        adzuna_connected=False,
+        course_count=len(opportunity_service.catalog.courses),
+        preferences=preferences,
+    )
+
+
+@router.post(
+    "/opportunities/search",
+    response_model=OpportunitySearchResponse,
+)
+async def search_opportunities(
+    payload: OpportunitySearchRequest,
+    student: StudentSession = Depends(get_student_session),
+) -> dict:
+    preferences = payload.model_dump(exclude={"limit"})
+    with student.chat_lock:
+        student.career_preferences = preferences
+
+    def search() -> dict:
+        try:
+            transcript = student.academic.full_transcript()
+        except Exception:
+            transcript = None
+        return opportunity_service.search(
+            **preferences,
+            transcript=transcript,
+            linkedin_profile=student.linkedin_profile,
+            limit=payload.limit,
+        )
+
+    try:
+        return await run_in_threadpool(search)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from None
 
 
 def _replace_profile(

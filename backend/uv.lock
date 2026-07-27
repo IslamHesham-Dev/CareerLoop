@@ -102,7 +102,7 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "requests", specifier = ">=2.31" },
     { name = "requests-ntlm", specifier = ">=1.2" },
-    { name = "swelist", specifier = ">=0.1.10" },
+    { name = "swelist", specifier = "==0.1.10" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.34" },
 ]
 

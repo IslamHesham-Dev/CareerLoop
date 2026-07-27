@@ -130,4 +130,57 @@ void main() {
       'Search',
     );
   });
+
+  test('loads explainable opportunity matches and course links', () {
+    final result = OpportunitySearchResult.fromJson({
+      'source': 'Swelist',
+      'source_detail': 'Live roles',
+      'searched_at': '2026-07-27T12:00:00Z',
+      'evidence': {
+        'academic_transcript': true,
+        'linkedin_pdf': true,
+        'github': false,
+        'resume': false,
+      },
+      'jobs': [
+        {
+          'id': 'job-1',
+          'company': 'Example',
+          'title': 'Backend Engineer',
+          'location': 'Berlin, Germany',
+          'url': 'https://example.com/job',
+          'source': 'Swelist',
+          'role_family': 'backend',
+          'match_score': 82,
+          'match_reasons': ['Profile evidence: python'],
+          'keyword_matches': ['backend'],
+          'profile_skill_matches': ['python'],
+          'inferred_skill_gaps': ['docker'],
+          'recommended_course_ids': ['ibm-devops'],
+        },
+      ],
+      'recommended_courses': [
+        {
+          'id': 'ibm-devops',
+          'title': 'IBM DevOps',
+          'provider': 'IBM',
+          'platform': 'Coursera',
+          'url': 'https://www.coursera.org/example',
+          'level': 'Beginner',
+          'duration': '15 courses',
+          'skills': ['docker'],
+          'roles': ['devops'],
+          'addresses_skills': ['docker'],
+          'catalog_source': 'Courses resources.txt',
+        },
+      ],
+      'limitations': ['Confirm requirements on the employer page.'],
+    });
+
+    expect(result.jobs.single.matchScore, 82);
+    expect(result.jobs.single.inferredSkillGaps, ['docker']);
+    expect(result.evidence.linkedInPdf, isTrue);
+    expect(result.courses.single.platform, 'Coursera');
+    expect(result.courses.single.url.host, 'www.coursera.org');
+  });
 }

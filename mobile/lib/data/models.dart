@@ -540,6 +540,177 @@ class ToolActivity {
       );
 }
 
+class OpportunityEvidence {
+  final bool academicTranscript;
+  final bool linkedInPdf;
+  final bool github;
+  final bool resume;
+
+  const OpportunityEvidence({
+    required this.academicTranscript,
+    required this.linkedInPdf,
+    required this.github,
+    required this.resume,
+  });
+
+  factory OpportunityEvidence.fromJson(Map<String, dynamic> json) =>
+      OpportunityEvidence(
+        academicTranscript: json['academic_transcript'] as bool? ?? false,
+        linkedInPdf: json['linkedin_pdf'] as bool? ?? false,
+        github: json['github'] as bool? ?? false,
+        resume: json['resume'] as bool? ?? false,
+      );
+}
+
+class JobOpportunity {
+  final String id;
+  final String company;
+  final String title;
+  final String location;
+  final Uri url;
+  final String source;
+  final String roleFamily;
+  final int matchScore;
+  final List<String> matchReasons;
+  final List<String> keywordMatches;
+  final List<String> profileSkillMatches;
+  final List<String> inferredSkillGaps;
+  final List<String> recommendedCourseIds;
+
+  const JobOpportunity({
+    required this.id,
+    required this.company,
+    required this.title,
+    required this.location,
+    required this.url,
+    required this.source,
+    required this.roleFamily,
+    required this.matchScore,
+    required this.matchReasons,
+    required this.keywordMatches,
+    required this.profileSkillMatches,
+    required this.inferredSkillGaps,
+    required this.recommendedCourseIds,
+  });
+
+  factory JobOpportunity.fromJson(Map<String, dynamic> json) => JobOpportunity(
+        id: json['id'] as String? ?? '',
+        company: json['company'] as String? ?? 'Company',
+        title: json['title'] as String? ?? 'Open position',
+        location: json['location'] as String? ?? 'Location not specified',
+        url: Uri.tryParse(json['url'] as String? ?? '') ?? Uri(),
+        source: json['source'] as String? ?? 'Swelist',
+        roleFamily: json['role_family'] as String? ?? 'general',
+        matchScore: json['match_score'] as int? ?? 0,
+        matchReasons:
+            List<String>.from(json['match_reasons'] as List? ?? const []),
+        keywordMatches:
+            List<String>.from(json['keyword_matches'] as List? ?? const []),
+        profileSkillMatches: List<String>.from(
+          json['profile_skill_matches'] as List? ?? const [],
+        ),
+        inferredSkillGaps: List<String>.from(
+          json['inferred_skill_gaps'] as List? ?? const [],
+        ),
+        recommendedCourseIds: List<String>.from(
+          json['recommended_course_ids'] as List? ?? const [],
+        ),
+      );
+}
+
+class CareerCourseRecommendation {
+  final String id;
+  final String title;
+  final String provider;
+  final String platform;
+  final Uri url;
+  final String level;
+  final String duration;
+  final List<String> skills;
+  final List<String> roles;
+  final List<String> addressesSkills;
+
+  const CareerCourseRecommendation({
+    required this.id,
+    required this.title,
+    required this.provider,
+    required this.platform,
+    required this.url,
+    required this.level,
+    required this.duration,
+    required this.skills,
+    required this.roles,
+    required this.addressesSkills,
+  });
+
+  factory CareerCourseRecommendation.fromJson(Map<String, dynamic> json) =>
+      CareerCourseRecommendation(
+        id: json['id'] as String? ?? '',
+        title: json['title'] as String? ?? 'Recommended course',
+        provider: json['provider'] as String? ?? 'Course provider',
+        platform: json['platform'] as String? ?? 'Coursera',
+        url: Uri.tryParse(json['url'] as String? ?? '') ?? Uri(),
+        level: json['level'] as String? ?? '',
+        duration: json['duration'] as String? ?? '',
+        skills: List<String>.from(json['skills'] as List? ?? const []),
+        roles: List<String>.from(json['roles'] as List? ?? const []),
+        addressesSkills: List<String>.from(
+          json['addresses_skills'] as List? ?? const [],
+        ),
+      );
+}
+
+class OpportunitySearchResult {
+  final String source;
+  final String sourceDetail;
+  final DateTime searchedAt;
+  final OpportunityEvidence evidence;
+  final List<JobOpportunity> jobs;
+  final List<CareerCourseRecommendation> courses;
+  final String? message;
+  final List<String> limitations;
+
+  const OpportunitySearchResult({
+    required this.source,
+    required this.sourceDetail,
+    required this.searchedAt,
+    required this.evidence,
+    required this.jobs,
+    required this.courses,
+    required this.message,
+    required this.limitations,
+  });
+
+  factory OpportunitySearchResult.fromJson(Map<String, dynamic> json) =>
+      OpportunitySearchResult(
+        source: json['source'] as String? ?? 'Swelist',
+        sourceDetail: json['source_detail'] as String? ?? '',
+        searchedAt: DateTime.tryParse(json['searched_at'] as String? ?? '')
+                ?.toLocal() ??
+            DateTime.now(),
+        evidence: OpportunityEvidence.fromJson(
+          Map<String, dynamic>.from(json['evidence'] as Map? ?? const {}),
+        ),
+        jobs: (json['jobs'] as List? ?? const [])
+            .map(
+              (item) => JobOpportunity.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
+        courses: (json['recommended_courses'] as List? ?? const [])
+            .map(
+              (item) => CareerCourseRecommendation.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
+        message: json['message'] as String?,
+        limitations:
+            List<String>.from(json['limitations'] as List? ?? const []),
+      );
+}
+
 class PracticeQuestion {
   final String id;
   final String question;

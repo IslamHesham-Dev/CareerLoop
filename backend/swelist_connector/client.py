@@ -14,8 +14,12 @@ its text output into structured Python objects (`JobPosting`).
 
 from __future__ import annotations
 
+import os
+import re
 import subprocess
+import sys
 from typing import Literal
+from urllib.parse import urlparse
 
 from .models import JobPosting
 
@@ -33,7 +37,19 @@ class SwelistConnector:
         location: str | None = None,
     ) -> list[JobPosting]:
         """Fetch job postings by invoking the swelist CLI and parsing its output."""
-        cmd = ["swelist", "run", "--role", role, "--timeframe", timeframe]
+        # Use the active interpreter instead of relying on PATH. Render starts
+        # Uvicorn from ``.venv/bin`` without activating the virtualenv, so a
+        # bare ``swelist`` subprocess is not reliably discoverable there.
+        cmd = [
+            sys.executable,
+            "-m",
+            "swelist.main",
+            "run",
+            "--role",
+            role,
+            "--timeframe",
+            timeframe,
+        ]
         if location:
             cmd.extend(["--location", location])
 
@@ -42,30 +58,38 @@ class SwelistConnector:
             # swelist uses rich, so we strip out ANSI sequences implicitly if possible,
             # but usually redirecting stdout makes it fall back to plain text.
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=self.timeout, check=True
+                cmd,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=self.timeout,
+                check=True,
+                env={**os.environ, "NO_COLOR": "1"},
             )
+        except FileNotFoundError:
+            raise RuntimeError(
+                "Swelist is not installed in the backend environment."
+            ) from None
         except subprocess.TimeoutExpired:
             raise RuntimeError("The swelist command timed out.") from None
         except subprocess.CalledProcessError as exc:
-            raise RuntimeError(f"The swelist command failed: {exc.stderr}") from None
+            detail = (exc.stderr or exc.stdout or "").strip()
+            raise RuntimeError(
+                f"The swelist command failed: {detail or 'unknown error'}"
+            ) from None
 
         jobs: list[JobPosting] = []
         current_job: dict[str, str] = {}
         parsing_link = False
-        
+        ansi = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
+
         # Parse the block format output from swelist
-        for line in result.stdout.splitlines():
-            line = line.strip()
+        for raw_line in result.stdout.splitlines():
+            line = ansi.sub("", raw_line).strip()
             if not line:
                 if "company" in current_job and "title" in current_job:
-                    jobs.append(
-                        JobPosting(
-                            company=current_job.get("company", ""),
-                            title=current_job.get("title", ""),
-                            location=current_job.get("location", ""),
-                            link=current_job.get("link", "").replace(" ", ""),
-                        )
-                    )
+                    self._append_job(jobs, current_job)
                     current_job = {}
                 parsing_link = False
                 continue
@@ -90,13 +114,25 @@ class SwelistConnector:
 
         # Catch trailing job if output didn't end with a newline
         if "company" in current_job and "title" in current_job:
-            jobs.append(
-                JobPosting(
-                    company=current_job.get("company", ""),
-                    title=current_job.get("title", ""),
-                    location=current_job.get("location", ""),
-                    link=current_job.get("link", "").replace(" ", ""),
-                )
-            )
+            self._append_job(jobs, current_job)
 
-        return jobs
+        unique = {job.link: job for job in jobs if job.link}
+        return list(unique.values())
+
+    @staticmethod
+    def _append_job(
+        jobs: list[JobPosting],
+        value: dict[str, str],
+    ) -> None:
+        link = value.get("link", "").replace(" ", "")
+        parsed = urlparse(link)
+        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+            return
+        jobs.append(
+            JobPosting(
+                company=value.get("company", ""),
+                title=value.get("title", ""),
+                location=value.get("location", ""),
+                link=link,
+            )
+        )
