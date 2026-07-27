@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/github_profile_repository.dart';
 import '../../data/practice_repository.dart';
 import '../../data/repositories.dart';
 import '../core/brand_marks.dart';
@@ -33,8 +35,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final academicReady = academic.transcript != null;
     final cmsReady = session?.cmsConnected ?? false;
     final linkedInReady = context.watch<CareerProfileRepository>().hasProfile;
-    final liveSignals =
-        (academicReady ? 1 : 0) + (cmsReady ? 1 : 0) + (linkedInReady ? 1 : 0);
+    final github = context.watch<GithubProfileRepository>();
+    final githubReady = github.hasProfile;
+    final liveSignals = (academicReady ? 1 : 0) +
+        (cmsReady ? 1 : 0) +
+        (linkedInReady ? 1 : 0) +
+        (githubReady ? 1 : 0);
     return SafeArea(
       bottom: false,
       child: ListView(
@@ -87,12 +93,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
             color: cmsReady ? LensColors.aqua : LensColors.amber,
           ),
           const SizedBox(height: 9),
-          const _EvidenceSource(
+          _EvidenceSource(
             icon: Icons.code_rounded,
+            brand: Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                color: LensColors.ink,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                SimpleIcons.github,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
             title: 'Projects & repositories',
-            subtitle: 'GitHub skills, languages, and project momentum',
-            status: 'NEXT',
-            color: LensColors.violet,
+            subtitle: githubReady
+                ? '${github.profile?.analyzedRepositoryCount ?? 0} repositories · evidence-backed skills'
+                : 'Connect GitHub skills, languages, and project momentum',
+            status: githubReady ? 'LIVE' : 'CONNECT',
+            color: githubReady ? LensColors.violet : LensColors.muted,
+            onTap: () => context.push('/github-profile'),
           ),
           const SizedBox(height: 9),
           _EvidenceSource(

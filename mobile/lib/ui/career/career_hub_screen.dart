@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
 import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
@@ -17,6 +19,9 @@ class CareerHubScreen extends StatelessWidget {
     final cmsConnected =
         context.watch<AuthRepository>().session?.cmsConnected ?? false;
     final careerProfile = context.watch<CareerProfileRepository>();
+    final githubProfile = context.watch<GithubProfileRepository>();
+    final professionalSources =
+        (careerProfile.hasProfile ? 1 : 0) + (githubProfile.hasProfile ? 1 : 0);
     return SafeArea(
       bottom: false,
       child: ListView(
@@ -32,19 +37,28 @@ class CareerHubScreen extends StatelessWidget {
           _CareerHero(
             academicReady: academic.transcript != null,
             cmsConnected: cmsConnected,
-            careerReady: careerProfile.hasProfile,
+            careerReady: careerProfile.hasProfile || githubProfile.hasProfile,
           ),
           const SizedBox(height: 26),
           _SectionHeader(
             title: 'Professional evidence',
-            detail:
-                careerProfile.hasProfile ? '1 source live' : 'Connect a source',
+            detail: professionalSources == 0
+                ? 'Connect a source'
+                : '$professionalSources sources live',
           ),
           const SizedBox(height: 12),
           _LinkedInConnectorCard(
             connected: careerProfile.hasProfile,
             name: careerProfile.profile?.name,
             onTap: () => context.push('/linkedin-profile'),
+          ),
+          const SizedBox(height: 10),
+          _GithubConnectorCard(
+            connected: githubProfile.hasProfile,
+            login: githubProfile.profile?.login,
+            repositoryCount:
+                githubProfile.profile?.analyzedRepositoryCount ?? 0,
+            onTap: () => context.push('/github-profile'),
           ),
           const SizedBox(height: 28),
           _SectionHeader(
@@ -375,6 +389,92 @@ class _LinkedInConnectorCard extends StatelessWidget {
                 Icon(
                   Icons.chevron_right_rounded,
                   color: linkedInBlue,
+                  size: 19,
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GithubConnectorCard extends StatelessWidget {
+  final bool connected;
+  final String? login;
+  final int repositoryCount;
+  final VoidCallback onTap;
+
+  const _GithubConnectorCard({
+    required this.connected,
+    required this.login,
+    required this.repositoryCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LensCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LensColors.ink,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              SimpleIcons.github,
+              color: Colors.white,
+              size: 25,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'GitHub projects',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  connected
+                      ? '@${login ?? 'profile'} · $repositoryCount repositories analyzed'
+                      : 'Connect public repositories as skill evidence',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (connected)
+            const Icon(Icons.check_circle_rounded, color: LensColors.aqua)
+          else
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Connect',
+                  style: TextStyle(
+                    color: LensColors.ink,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: LensColors.ink,
                   size: 19,
                 ),
               ],

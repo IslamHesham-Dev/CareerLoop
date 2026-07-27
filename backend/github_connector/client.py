@@ -2,18 +2,15 @@
 
     from github_connector import GithubConnector
 
-    gh = GithubConnector(token="ghp_...")   # or set GITHUB_TOKEN
+    gh = GithubConnector(token="github_access_token")
     profile = gh.get_profile()
     for repo in gh.list_repositories():
         detail = gh.get_repository_detail(repo)
         ...
 
-Auth is a personal access token (fine-grained or classic, `public_repo`/`repo`
-+ `read:user` scope) — the same "paste a token" flow GitHub itself recommends
-for scripts, so no OAuth app registration or callback URL is needed for this
-build. Like GucPortal/GucCms, the token lives only where the caller puts it
-(a StudentSession field, once this is wired into one); nothing in this module
-persists it anywhere.
+The token may be an OAuth user access token or a personal access token. In the
+CareerLoop app it comes from GitHub's OAuth device flow and lives only in the
+short-lived StudentSession; this connector never persists it.
 
 Everything below returns plain dataclasses (see models.py), so wrapping these
 calls as agent tools later is one `dataclasses.asdict` away, same as the CMS
@@ -129,6 +126,7 @@ class GithubConnector:
             public_repos=data.get("public_repos", 0),
             followers=data.get("followers", 0),
             html_url=data["html_url"],
+            avatar_url=data.get("avatar_url"),
         )
 
     def list_repositories(
@@ -171,6 +169,7 @@ class GithubConnector:
                         is_archived=item.get("archived", False),
                         pushed_at=item.get("pushed_at"),
                         default_branch=item.get("default_branch") or "main",
+                        is_private=item.get("private", False),
                     )
                 )
             if len(data) < 100:

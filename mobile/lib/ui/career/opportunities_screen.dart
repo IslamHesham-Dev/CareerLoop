@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/github_profile_repository.dart';
 import '../../data/models.dart';
 import '../../data/opportunity_repository.dart';
 import '../../data/repositories.dart';
@@ -348,6 +349,8 @@ class _EvidenceRail extends StatelessWidget {
         (context.watch<AcademicRepository>().transcript != null);
     final linkedIn = evidence?.linkedInPdf ??
         context.watch<CareerProfileRepository>().hasProfile;
+    final github =
+        evidence?.github ?? context.watch<GithubProfileRepository>().hasProfile;
     return Row(
       children: [
         Expanded(
@@ -368,12 +371,12 @@ class _EvidenceRail extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        const Expanded(
+        Expanded(
           child: _EvidenceCell(
             icon: Icons.code_rounded,
             label: 'GitHub',
-            state: 'Next',
-            live: false,
+            state: github ? 'Used' : 'Optional',
+            live: github,
           ),
         ),
         const SizedBox(width: 8),

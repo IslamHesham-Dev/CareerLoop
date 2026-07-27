@@ -49,7 +49,7 @@ source labels so the mobile interface can distinguish portal facts from advice.
 ```json
 {
   "role_type": "newgrad",
-  "timeframe": "lastweek",
+  "timeframe": "all",
   "target_market": "europe",
   "locations": ["Berlin", "Remote"],
   "keywords": ["backend", "python"],
@@ -59,12 +59,27 @@ source labels so the mobile interface can distinguish portal facts from advice.
 ```
 
 The endpoint reads live Swelist metadata, ranks openings against the student's
-four-year transcript and imported LinkedIn PDF when available, and returns
-explainable match signals. Skill gaps are explicitly marked as role-family
+four-year transcript, imported LinkedIn PDF, and connected GitHub project
+snapshot when available, and returns explainable match signals. Skill gaps are
+explicitly marked as role-family
 inferences because Swelist does not provide complete job descriptions. Course
 recommendations come from the structured catalogue derived from
-`docs/Courses resources.txt`. GitHub, resume, and Adzuna are reported as
-unconnected until their integrations are implemented.
+`docs/Courses resources.txt`. Resume and Adzuna are reported as unconnected
+until their integrations are implemented.
+
+## GitHub career evidence
+
+- `GET /v1/career/github-profile`
+- `POST /v1/career/github/connect/start`
+- `POST /v1/career/github/connect/poll`
+- `POST /v1/career/github-profile/sync`
+- `POST /v1/career/github-profile/refresh`
+- `POST /v1/career/github-profile/remove`
+
+The start endpoint returns a GitHub device `user_code` and verification URI.
+The backend keeps the device code and eventual OAuth token inside the
+short-lived student session. Flutter persists only the extracted public profile
+snapshot and can sync that snapshot into a new university session.
 
 ## CMS learning content
 

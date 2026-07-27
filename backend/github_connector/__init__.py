@@ -3,17 +3,14 @@ evidence-backed technical skills.
 
     from github_connector import GithubConnector, extract_skills
 
-    gh = GithubConnector(token="ghp_...")   # or set GITHUB_TOKEN
+    gh = GithubConnector(token="github_access_token")
     profile = gh.get_profile()
     repos = gh.list_repositories()
     details = [gh.get_repository_detail(repo) for repo in repos]
     skills = extract_skills(details)
 
-Like guc_portal and guc_cms, this package knows nothing about agents or
-FastAPI sessions — that wiring (a StudentSession field, agent tools under
-app/agent/) happens where those two connectors are wired in, so this one
-follows the same seam when it's time to plug in the CV-generation feature.
-Nothing here persists a token or writes to disk.
+FastAPI session and agent integration live under app/. Nothing in this package
+persists a token or writes to disk.
 
 For a no-code sanity check against a real account, run:
 

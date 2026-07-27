@@ -96,6 +96,7 @@ class CapabilityFooter extends StatelessWidget {
   static String _sourceLabel(String source) {
     final value = source.toLowerCase();
     if (value.contains('linkedin')) return 'LinkedIn PDF';
+    if (value.contains('github')) return 'GitHub Projects';
     if (value.contains('swelist') || value.contains('job posting')) {
       return 'SweList Jobs';
     }
@@ -122,6 +123,7 @@ class CapabilityFooter extends StatelessWidget {
   static IconData _sourceIcon(String source) {
     final value = source.toLowerCase();
     if (value.contains('linkedin')) return Icons.badge_outlined;
+    if (value.contains('github')) return Icons.code_rounded;
     if (value.contains('coursera')) return Icons.school_outlined;
     if (value.contains('job') || value.contains('career')) {
       return Icons.work_outline_rounded;
@@ -143,6 +145,7 @@ class CapabilityFooter extends StatelessWidget {
       'get_advisory_transcript': 'Transcript Reader',
       'get_full_transcript': 'Degree History',
       'get_linkedin_pdf_profile': 'Profile Reader',
+      'get_github_project_profile': 'GitHub Evidence',
       'list_grade_seasons': 'Semester Lookup',
       'list_courses_in_season': 'Course Lookup',
       'get_course_grades': 'Grade Analysis',
@@ -166,6 +169,7 @@ class CapabilityFooter extends StatelessWidget {
   static IconData _toolIcon(String name) {
     if (name.contains('job')) return Icons.travel_explore_rounded;
     if (name.contains('linkedin')) return Icons.person_search_outlined;
+    if (name.contains('github')) return Icons.code_rounded;
     if (name.contains('practice')) return Icons.quiz_outlined;
     if (name.contains('pdf')) return Icons.picture_as_pdf_outlined;
     if (name.contains('video')) return Icons.smart_display_outlined;

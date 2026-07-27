@@ -847,6 +847,219 @@ class ChatMessage {
   });
 }
 
+class GithubSkillEvidence {
+  final String skill;
+  final String category;
+  final List<String> evidenceRepos;
+  final double weight;
+
+  const GithubSkillEvidence({
+    required this.skill,
+    required this.category,
+    required this.evidenceRepos,
+    required this.weight,
+  });
+
+  factory GithubSkillEvidence.fromJson(Map<String, dynamic> json) =>
+      GithubSkillEvidence(
+        skill: json['skill'] as String? ?? '',
+        category: json['category'] as String? ?? 'technology',
+        evidenceRepos: List<String>.from(
+          json['evidence_repos'] as List? ?? const [],
+        ),
+        weight: (json['weight'] as num?)?.toDouble() ?? 0,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'skill': skill,
+        'category': category,
+        'evidence_repos': evidenceRepos,
+        'weight': weight,
+      };
+}
+
+class GithubRepositoryEvidence {
+  final String name;
+  final String fullName;
+  final String? description;
+  final Uri url;
+  final String? primaryLanguage;
+  final Map<String, int> languages;
+  final List<String> topics;
+  final int stars;
+  final int forks;
+  final DateTime? pushedAt;
+  final String? readmeExcerpt;
+  final List<String> detectedSkills;
+
+  const GithubRepositoryEvidence({
+    required this.name,
+    required this.fullName,
+    required this.description,
+    required this.url,
+    required this.primaryLanguage,
+    required this.languages,
+    required this.topics,
+    required this.stars,
+    required this.forks,
+    required this.pushedAt,
+    required this.readmeExcerpt,
+    required this.detectedSkills,
+  });
+
+  factory GithubRepositoryEvidence.fromJson(Map<String, dynamic> json) =>
+      GithubRepositoryEvidence(
+        name: json['name'] as String? ?? 'Repository',
+        fullName: json['full_name'] as String? ?? '',
+        description: json['description'] as String?,
+        url: Uri.tryParse(json['html_url'] as String? ?? '') ?? Uri(),
+        primaryLanguage: json['primary_language'] as String?,
+        languages: (json['languages'] as Map? ?? const {}).map(
+          (key, value) => MapEntry(
+            key.toString(),
+            (value as num?)?.toInt() ?? 0,
+          ),
+        ),
+        topics: List<String>.from(json['topics'] as List? ?? const []),
+        stars: json['stars'] as int? ?? 0,
+        forks: json['forks'] as int? ?? 0,
+        pushedAt: DateTime.tryParse(json['pushed_at'] as String? ?? ''),
+        readmeExcerpt: json['readme_excerpt'] as String?,
+        detectedSkills: List<String>.from(
+          json['detected_skills'] as List? ?? const [],
+        ),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'full_name': fullName,
+        'description': description,
+        'html_url': url.toString(),
+        'primary_language': primaryLanguage,
+        'languages': languages,
+        'topics': topics,
+        'stars': stars,
+        'forks': forks,
+        'pushed_at': pushedAt?.toUtc().toIso8601String(),
+        'readme_excerpt': readmeExcerpt,
+        'detected_skills': detectedSkills,
+      };
+}
+
+class GithubProfileEvidence {
+  final String login;
+  final String? name;
+  final String? bio;
+  final String? company;
+  final String? location;
+  final Uri? avatarUrl;
+  final Uri profileUrl;
+  final int publicRepos;
+  final int followers;
+  final int repositoryCount;
+  final int analyzedRepositoryCount;
+  final DateTime refreshedAt;
+  final Map<String, int> languages;
+  final List<GithubSkillEvidence> skills;
+  final List<GithubRepositoryEvidence> repositories;
+
+  const GithubProfileEvidence({
+    required this.login,
+    required this.name,
+    required this.bio,
+    required this.company,
+    required this.location,
+    required this.avatarUrl,
+    required this.profileUrl,
+    required this.publicRepos,
+    required this.followers,
+    required this.repositoryCount,
+    required this.analyzedRepositoryCount,
+    required this.refreshedAt,
+    required this.languages,
+    required this.skills,
+    required this.repositories,
+  });
+
+  factory GithubProfileEvidence.fromJson(Map<String, dynamic> json) =>
+      GithubProfileEvidence(
+        login: json['login'] as String? ?? '',
+        name: json['name'] as String?,
+        bio: json['bio'] as String?,
+        company: json['company'] as String?,
+        location: json['location'] as String?,
+        avatarUrl: Uri.tryParse(json['avatar_url'] as String? ?? ''),
+        profileUrl: Uri.tryParse(json['html_url'] as String? ?? '') ?? Uri(),
+        publicRepos: json['public_repos'] as int? ?? 0,
+        followers: json['followers'] as int? ?? 0,
+        repositoryCount: json['repository_count'] as int? ?? 0,
+        analyzedRepositoryCount: json['analyzed_repository_count'] as int? ?? 0,
+        refreshedAt: DateTime.tryParse(json['refreshed_at'] as String? ?? '') ??
+            DateTime.now(),
+        languages: (json['languages'] as Map? ?? const {}).map(
+          (key, value) => MapEntry(
+            key.toString(),
+            (value as num?)?.toInt() ?? 0,
+          ),
+        ),
+        skills: (json['skills'] as List? ?? const [])
+            .map(
+              (value) => GithubSkillEvidence.fromJson(
+                Map<String, dynamic>.from(value as Map),
+              ),
+            )
+            .toList(),
+        repositories: (json['repositories'] as List? ?? const [])
+            .map(
+              (value) => GithubRepositoryEvidence.fromJson(
+                Map<String, dynamic>.from(value as Map),
+              ),
+            )
+            .toList(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'login': login,
+        'name': name,
+        'bio': bio,
+        'company': company,
+        'location': location,
+        'avatar_url': avatarUrl?.toString(),
+        'html_url': profileUrl.toString(),
+        'public_repos': publicRepos,
+        'followers': followers,
+        'repository_count': repositoryCount,
+        'analyzed_repository_count': analyzedRepositoryCount,
+        'refreshed_at': refreshedAt.toUtc().toIso8601String(),
+        'languages': languages,
+        'skills': skills.map((value) => value.toJson()).toList(),
+        'repositories': repositories.map((value) => value.toJson()).toList(),
+      };
+}
+
+class GithubDeviceAuthorization {
+  final String userCode;
+  final Uri verificationUri;
+  final int expiresIn;
+  final int interval;
+
+  const GithubDeviceAuthorization({
+    required this.userCode,
+    required this.verificationUri,
+    required this.expiresIn,
+    required this.interval,
+  });
+
+  factory GithubDeviceAuthorization.fromJson(Map<String, dynamic> json) =>
+      GithubDeviceAuthorization(
+        userCode: json['user_code'] as String? ?? '',
+        verificationUri:
+            Uri.tryParse(json['verification_uri'] as String? ?? '') ?? Uri(),
+        expiresIn: json['expires_in'] as int? ?? 900,
+        interval: json['interval'] as int? ?? 5,
+      );
+}
+
 class LinkedInPdfProfile {
   final String fileName;
   final DateTime importedAt;

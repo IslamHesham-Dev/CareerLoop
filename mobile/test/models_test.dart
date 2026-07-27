@@ -193,4 +193,53 @@ void main() {
     expect(result.courses.single.platform, 'Coursera');
     expect(result.courses.single.url.host, 'www.coursera.org');
   });
+
+  test('loads repository-backed GitHub profile evidence', () {
+    final profile = GithubProfileEvidence.fromJson({
+      'login': 'student',
+      'name': 'Student Builder',
+      'avatar_url': 'https://avatars.githubusercontent.com/u/1',
+      'html_url': 'https://github.com/student',
+      'public_repos': 5,
+      'followers': 3,
+      'repository_count': 4,
+      'analyzed_repository_count': 2,
+      'refreshed_at': '2026-07-27T12:00:00Z',
+      'languages': {'Python': 9000, 'Dart': 3000},
+      'skills': [
+        {
+          'skill': 'FastAPI',
+          'category': 'backend framework',
+          'evidence_repos': ['careerloop'],
+          'weight': 1,
+        },
+      ],
+      'repositories': [
+        {
+          'name': 'careerloop',
+          'full_name': 'student/careerloop',
+          'description': 'Academic and career agent',
+          'html_url': 'https://github.com/student/careerloop',
+          'primary_language': 'Python',
+          'languages': {'Python': 9000, 'Dart': 3000},
+          'topics': ['fastapi'],
+          'stars': 4,
+          'forks': 1,
+          'pushed_at': '2026-07-01T00:00:00Z',
+          'readme_excerpt': 'CareerLoop uses FastAPI.',
+          'detected_skills': ['Python', 'FastAPI'],
+        },
+      ],
+    });
+
+    expect(profile.login, 'student');
+    expect(profile.analyzedRepositoryCount, 2);
+    expect(profile.languages['Python'], 9000);
+    expect(profile.skills.single.evidenceRepos, ['careerloop']);
+    expect(profile.repositories.single.detectedSkills, ['Python', 'FastAPI']);
+    expect(
+      GithubProfileEvidence.fromJson(profile.toJson()).profileUrl.host,
+      'github.com',
+    );
+  });
 }

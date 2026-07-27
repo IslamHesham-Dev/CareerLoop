@@ -8,6 +8,7 @@ import '../ui/advisor/advisor_screen.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/career/career_hub_screen.dart';
 import '../ui/career/linkedin_import_screen.dart';
+import '../ui/career/github_profile_screen.dart';
 import '../ui/career/opportunities_screen.dart';
 import '../ui/career/opportunity_detail_screen.dart';
 import '../ui/core/app_shell.dart';
@@ -137,6 +138,10 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         GoRoute(
           path: '/linkedin-profile',
           builder: (context, state) => const LinkedInImportScreen(),
+        ),
+        GoRoute(
+          path: '/github-profile',
+          builder: (context, state) => const GithubProfileScreen(),
         ),
         GoRoute(
           path: '/opportunities',

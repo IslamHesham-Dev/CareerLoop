@@ -29,6 +29,80 @@ class LinkedInProfileMessage(BaseModel):
     message: str
 
 
+class GithubSkillEvidence(BaseModel):
+    skill: str
+    category: str
+    evidence_repos: list[str] = Field(default_factory=list, max_length=40)
+    weight: float = Field(ge=0)
+
+
+class GithubRepositoryEvidence(BaseModel):
+    name: str
+    full_name: str
+    description: str | None = None
+    html_url: str
+    primary_language: str | None = None
+    languages: dict[str, int] = Field(default_factory=dict)
+    topics: list[str] = Field(default_factory=list, max_length=40)
+    stars: int = Field(default=0, ge=0)
+    forks: int = Field(default=0, ge=0)
+    pushed_at: str | None = None
+    readme_excerpt: str | None = Field(default=None, max_length=1600)
+    detected_skills: list[str] = Field(default_factory=list, max_length=60)
+
+
+class GithubProfileEvidence(BaseModel):
+    login: str
+    name: str | None = None
+    bio: str | None = None
+    company: str | None = None
+    location: str | None = None
+    avatar_url: str | None = None
+    html_url: str
+    public_repos: int = Field(ge=0)
+    followers: int = Field(ge=0)
+    repository_count: int = Field(ge=0)
+    analyzed_repository_count: int = Field(ge=0)
+    refreshed_at: str
+    languages: dict[str, int] = Field(default_factory=dict)
+    skills: list[GithubSkillEvidence] = Field(default_factory=list, max_length=100)
+    repositories: list[GithubRepositoryEvidence] = Field(
+        default_factory=list,
+        max_length=20,
+    )
+
+
+class GithubProfileStatus(BaseModel):
+    configured: bool
+    connected: bool
+    profile: GithubProfileEvidence | None = None
+    message: str | None = None
+
+
+class GithubDeviceAuthorization(BaseModel):
+    user_code: str
+    verification_uri: str
+    expires_in: int = Field(gt=0)
+    interval: int = Field(gt=0)
+
+
+class GithubAuthorizationPoll(BaseModel):
+    status: Literal[
+        "pending",
+        "slow_down",
+        "connected",
+        "expired",
+        "denied",
+    ]
+    retry_after: int = Field(default=5, ge=1)
+    profile: GithubProfileEvidence | None = None
+    message: str | None = None
+
+
+class GithubProfileMessage(BaseModel):
+    message: str
+
+
 class OpportunityPreferences(BaseModel):
     role_type: Literal["internship", "newgrad"] = "newgrad"
     timeframe: Literal["all", "lastday", "lastweek", "lastmonth"] = "all"

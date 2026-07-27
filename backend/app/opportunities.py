@@ -285,6 +285,7 @@ class OpportunityService:
         work_modes: list[str],
         transcript: dict[str, Any] | None,
         linkedin_profile: dict[str, Any] | None,
+        github_profile: dict[str, Any] | None = None,
         limit: int = 24,
     ) -> dict[str, Any]:
         resolved_location = self._location_filter(
@@ -297,9 +298,15 @@ class OpportunityService:
             timeframe=timeframe,  # type: ignore[arg-type]
             location=resolved_location or None,
         )
-        evidence_text, academic_ready, linkedin_ready = self._evidence_text(
+        (
+            evidence_text,
+            academic_ready,
+            linkedin_ready,
+            github_ready,
+        ) = self._evidence_text(
             transcript,
             linkedin_profile,
+            github_profile,
         )
         known_skills = self._skills_in(evidence_text)
         normalized_keywords = [
@@ -383,7 +390,7 @@ class OpportunityService:
             "evidence": {
                 "academic_transcript": academic_ready,
                 "linkedin_pdf": linkedin_ready,
-                "github": False,
+                "github": github_ready,
                 "resume": False,
             },
             "jobs": matches,
@@ -396,8 +403,15 @@ class OpportunityService:
                     "must be confirmed on the employer application page."
                 ),
                 (
-                    "GitHub and resume evidence are not connected yet and "
-                    "were not used in the ranking."
+                    (
+                        "Resume evidence is not connected yet and was not "
+                        "used in the ranking."
+                    )
+                    if github_ready
+                    else (
+                        "GitHub and resume evidence are not connected yet "
+                        "and were not used in the ranking."
+                    )
                 ),
                 (
                     "Swelist has no dedicated remote/hybrid/on-site field; "
@@ -421,10 +435,14 @@ class OpportunityService:
     def _evidence_text(
         transcript: dict[str, Any] | None,
         linkedin_profile: dict[str, Any] | None,
-    ) -> tuple[str, bool, bool]:
+        github_profile: dict[str, Any] | None,
+    ) -> tuple[str, bool, bool, bool]:
         pieces: list[str] = []
         academic_ready = bool(transcript and transcript.get("courses"))
         linkedin_ready = bool(linkedin_profile)
+        github_ready = bool(
+            github_profile and github_profile.get("repositories")
+        )
         if transcript:
             pieces.extend(
                 str(course.get("course", ""))
@@ -444,7 +462,30 @@ class OpportunityService:
                     pieces.extend(str(item) for item in value)
                 elif value:
                     pieces.append(str(value))
-        return " ".join(pieces).casefold(), academic_ready, linkedin_ready
+        if github_profile:
+            for skill in github_profile.get("skills", []):
+                if isinstance(skill, dict):
+                    pieces.append(str(skill.get("skill", "")))
+            for repository in github_profile.get("repositories", []):
+                if not isinstance(repository, dict):
+                    continue
+                pieces.extend(
+                    str(repository.get(field, ""))
+                    for field in (
+                        "name",
+                        "description",
+                        "primary_language",
+                        "topics",
+                        "languages",
+                        "detected_skills",
+                    )
+                )
+        return (
+            " ".join(pieces).casefold(),
+            academic_ready,
+            linkedin_ready,
+            github_ready,
+        )
 
     @staticmethod
     def _skills_in(text: str) -> set[str]:

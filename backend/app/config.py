@@ -73,6 +73,13 @@ class Settings(BaseSettings):
             "DEGREELENS_NOTION_API_VERSION",
         ),
     )
+    github_oauth_client_id: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "GITHUB_OAUTH_CLIENT_ID",
+            "DEGREELENS_GITHUB_OAUTH_CLIENT_ID",
+        ),
+    )
     session_ttl_minutes: int = 45
     advisory_year: str = "2024-2025"
     current_season: str = "Winter 2024"

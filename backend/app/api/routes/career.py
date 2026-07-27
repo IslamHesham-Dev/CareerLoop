@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import importlib.util
+import time
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 
+from app.config import Settings, get_settings
 from app.dependencies import get_student_session
+from app.github_profile import (
+    GithubConfigurationError,
+    GithubConnectionError,
+    GithubDeviceClient,
+    extract_github_profile,
+)
 from app.linkedin_pdf import (
     MAX_LINKEDIN_PDF_BYTES,
     LinkedInPdfError,
@@ -20,6 +28,11 @@ from app.schemas.career import (
     LinkedInProfile,
     LinkedInProfileMessage,
     LinkedInProfileStatus,
+    GithubAuthorizationPoll,
+    GithubDeviceAuthorization,
+    GithubProfileEvidence,
+    GithubProfileMessage,
+    GithubProfileStatus,
 )
 from app.sessions.models import StudentSession
 
@@ -97,6 +110,218 @@ def remove_linkedin_profile(
 
 
 @router.get(
+    "/github-profile",
+    response_model=GithubProfileStatus,
+)
+def github_profile_status(
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GithubProfileStatus:
+    profile = (
+        GithubProfileEvidence.model_validate(student.github_profile)
+        if student.github_profile
+        else None
+    )
+    configured = bool(settings.github_oauth_client_id.strip())
+    return GithubProfileStatus(
+        configured=configured,
+        connected=profile is not None,
+        profile=profile,
+        message=(
+            None
+            if configured
+            else "Add GITHUB_OAUTH_CLIENT_ID to enable GitHub connection."
+        ),
+    )
+
+
+@router.post(
+    "/github/connect/start",
+    response_model=GithubDeviceAuthorization,
+)
+async def start_github_connection(
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GithubDeviceAuthorization:
+    try:
+        payload = await run_in_threadpool(
+            GithubDeviceClient(settings.github_oauth_client_id).start
+        )
+    except GithubConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from None
+    except (GithubConnectionError, OSError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from None
+    with student.chat_lock:
+        student.github_device_code = str(payload["device_code"])
+        student.github_device_expires_at = (
+            time.time() + int(payload["expires_in"])
+        )
+        student.github_poll_interval = max(5, int(payload["interval"]))
+        student.github_last_poll_at = None
+    return GithubDeviceAuthorization(
+        user_code=str(payload["user_code"]),
+        verification_uri=str(payload["verification_uri"]),
+        expires_in=int(payload["expires_in"]),
+        interval=student.github_poll_interval,
+    )
+
+
+@router.post(
+    "/github/connect/poll",
+    response_model=GithubAuthorizationPoll,
+)
+async def poll_github_connection(
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GithubAuthorizationPoll:
+    now = time.time()
+    device_code = student.github_device_code
+    expires_at = student.github_device_expires_at or 0
+    interval = student.github_poll_interval
+    if not device_code:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Start GitHub connection before checking authorization.",
+        )
+    if now >= expires_at:
+        _clear_github_device_flow(student)
+        return GithubAuthorizationPoll(
+            status="expired",
+            retry_after=interval,
+            message="The GitHub code expired. Start the connection again.",
+        )
+    last_poll = student.github_last_poll_at or 0
+    if now - last_poll < interval:
+        return GithubAuthorizationPoll(
+            status="pending",
+            retry_after=max(1, int(interval - (now - last_poll))),
+        )
+    student.github_last_poll_at = now
+    try:
+        result = await run_in_threadpool(
+            GithubDeviceClient(settings.github_oauth_client_id).poll,
+            device_code,
+        )
+    except GithubConfigurationError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from None
+    except (GithubConnectionError, OSError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        ) from None
+
+    result_status = str(result["status"])
+    if result_status == "connected":
+        access_token = str(result["access_token"])
+        try:
+            profile = await run_in_threadpool(
+                extract_github_profile,
+                access_token,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=(
+                    "GitHub was authorized, but repository evidence could not "
+                    f"be analyzed: {exc}"
+                ),
+            ) from None
+        with student.chat_lock:
+            student.github_access_token = access_token
+            _replace_github_profile(student, profile)
+            _clear_github_device_flow(student)
+        return GithubAuthorizationPoll(
+            status="connected",
+            retry_after=interval,
+            profile=profile,
+        )
+    if result_status in {"expired", "denied"}:
+        _clear_github_device_flow(student)
+    if result_status == "slow_down":
+        with student.chat_lock:
+            student.github_poll_interval += 5
+            interval = student.github_poll_interval
+    return GithubAuthorizationPoll(
+        status=result_status,  # type: ignore[arg-type]
+        retry_after=interval,
+        message=result.get("message"),
+    )
+
+
+@router.post(
+    "/github-profile/sync",
+    response_model=GithubProfileStatus,
+)
+def sync_github_profile(
+    profile: GithubProfileEvidence,
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GithubProfileStatus:
+    _replace_github_profile(student, profile)
+    return GithubProfileStatus(
+        configured=bool(settings.github_oauth_client_id.strip()),
+        connected=True,
+        profile=profile,
+    )
+
+
+@router.post(
+    "/github-profile/refresh",
+    response_model=GithubProfileStatus,
+)
+async def refresh_github_profile(
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GithubProfileStatus:
+    if not student.github_access_token:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=(
+                "Reconnect GitHub to refresh this local profile snapshot."
+            ),
+        )
+    try:
+        profile = await run_in_threadpool(
+            extract_github_profile,
+            student.github_access_token,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"GitHub profile refresh failed: {exc}",
+        ) from None
+    _replace_github_profile(student, profile)
+    return GithubProfileStatus(
+        configured=bool(settings.github_oauth_client_id.strip()),
+        connected=True,
+        profile=profile,
+    )
+
+
+@router.post(
+    "/github-profile/remove",
+    response_model=GithubProfileMessage,
+)
+def remove_github_profile(
+    student: StudentSession = Depends(get_student_session),
+) -> GithubProfileMessage:
+    with student.chat_lock:
+        student.github_access_token = None
+        _clear_github_device_flow(student)
+        _replace_github_profile(student, None)
+    return GithubProfileMessage(message="GitHub profile removed.")
+
+
+@router.get(
     "/opportunities/status",
     response_model=OpportunityStatusResponse,
 )
@@ -138,6 +363,7 @@ async def search_opportunities(
             **preferences,
             transcript=transcript,
             linkedin_profile=student.linkedin_profile,
+            github_profile=student.github_profile,
             limit=payload.limit,
         )
 
@@ -158,3 +384,18 @@ def _replace_profile(
         student.linkedin_profile = profile.model_dump() if profile else None
         student.conversation.clear()
         student.agent = None
+
+
+def _replace_github_profile(
+    student: StudentSession,
+    profile: GithubProfileEvidence | None,
+) -> None:
+    student.github_profile = profile.model_dump() if profile else None
+    student.conversation.clear()
+    student.agent = None
+
+
+def _clear_github_device_flow(student: StudentSession) -> None:
+    student.github_device_code = None
+    student.github_device_expires_at = None
+    student.github_last_poll_at = None

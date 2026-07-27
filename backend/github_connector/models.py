@@ -21,6 +21,7 @@ class GithubProfile:
     public_repos: int
     followers: int
     html_url: str
+    avatar_url: str | None = None
 
 
 @dataclass
@@ -39,6 +40,7 @@ class Repository:
     is_archived: bool
     pushed_at: str | None  # ISO 8601 timestamp of the last push; a recency signal
     default_branch: str  # needed to walk the repo's file tree for manifests
+    is_private: bool = False
 
 
 @dataclass

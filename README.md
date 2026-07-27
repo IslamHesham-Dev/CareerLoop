@@ -111,16 +111,38 @@ uv run python scripts/import_transcript_intake.py `
 ## Opportunity matching
 
 The Career Studio includes a live **Opportunity Match** workspace backed by
-Swelist. Students can filter internships or new-graduate roles by recency,
-market, location, work mode, and keywords. CareerLoop ranks the returned
-listing metadata against the four-year transcript and imported LinkedIn PDF,
+Swelist. Students can filter internships or new-graduate roles by market,
+location, work mode, role family, and technology preferences.
+CareerLoop ranks the returned listing metadata against the four-year
+transcript, imported LinkedIn PDF, and connected GitHub project evidence,
 shows the evidence behind each match, and labels role-family skill gaps as
 inferences that must be confirmed on the employer page.
 
 Recommended learning paths come from
 `backend/content/career/course_catalog.json`, the deployable structured subset
-of `docs/Courses resources.txt`. GitHub, resume, and Adzuna are intentionally
-shown as upcoming evidence/connectors rather than being implied as live.
+of `docs/Courses resources.txt`. Resume and Adzuna are intentionally shown as
+upcoming evidence/connectors rather than being implied as live.
+
+## GitHub project evidence
+
+CareerLoop uses GitHub's OAuth device flow. Create a GitHub OAuth App, enable
+**Device Flow**, and add its public client ID to the backend/Render environment:
+
+```env
+GITHUB_OAUTH_CLIENT_ID=your_oauth_app_client_id
+```
+
+The mobile app displays and copies GitHub's one-time code, opens
+`github.com/login/device`, and polls the backend until authorization completes.
+No client secret or OAuth token is placed in Flutter.
+
+The current build intentionally requests only `read:user` and analyzes public,
+non-fork, non-archived repositories. It extracts language byte counts, project
+descriptions, topics, README excerpts, and technologies found in dependency
+manifests. A maximum of 12 recent owned/collaborative repositories is analyzed
+per refresh. The extracted snapshot is stored in the app's private support
+directory and rehydrated into short-lived CareerLoop sessions. The agent calls
+`get_github_project_profile` when technical project evidence is relevant.
 
 ## Notion response export
 

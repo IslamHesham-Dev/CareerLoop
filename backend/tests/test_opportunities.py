@@ -46,6 +46,22 @@ def test_profile_aware_swelist_search_returns_gaps_and_courses() -> None:
             ]
         },
         linkedin_profile={"skills": ["Python", "Git"]},
+        github_profile={
+            "skills": [
+                {
+                    "skill": "Docker",
+                    "category": "devops",
+                    "evidence_repos": ["careerloop"],
+                }
+            ],
+            "repositories": [
+                {
+                    "name": "careerloop",
+                    "description": "FastAPI backend",
+                    "detected_skills": ["Docker"],
+                }
+            ],
+        },
         limit=10,
     )
 
@@ -59,15 +75,17 @@ def test_profile_aware_swelist_search_returns_gaps_and_courses() -> None:
     ]
     job = result["jobs"][0]
     assert "python" in job["profile_skill_matches"]
-    assert "rest api" in job["inferred_skill_gaps"]
+    assert "rest api" in job["profile_skill_matches"]
+    assert "databases" in job["inferred_skill_gaps"]
     assert job["recommended_course_ids"]
     assert result["evidence"] == {
         "academic_transcript": True,
         "linkedin_pdf": True,
-        "github": False,
+        "github": True,
         "resume": False,
     }
     assert result["recommended_courses"]
+    assert "docker" in job["profile_skill_matches"]
     assert all(
         course["platform"] == "Coursera"
         for course in result["recommended_courses"]

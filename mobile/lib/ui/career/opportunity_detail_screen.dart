@@ -144,7 +144,8 @@ class OpportunityDetailScreen extends StatelessWidget {
   void _askAi(BuildContext context) {
     context.read<AdvisorRepository>().send(
           'Deep-evaluate my fit for ${job.title} at ${job.company}. Use my '
-          'full transcript and imported LinkedIn PDF. The live application '
+          'full transcript, imported LinkedIn PDF, and connected GitHub '
+          'project evidence. The live application '
           'page is ${job.url}. Known listing metadata: category '
           '${job.category ?? 'not supplied'}, locations ${job.location}, '
           'sponsorship ${job.sponsorship ?? 'not supplied'}, and degrees '

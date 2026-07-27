@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'career_profile_repository.dart';
+import 'github_profile_repository.dart';
 import 'models.dart';
 
 class OpportunityRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
+  final GithubProfileRepository githubProfileRepository;
 
   OpportunitySearchResult? result;
   String roleType = 'newgrad';
@@ -21,6 +23,7 @@ class OpportunityRepository extends ChangeNotifier {
   OpportunityRepository({
     required this.api,
     required this.careerProfileRepository,
+    required this.githubProfileRepository,
   });
 
   Future<bool> search({
@@ -43,6 +46,7 @@ class OpportunityRepository extends ChangeNotifier {
     notifyListeners();
     try {
       await careerProfileRepository.ensureSynced();
+      await githubProfileRepository.ensureSynced();
       final json = await api.post(
         '/v1/career/opportunities/search',
         body: {
