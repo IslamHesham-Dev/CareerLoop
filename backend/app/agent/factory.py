@@ -221,6 +221,34 @@ def build_agent(student: StudentSession, settings: Settings):
         except Exception as e:
             return {"error": str(e)}
 
+    @tool
+    def get_company_jobs(company_name: str) -> dict:
+        """Search for all current open roles at a specific company by name.
+        Uses an LLM to dynamically fetch and parse their careers page."""
+        import dataclasses
+        from company_jobs_connector import CompanyJobsConnector
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+            
+        try:
+            connector = CompanyJobsConnector(anthropic_api_key=api_key)
+            jobs = connector.get_company_jobs(company_name)
+            if not jobs:
+                return {
+                    "status": "not_found",
+                    "message": f"Could not find any open roles for '{company_name}'. They might not be hiring, or they use an unsupported ATS platform."
+                }
+            return {
+                "status": "success",
+                "count": len(jobs),
+                "company_name": company_name,
+                "jobs": [dataclasses.asdict(j) for j in jobs],
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -249,6 +277,7 @@ def build_agent(student: StudentSession, settings: Settings):
         read_cms_pdf,
         create_practice_set,
         search_tech_jobs,
+        get_company_jobs,
     ]
     cms_context = (
         "The CMS tools read the student's complete live GIU CMS course "
@@ -271,9 +300,9 @@ def build_agent(student: StudentSession, settings: Settings):
         "verified academic, learning, project, professional, and opportunity "
         "signals into explainable next actions. In the current build GIU "
         "portal, transcript, CMS, supplied video transcripts, local practice, "
-        "real-time tech job postings (via swelist), "
+        "real-time tech job postings (via swelist), dynamic company job search, "
         "and an optional user-imported LinkedIn profile PDF are supported; "
-        "GitHub, live LinkedIn APIs, CV, company, email, and "
+        "GitHub, live LinkedIn APIs, CV, email, and "
         "course-provider connectors are not connected yet. Never "
         "imply that an unconnected source was inspected. Use portal tools for "
         "every factual claim about the student's records. "
@@ -380,6 +409,7 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
         "read_cms_pdf": "GIU CMS PDF",
         "create_practice_set": "Interactive practice set",
         "search_tech_jobs": "Tech job postings (swelist)",
+        "get_company_jobs": "Company career page (LLM Extracted)",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:
