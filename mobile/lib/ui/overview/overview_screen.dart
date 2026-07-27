@@ -34,39 +34,38 @@ class _OverviewScreenState extends State<OverviewScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(22, 14, 22, 14),
+              padding: const EdgeInsets.fromLTRB(22, 14, 22, 8),
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
-                    const Expanded(child: LensLogo(size: 38)),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: LensColors.line),
-                      ),
-                      child: IconButton(
-                        onPressed: () => context.push('/settings'),
-                        icon: const Icon(Icons.tune_rounded, size: 20),
-                        color: LensColors.ink,
-                      ),
+                    const Expanded(child: LensLogo(size: 39)),
+                    IconButton.filledTonal(
+                      onPressed: () => context.push('/settings'),
+                      icon: const Icon(Icons.tune_rounded),
                     ),
                   ],
                 ),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(22, 10, 22, 140),
+              padding: const EdgeInsets.fromLTRB(22, 22, 22, 120),
               sliver: SliverList.list(
                 children: [
-                  const _BentoHeader(),
-                  const SizedBox(height: 24),
+                  const PageHeading(
+                    eyebrow: 'Your CareerLoop',
+                    title: 'Academic evidence.\nCareer momentum.',
+                    subtitle:
+                        'One intelligent loop turns what you learn and achieve into what you can do next.',
+                  ),
+                  const SizedBox(height: 18),
                   if (session != null && !session.cmsConnected) ...[
                     CmsAccessNotice(message: session.cmsMessage),
                     const SizedBox(height: 18),
                   ],
-                  const _FocusHero(),
+                  _AdvisorySemesterPicker(academic: academic),
                   const SizedBox(height: 24),
+                  const _FocusHero(),
+                  const SizedBox(height: 18),
                   if (academic.loadingDashboard &&
                       academic.context == null) ...[
                     const LensCard(child: LensLoading()),
@@ -77,8 +76,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       onRetry: () => academic.loadDashboard(force: true),
                     ),
                   ] else ...[
-                    _BentoMetricsGrid(academic: academic),
-                    const SizedBox(height: 32),
+                    _Metrics(academic: academic),
+                    const SizedBox(height: 26),
                     _SectionTitle(
                       title: 'Next best actions',
                       action: 'Open Copilot',
@@ -91,9 +90,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         context.go('/advisor');
                       },
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 28),
                     const _SectionTitle(
-                      title: 'Growth loops',
+                      title: 'Your two growth loops',
                     ),
                     const SizedBox(height: 12),
                     _PillarRoutes(
@@ -112,147 +111,71 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 }
 
-class _BentoHeader extends StatelessWidget {
-  const _BentoHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: LensColors.indigo.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Text(
-                'WORKSPACE V1.0',
-                style: TextStyle(
-                  color: LensColors.indigo,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.0,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Academic evidence.\nCareer momentum.',
-          style: TextStyle(
-            fontSize: 34,
-            height: 1.1,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1.5,
-            color: LensColors.ink,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _BentoMetricsGrid extends StatelessWidget {
+class _AdvisorySemesterPicker extends StatelessWidget {
   final AcademicRepository academic;
-  const _BentoMetricsGrid({required this.academic});
+
+  const _AdvisorySemesterPicker({required this.academic});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: LensCard(
-            padding: const EdgeInsets.all(22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.bubble_chart_rounded,
-                    color: LensColors.aqua, size: 24),
-                const SizedBox(height: 28),
-                Text(
-                  academic.transcript?.cumulativeGpaWithGrade ?? '—',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1.0,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  'Cumulative GPA',
-                  style: TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
+    final current = academic.context?.currentSeason ?? 'Winter 2024';
+    final options = <String>{current, ...academic.seasons}.toList();
+    return DropdownButtonFormField<String>(
+      key: ValueKey(current),
+      value: current,
+      isExpanded: true,
+      decoration: const InputDecoration(
+        labelText: 'Active learning context',
+        helperText: 'Controls course evidence and the Copilot context.',
+        prefixIcon: Icon(Icons.calendar_month_outlined),
+      ),
+      items: options
+          .map(
+            (season) => DropdownMenuItem(
+              value: season,
+              child: Text(
+                season,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: Column(
-            children: [
-              LensCard(
-                padding: const EdgeInsets.all(18),
-                color: LensColors.ink,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.auto_stories_rounded,
-                        color: Colors.white, size: 20),
-                    const SizedBox(height: 16),
-                    Text(
-                      '${academic.courses.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w900,
-                      ),
+          )
+          .toList(),
+      onChanged: academic.updatingAdvisorySemester
+          ? null
+          : (season) async {
+              if (season == null || season == current) return;
+              final changed = await academic.selectAdvisorySemester(season);
+              if (!context.mounted) return;
+              if (changed) {
+                context.read<AdvisorRepository>().clearLocal();
+                final cmsConnected =
+                    context.read<AuthRepository>().session?.cmsConnected ??
+                        false;
+                if (cmsConnected) {
+                  await context.read<CmsRepository>().loadCourses(
+                        force: true,
+                        season: season,
+                      );
+                }
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      academic.error ??
+                          (cmsConnected
+                              ? 'Now advising from $season. CMS courses and '
+                                  'the AI context were refreshed.'
+                              : 'Now advising from $season. Portal records '
+                                  'and the AI context were refreshed.'),
                     ),
-                    const Text(
-                      'Signals',
-                      style: TextStyle(
-                        color: Colors.white60,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              LensCard(
-                padding: const EdgeInsets.all(18),
-                isGlass: true,
-                child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.verified_rounded,
-                        color: LensColors.indigo, size: 20),
-                    const SizedBox(height: 16),
-                    Text(
-                      '94%',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+                  ),
+                );
+              } else if (academic.error != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(academic.error!)),
+                );
+              }
+            },
     );
   }
 }
@@ -263,23 +186,19 @@ class _FocusHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      padding: const EdgeInsets.all(23),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(30),
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            LensColors.ink,
-            Color(0xFF27272A), // Zinc 800
-          ],
+          colors: [LensColors.ink, Color(0xFF28326B)],
         ),
         boxShadow: [
           BoxShadow(
-            color: LensColors.ink.withValues(alpha: .2),
-            blurRadius: 40,
-            offset: const Offset(0, 20),
+            color: LensColors.indigo.withValues(alpha: .25),
+            blurRadius: 36,
+            offset: const Offset(0, 18),
           ),
         ],
       ),
@@ -289,40 +208,40 @@ class _FocusHero extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withValues(alpha: .1)),
+                  color: Colors.white.withValues(alpha: .09),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: .12),
+                  ),
                 ),
                 child: const Icon(
-                  Icons.auto_awesome_rounded,
+                  Icons.all_inclusive_rounded,
                   color: LensColors.aqua,
-                  size: 26,
+                  size: 27,
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 13),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Agentic Copilot',
+                      'The evidence loop',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w900,
                         fontSize: 20,
-                        letterSpacing: -0.5,
                       ),
                     ),
                     Text(
-                      'Evidence Network Active',
+                      'Evidence becomes action',
                       style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                        color: LensColors.aqua,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -335,28 +254,57 @@ class _FocusHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 36),
+          const SizedBox(height: 22),
           const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _HeroNode(
-                icon: Icons.school_rounded,
-                label: 'Verified Facts',
+              _LoopNode(
+                icon: Icons.school_outlined,
+                label: 'ACADEMIC',
+                detail: 'Learn · prove',
                 color: LensColors.indigo,
               ),
-              _HeroConnector(),
-              _HeroNode(
-                icon: Icons.hub_rounded,
-                label: 'Smart Context',
+              _ConnectorLine(color: LensColors.indigo),
+              _LoopNode(
+                icon: Icons.auto_awesome_rounded,
+                label: 'COPILOT',
+                detail: 'Connect · decide',
                 color: LensColors.aqua,
               ),
-              _HeroConnector(),
-              _HeroNode(
-                icon: Icons.rocket_launch_rounded,
-                label: 'Direct Action',
+              _ConnectorLine(color: LensColors.violet),
+              _LoopNode(
+                icon: Icons.rocket_launch_outlined,
+                label: 'CAREER',
+                detail: 'Match · act',
                 color: LensColors.violet,
               ),
             ],
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.info_outline_rounded,
+                    color: Colors.white60, size: 16),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Every verified signal can become a stronger plan, profile, application, or interview answer.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: .7),
+                      height: 1.4,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -364,13 +312,43 @@ class _FocusHero extends StatelessWidget {
   }
 }
 
-class _HeroNode extends StatelessWidget {
+class _ConnectorLine extends StatelessWidget {
+  final Color color;
+  const _ConnectorLine({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                color.withValues(alpha: 0.5),
+                color.withValues(alpha: 0.1),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LoopNode extends StatelessWidget {
   final IconData icon;
   final String label;
+  final String detail;
   final Color color;
 
-  const _HeroNode(
-      {required this.icon, required this.label, required this.color});
+  const _LoopNode({
+    required this.icon,
+    required this.label,
+    required this.detail,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -380,20 +358,29 @@ class _HeroNode extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
+            color: color.withValues(alpha: .14),
             shape: BoxShape.circle,
-            border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+            border: Border.all(color: color.withValues(alpha: .45)),
           ),
           child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 7),
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
+            color: Colors.white,
+            fontSize: 8.5,
+            letterSpacing: .7,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          detail,
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: .5),
+            fontSize: 8.5,
           ),
         ),
       ],
@@ -401,26 +388,73 @@ class _HeroNode extends StatelessWidget {
   }
 }
 
-class _HeroConnector extends StatelessWidget {
-  const _HeroConnector();
+class _Metrics extends StatelessWidget {
+  final AcademicRepository academic;
+
+  const _Metrics({required this.academic});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.only(bottom: 20),
-        child: Container(
-          height: 1,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0),
-                Colors.white.withValues(alpha: 0.25),
-                Colors.white.withValues(alpha: 0),
-              ],
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Row(
+        children: [
+          Expanded(
+            child: _Metric(
+              icon: Icons.auto_stories_rounded,
+              value: '${academic.courses.length}',
+              label: 'Academic signals',
+              color: LensColors.indigo,
             ),
           ),
-        ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _Metric(
+              icon: Icons.bubble_chart_rounded,
+              value: academic.transcript?.cumulativeGpaWithGrade ?? '—',
+              label: 'Cumulative GPA',
+              color: LensColors.aqua,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Metric extends StatelessWidget {
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color color;
+
+  const _Metric({
+    required this.icon,
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LensCard(
+      padding: const EdgeInsets.all(17),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 21),
+          const SizedBox(height: 14),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 25,
+              fontWeight: FontWeight.w900,
+              letterSpacing: -.6,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        ],
       ),
     );
   }
@@ -442,27 +476,10 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(
-            title,
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
-              color: LensColors.ink,
-            ),
-          ),
+          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
         ),
         if (action != null && onTap != null)
-          TextButton(
-            onPressed: onTap,
-            child: Row(
-              children: [
-                Text(action!),
-                const SizedBox(width: 4),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 10),
-              ],
-            ),
-          ),
+          TextButton(onPressed: onTap, child: Text(action!)),
       ],
     );
   }
@@ -477,16 +494,16 @@ class _PromptGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     const prompts = [
       (
-        Icons.auto_graph_rounded,
-        'Analyze skills',
-        'Use my full transcript to identify my strongest career-relevant skills.',
-        LensColors.indigo
+        Icons.track_changes_rounded,
+        'Find my career evidence',
+        'Use my full transcript to identify my strongest career-relevant skills and the evidence for each.',
+        LensColors.indigo,
       ),
       (
-        Icons.quiz_rounded,
-        'Create quiz',
+        Icons.quiz_outlined,
+        'Build a focused quiz',
         'Create a 10-question interactive quiz for my weakest current course.',
-        LensColors.aqua
+        LensColors.aqua,
       ),
     ];
     return Row(
@@ -495,31 +512,27 @@ class _PromptGrid extends StatelessWidget {
             (prompt) => Expanded(
               child: Padding(
                 padding: EdgeInsets.only(
-                  right: prompt == prompts.first ? 8 : 0,
-                  left: prompt == prompts.last ? 8 : 0,
+                  right: prompt == prompts.first ? 6 : 0,
+                  left: prompt == prompts.last ? 6 : 0,
                 ),
                 child: LensCard(
                   onTap: () => onPrompt(prompt.$3),
-                  isGlass: true,
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(16),
                   child: SizedBox(
-                    height: 100,
+                    height: 92,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(prompt.$1, color: prompt.$4, size: 22),
+                        Icon(prompt.$1, color: prompt.$4),
                         const Spacer(),
                         Text(
                           prompt.$2,
                           style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.3,
+                            fontSize: 13,
+                            height: 1.25,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        const Icon(Icons.arrow_forward_rounded,
-                            size: 14, color: LensColors.muted),
                       ],
                     ),
                   ),
@@ -549,75 +562,90 @@ class _PillarRoutes extends StatelessWidget {
       children: [
         LensCard(
           onTap: onLearn,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(17),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 47,
+                height: 47,
                 decoration: BoxDecoration(
-                  color: LensColors.indigo.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(14),
+                  color: LensColors.indigo.withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Icon(Icons.auto_stories_rounded,
-                    color: LensColors.indigo),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  color: LensColors.indigo,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 13),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'Academic Growth',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: TextStyle(fontWeight: FontWeight.w900),
                     ),
+                    const SizedBox(height: 3),
                     Text(
-                      '$courseCount courses · materials · practice',
+                      '$courseCount courses · materials · AI practice',
                       style: const TextStyle(
-                          color: LensColors.muted, fontSize: 12),
+                        color: LensColors.muted,
+                        fontSize: 10.5,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: LensColors.indigo,
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         LensCard(
           onTap: onCareer,
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(17),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 47,
+                height: 47,
                 decoration: BoxDecoration(
-                  color: LensColors.violet.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(14),
+                  color: LensColors.violet.withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(15),
                 ),
-                child: const Icon(Icons.rocket_launch_rounded,
-                    color: LensColors.violet),
+                child: const Icon(
+                  Icons.rocket_launch_rounded,
+                  color: LensColors.violet,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 13),
               const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Career Momentum',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                      style: TextStyle(fontWeight: FontWeight.w900),
                     ),
+                    SizedBox(height: 3),
                     Text(
-                      'Profile · matching · applications',
-                      style: TextStyle(color: LensColors.muted, fontSize: 12),
+                      'Profile · opportunities · application studio',
+                      style: TextStyle(
+                        color: LensColors.muted,
+                        fontSize: 10.5,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: LensColors.violet,
+              ),
             ],
           ),
         ),
