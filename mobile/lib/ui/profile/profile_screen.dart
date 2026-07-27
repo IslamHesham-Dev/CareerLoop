@@ -5,6 +5,7 @@ import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/practice_repository.dart';
 import '../../data/repositories.dart';
@@ -37,10 +38,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final linkedInReady = context.watch<CareerProfileRepository>().hasProfile;
     final github = context.watch<GithubProfileRepository>();
     final githubReady = github.hasProfile;
+    final resume = context.watch<CurrentCvRepository>();
+    final resumeReady = resume.hasProfile;
     final liveSignals = (academicReady ? 1 : 0) +
         (cmsReady ? 1 : 0) +
         (linkedInReady ? 1 : 0) +
-        (githubReady ? 1 : 0);
+        (githubReady ? 1 : 0) +
+        (resumeReady ? 1 : 0);
     return SafeArea(
       bottom: false,
       child: ListView(
@@ -130,12 +134,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => context.push('/linkedin-profile'),
           ),
           const SizedBox(height: 9),
-          const _EvidenceSource(
+          _EvidenceSource(
             icon: Icons.description_outlined,
             title: 'Career documents',
-            subtitle: 'CV versions, constraints, and approved claims',
-            status: 'PLANNED',
-            color: LensColors.muted,
+            subtitle: resumeReady
+                ? '${resume.currentCv?.fileName ?? 'Resume'} · extracted career evidence'
+                : 'Import your resume for CV claims and role matching',
+            status: resumeReady ? 'LIVE' : 'CONNECT',
+            color: resumeReady ? LensColors.indigo : LensColors.muted,
+            onTap: () => context.push('/resume-profile'),
           ),
           const SizedBox(height: 26),
           const _Header(

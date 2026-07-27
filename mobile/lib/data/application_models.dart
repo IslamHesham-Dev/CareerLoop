@@ -30,6 +30,72 @@ class CurrentCv {
       };
 }
 
+class ResumeProfile {
+  final String fileName;
+  final DateTime importedAt;
+  final int pageCount;
+  final String? name;
+  final String? headline;
+  final String? email;
+  final String? phone;
+  final String? summary;
+  final List<String> skills;
+  final List<String> experience;
+  final List<String> education;
+  final List<String> certifications;
+  final String rawText;
+
+  const ResumeProfile({
+    required this.fileName,
+    required this.importedAt,
+    required this.pageCount,
+    required this.name,
+    required this.headline,
+    required this.email,
+    required this.phone,
+    required this.summary,
+    required this.skills,
+    required this.experience,
+    required this.education,
+    required this.certifications,
+    required this.rawText,
+  });
+
+  factory ResumeProfile.fromJson(Map<String, dynamic> json) => ResumeProfile(
+        fileName: json['file_name'] as String? ?? 'Current_CV.pdf',
+        importedAt: DateTime.tryParse(json['imported_at'] as String? ?? '') ??
+            DateTime.now(),
+        pageCount: (json['page_count'] as num?)?.toInt() ?? 1,
+        name: json['name'] as String?,
+        headline: json['headline'] as String?,
+        email: json['email'] as String?,
+        phone: json['phone'] as String?,
+        summary: json['summary'] as String?,
+        skills: List<String>.from(json['skills'] as List? ?? const []),
+        experience: List<String>.from(json['experience'] as List? ?? const []),
+        education: List<String>.from(json['education'] as List? ?? const []),
+        certifications:
+            List<String>.from(json['certifications'] as List? ?? const []),
+        rawText: json['raw_text'] as String? ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'file_name': fileName,
+        'imported_at': importedAt.toUtc().toIso8601String(),
+        'page_count': pageCount,
+        'name': name,
+        'headline': headline,
+        'email': email,
+        'phone': phone,
+        'summary': summary,
+        'skills': skills,
+        'experience': experience,
+        'education': education,
+        'certifications': certifications,
+        'raw_text': rawText,
+      };
+}
+
 class ApplicationDraft {
   final String id;
   final String linkedInPostUrl;

@@ -89,10 +89,17 @@ class ApplicationRepository extends ChangeNotifier {
     sent = null;
     notifyListeners();
     try {
-      await Future.wait([
+      final synced = await Future.wait([
         careerProfileRepository.ensureSynced(),
         githubProfileRepository.ensureSynced(),
+        currentCvRepository.ensureSynced(),
       ]);
+      if (currentCvRepository.hasProfile && !synced.last) {
+        throw const ApiException(
+          'Your resume could not be loaded for this application. Try '
+          'replacing the PDF or signing in again.',
+        );
+      }
       final json = await api.post(
         '/v1/career/applications/preview',
         body: {

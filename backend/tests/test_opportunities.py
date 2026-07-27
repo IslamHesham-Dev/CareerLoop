@@ -132,6 +132,34 @@ def test_swelist_connector_uses_the_active_python_environment(
     assert jobs[0].company_logo_url
 
 
+def test_resume_evidence_participates_in_matching() -> None:
+    connector = FakeSwelistConnector()
+    service = OpportunityService(connector=connector)  # type: ignore[arg-type]
+
+    result = service.search(
+        role_type="newgrad",
+        timeframe="all",
+        target_market="europe",
+        locations=["Berlin"],
+        keywords=["backend"],
+        work_modes=[],
+        transcript=None,
+        linkedin_profile=None,
+        resume_profile={
+            "raw_text": "Backend engineer using Python and FastAPI.",
+            "skills": ["Python", "FastAPI", "Docker"],
+            "experience": ["Built REST APIs"],
+        },
+    )
+
+    assert result["evidence"]["resume"] is True
+    assert "python" in result["jobs"][0]["profile_skill_matches"]
+    assert not any(
+        "Resume evidence is not connected" in item
+        for item in result["limitations"]
+    )
+
+
 def test_swelist_structured_feed_keeps_listing_metadata() -> None:
     from swelist_connector.client import SwelistConnector
 

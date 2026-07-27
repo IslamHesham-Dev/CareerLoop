@@ -1,6 +1,24 @@
 from __future__ import annotations
 
-from cv_connector import extract_cv_profile_from_text
+import asyncio
+import io
+import threading
+from types import SimpleNamespace
+
+import pytest
+from fastapi import UploadFile
+from fastapi.testclient import TestClient
+
+from app.api.routes import career
+from app.api.routes.career import (
+    import_resume_profile,
+    remove_resume_profile,
+    resume_profile_status,
+    sync_resume_profile,
+)
+from app.main import app
+from app.schemas.career import ResumeProfile
+from cv_connector import CVProfile, extract_cv_profile_from_text
 
 
 def test_extract_cv_profile_from_text_extracts_common_fields() -> None:
@@ -24,3 +42,83 @@ def test_extract_cv_profile_from_text_extracts_common_fields() -> None:
     assert "FastAPI" in profile.skills
     assert profile.education
     assert profile.experience
+
+
+def _profile() -> ResumeProfile:
+    return ResumeProfile(
+        file_name="Jane_Doe_CV.pdf",
+        imported_at="2026-07-27T12:00:00Z",
+        page_count=1,
+        name="Jane Doe",
+        headline="Software Engineer",
+        email="jane@example.com",
+        phone="+1 555 123 4567",
+        summary="Experienced engineer.",
+        skills=["Python", "FastAPI"],
+        experience=["Built APIs."],
+        education=["BSc Computer Science"],
+        certifications=[],
+        raw_text=(
+            "Jane Doe\nSoftware Engineer\nExperienced engineer with Python "
+            "and FastAPI who built production APIs."
+        ),
+    )
+
+
+def test_resume_profile_can_be_rehydrated_and_removed() -> None:
+    student = SimpleNamespace(
+        resume_profile=None,
+        chat_lock=threading.RLock(),
+        conversation=["stale context"],
+        agent=object(),
+    )
+    profile = _profile()
+
+    result = sync_resume_profile(profile, student=student)
+    assert result.connected is True
+    assert resume_profile_status(student=student).profile.name == "Jane Doe"
+    assert student.conversation == []
+    assert student.agent is None
+
+    removed = remove_resume_profile(student=student)
+    assert removed.message == "Resume profile removed."
+    assert student.resume_profile is None
+
+
+def test_resume_upload_extracts_and_loads_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    extracted = CVProfile(**_profile().model_dump())
+    monkeypatch.setattr(
+        career,
+        "extract_cv_profile_from_bytes",
+        lambda _content, *, file_name: extracted,
+    )
+    student = SimpleNamespace(
+        resume_profile=None,
+        chat_lock=threading.RLock(),
+        conversation=["stale"],
+        agent=object(),
+    )
+    upload = UploadFile(
+        filename="Jane_Doe_CV.pdf",
+        file=io.BytesIO(b"%PDF-demo"),
+    )
+
+    result = asyncio.run(import_resume_profile(file=upload, student=student))
+
+    assert result.connected is True
+    assert result.profile is not None
+    assert result.profile.skills == ["Python", "FastAPI"]
+    assert student.resume_profile["name"] == "Jane Doe"
+    assert student.conversation == []
+
+
+def test_resume_routes_are_exposed() -> None:
+    with TestClient(app) as client:
+        paths = client.get("/openapi.json").json()["paths"]
+
+    assert "/v1/career/resume" in paths
+    assert "/v1/career/resume/import" in paths
+    assert "/v1/career/resume/sync" in paths
+    assert "/v1/career/resume/remove" in paths

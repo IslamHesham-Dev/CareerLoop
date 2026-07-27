@@ -5,6 +5,7 @@ import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
 import '../core/brand_marks.dart';
@@ -20,8 +21,10 @@ class CareerHubScreen extends StatelessWidget {
         context.watch<AuthRepository>().session?.cmsConnected ?? false;
     final careerProfile = context.watch<CareerProfileRepository>();
     final githubProfile = context.watch<GithubProfileRepository>();
-    final professionalSources =
-        (careerProfile.hasProfile ? 1 : 0) + (githubProfile.hasProfile ? 1 : 0);
+    final resume = context.watch<CurrentCvRepository>();
+    final professionalSources = (careerProfile.hasProfile ? 1 : 0) +
+        (githubProfile.hasProfile ? 1 : 0) +
+        (resume.hasProfile ? 1 : 0);
     return SafeArea(
       bottom: false,
       child: ListView(
@@ -37,7 +40,9 @@ class CareerHubScreen extends StatelessWidget {
           _CareerHero(
             academicReady: academic.transcript != null,
             cmsConnected: cmsConnected,
-            careerReady: careerProfile.hasProfile || githubProfile.hasProfile,
+            careerReady: careerProfile.hasProfile ||
+                githubProfile.hasProfile ||
+                resume.hasProfile,
           ),
           const SizedBox(height: 26),
           _SectionHeader(
@@ -59,6 +64,13 @@ class CareerHubScreen extends StatelessWidget {
             repositoryCount:
                 githubProfile.profile?.analyzedRepositoryCount ?? 0,
             onTap: () => context.push('/github-profile'),
+          ),
+          const SizedBox(height: 10),
+          _ResumeConnectorCard(
+            connected: resume.hasProfile,
+            fileName: resume.currentCv?.fileName,
+            skillCount: resume.profile?.skills.length ?? 0,
+            onTap: () => context.push('/resume-profile'),
           ),
           const SizedBox(height: 28),
           _SectionHeader(
@@ -462,6 +474,92 @@ class _GithubConnectorCard extends StatelessWidget {
                 Icon(
                   Icons.chevron_right_rounded,
                   color: LensColors.ink,
+                  size: 19,
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResumeConnectorCard extends StatelessWidget {
+  final bool connected;
+  final String? fileName;
+  final int skillCount;
+  final VoidCallback onTap;
+
+  const _ResumeConnectorCard({
+    required this.connected,
+    required this.fileName,
+    required this.skillCount,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LensCard(
+      onTap: onTap,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LensColors.indigo.withValues(alpha: .10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.description_outlined,
+              color: LensColors.indigo,
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Resume evidence',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  connected
+                      ? '${fileName ?? 'Current resume'} · $skillCount skills extracted'
+                      : 'Upload a PDF for agent-ready career context',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          if (connected)
+            const Icon(Icons.check_circle_rounded, color: LensColors.aqua)
+          else
+            const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Import',
+                  style: TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: LensColors.indigo,
                   size: 19,
                 ),
               ],

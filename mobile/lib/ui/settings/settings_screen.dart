@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
@@ -158,12 +159,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final notion = context.read<NotionRepository>();
                         final career = context.read<CareerProfileRepository>();
                         final github = context.read<GithubProfileRepository>();
+                        final resume = context.read<CurrentCvRepository>();
                         await advisor.reset();
                         academic.clearLocal();
                         cms.clearLocal();
                         notion.clearLocal();
                         career.markSessionChanged();
                         github.markSessionChanged();
+                        resume.markSessionChanged();
                         await auth.logout();
                       },
                 icon: const Icon(Icons.logout_rounded),

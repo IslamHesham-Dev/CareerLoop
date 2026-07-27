@@ -26,7 +26,7 @@ def test_job_search_discloses_connected_profile_evidence() -> None:
         name="search_tech_jobs",
         content=(
             '{"evidence":{"academic_transcript":true,'
-            '"linkedin_pdf":true,"github":true}}'
+            '"linkedin_pdf":true,"github":true,"resume":true}}'
         ),
     )
 
@@ -37,3 +37,4 @@ def test_job_search_discloses_connected_profile_evidence() -> None:
     assert "GIU transcript" in sources
     assert "Imported LinkedIn profile PDF" in sources
     assert "Connected GitHub project evidence" in sources
+    assert "Imported resume PDF" in sources

@@ -3,6 +3,9 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../data/repositories.dart';
+import '../../data/career_profile_repository.dart';
+import '../../data/current_cv_repository.dart';
+import '../../data/github_profile_repository.dart';
 import '../core/lens_components.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -38,6 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _institution,
     );
     if (signedIn && mounted) {
+      context.read<CareerProfileRepository>().markSessionChanged();
+      context.read<GithubProfileRepository>().markSessionChanged();
+      context.read<CurrentCvRepository>().markSessionChanged();
       context.read<AcademicRepository>().loadDashboard();
     }
   }

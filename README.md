@@ -120,8 +120,9 @@ inferences that must be confirmed on the employer page.
 
 Recommended learning paths come from
 `backend/content/career/course_catalog.json`, the deployable structured subset
-of `docs/Courses resources.txt`. Resume and Adzuna are intentionally shown as
-upcoming evidence/connectors rather than being implied as live.
+of `docs/Courses resources.txt`. Imported resume evidence now participates in
+matching when connected. Adzuna remains an upcoming connector rather than being
+implied as live.
 
 ## GitHub project evidence
 
@@ -143,6 +144,23 @@ manifests. A maximum of 12 recent owned/collaborative repositories is analyzed
 per refresh. The extracted snapshot is stored in the app's private support
 directory and rehydrated into short-lived CareerLoop sessions. The agent calls
 `get_github_project_profile` when technical project evidence is relevant.
+
+## Resume evidence
+
+**Career Studio → Resume evidence** accepts a text-based resume or CV PDF up to
+10 MB. The backend extracts name, headline, contact details, summary, skills,
+experience, education, and certifications into the current short-lived
+CareerLoop session. The original PDF and its structured snapshot are stored in
+the mobile app's private support directory; the backend does not persist the
+original file.
+
+The mobile app rehydrates the structured snapshot into every new university
+session before chat, opportunity matching, or application drafting. The agent
+uses `get_resume_profile` when relevant and can combine it with
+`get_full_transcript`, `get_linkedin_pdf_profile`, and
+`get_github_project_profile`. Resume text is treated as untrusted user data,
+not as instructions, and source conflicts must be disclosed instead of merged
+silently.
 
 ## LinkedIn post to reviewed Gmail application
 

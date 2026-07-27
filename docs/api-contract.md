@@ -64,8 +64,8 @@ snapshot when available, and returns explainable match signals. Skill gaps are
 explicitly marked as role-family
 inferences because Swelist does not provide complete job descriptions. Course
 recommendations come from the structured catalogue derived from
-`docs/Courses resources.txt`. Resume and Adzuna are reported as unconnected
-until their integrations are implemented.
+`docs/Courses resources.txt`. Imported resume evidence participates in ranking
+when connected. Adzuna remains reported as unconnected.
 
 ## GitHub career evidence
 
@@ -80,6 +80,19 @@ The start endpoint returns a GitHub device `user_code` and verification URI.
 The backend keeps the device code and eventual OAuth token inside the
 short-lived student session. Flutter persists only the extracted public profile
 snapshot and can sync that snapshot into a new university session.
+
+## Resume career evidence
+
+- `GET /v1/career/resume`
+- `POST /v1/career/resume/import` with multipart PDF field `file`
+- `POST /v1/career/resume/sync`
+- `POST /v1/career/resume/remove`
+
+Import accepts a text-based PDF up to 10 MB and returns a structured profile
+containing identity, contact, summary, skill, experience, education, and
+certification evidence. Flutter keeps the original PDF and extracted snapshot
+in private app storage, then syncs the snapshot into each short-lived backend
+session before relevant agent and opportunity tasks.
 
 ## Reviewed Gmail applications
 

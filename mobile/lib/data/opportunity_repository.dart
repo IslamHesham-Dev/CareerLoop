@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'career_profile_repository.dart';
+import 'current_cv_repository.dart';
 import 'github_profile_repository.dart';
 import 'models.dart';
 
@@ -9,6 +10,7 @@ class OpportunityRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
+  final CurrentCvRepository currentCvRepository;
 
   OpportunitySearchResult? result;
   String roleType = 'newgrad';
@@ -24,6 +26,7 @@ class OpportunityRepository extends ChangeNotifier {
     required this.api,
     required this.careerProfileRepository,
     required this.githubProfileRepository,
+    required this.currentCvRepository,
   });
 
   Future<bool> search({
@@ -47,6 +50,13 @@ class OpportunityRepository extends ChangeNotifier {
     try {
       await careerProfileRepository.ensureSynced();
       await githubProfileRepository.ensureSynced();
+      final resumeReady = await currentCvRepository.ensureSynced();
+      if (currentCvRepository.hasProfile && !resumeReady) {
+        throw const ApiException(
+          'Your resume could not be loaded for matching. Try replacing the '
+          'PDF or signing in again.',
+        );
+      }
       final json = await api.post(
         '/v1/career/opportunities/search',
         body: {

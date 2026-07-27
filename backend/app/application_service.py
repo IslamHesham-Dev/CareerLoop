@@ -84,6 +84,7 @@ def generate_application_draft(
     linkedin_profile: dict[str, Any] | None,
     github_profile: dict[str, Any] | None,
     settings: Settings,
+    resume_profile: dict[str, Any] | None = None,
 ) -> GeneratedApplicationDraft:
     api_key = settings.anthropic_api_key.get_secret_value().strip()
     if api_key:
@@ -96,6 +97,7 @@ def generate_application_draft(
             profile_context = _candidate_context(
                 linkedin_profile,
                 github_profile,
+                resume_profile,
             )
             result = model.invoke(
                 [
@@ -186,6 +188,7 @@ def _fallback_draft(
 def _candidate_context(
     linkedin_profile: dict[str, Any] | None,
     github_profile: dict[str, Any] | None,
+    resume_profile: dict[str, Any] | None = None,
 ) -> str:
     values: list[str] = []
     if linkedin_profile:
@@ -217,6 +220,18 @@ def _candidate_context(
         ]
         values.append(f"github_skills: {skills}")
         values.append(f"github_projects: {repos}")
+    if resume_profile:
+        for key in (
+            "headline",
+            "summary",
+            "skills",
+            "experience",
+            "education",
+            "certifications",
+        ):
+            value = resume_profile.get(key)
+            if value:
+                values.append(f"resume_{key}: {value}")
     return "\n".join(values)[:12_000] or "No additional profile evidence."
 
 

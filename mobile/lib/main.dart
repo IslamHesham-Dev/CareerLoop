@@ -30,19 +30,21 @@ Future<void> main() async {
   await careerProfile.loadLocal();
   final githubProfile = GithubProfileRepository(api: api);
   await githubProfile.loadLocal();
-  final currentCv = CurrentCvRepository();
+  final currentCv = CurrentCvRepository(api: api);
   await currentCv.loadLocal();
   final advisor = AdvisorRepository(
     api: api,
     practiceRepository: practice,
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
+    currentCvRepository: currentCv,
   );
   final notion = NotionRepository(api: api);
   final opportunities = OpportunityRepository(
     api: api,
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
+    currentCvRepository: currentCv,
   );
   final applications = ApplicationRepository(
     api: api,

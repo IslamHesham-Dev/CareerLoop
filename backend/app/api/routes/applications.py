@@ -66,6 +66,7 @@ async def preview_application(
         linkedin_profile=student.linkedin_profile,
         github_profile=student.github_profile,
         settings=settings,
+        resume_profile=student.resume_profile,
     )
     recipient = _prototype_recipient(settings)
     if draft.detected_contact_email:
@@ -73,7 +74,11 @@ async def preview_application(
             "CareerLoop detected a contact email in the post, but this "
             "prototype is locked to the test recipient."
         )
-    if not student.linkedin_profile and not student.github_profile:
+    if (
+        not student.linkedin_profile
+        and not student.github_profile
+        and not student.resume_profile
+    ):
         warnings.append(
             "No LinkedIn or GitHub profile evidence was connected, so the "
             "draft intentionally avoids detailed personal claims."
@@ -231,7 +236,11 @@ async def _valid_access_token(
 
 
 def _candidate_name(student: StudentSession) -> str:
-    for profile in (student.linkedin_profile, student.github_profile):
+    for profile in (
+        student.resume_profile,
+        student.linkedin_profile,
+        student.github_profile,
+    ):
         if profile:
             name = profile.get("name")
             if isinstance(name, str) and 2 <= len(name.strip()) <= 100:

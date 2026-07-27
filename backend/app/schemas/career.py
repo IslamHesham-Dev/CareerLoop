@@ -29,6 +29,31 @@ class LinkedInProfileMessage(BaseModel):
     message: str
 
 
+class ResumeProfile(BaseModel):
+    file_name: str = Field(min_length=1, max_length=240)
+    imported_at: str
+    page_count: int = Field(ge=1, le=25)
+    name: str | None = Field(default=None, max_length=200)
+    headline: str | None = Field(default=None, max_length=500)
+    email: str | None = Field(default=None, max_length=320)
+    phone: str | None = Field(default=None, max_length=100)
+    summary: str | None = Field(default=None, max_length=12_000)
+    skills: list[str] = Field(default_factory=list, max_length=150)
+    experience: list[str] = Field(default_factory=list, max_length=250)
+    education: list[str] = Field(default_factory=list, max_length=100)
+    certifications: list[str] = Field(default_factory=list, max_length=100)
+    raw_text: str = Field(min_length=20, max_length=60_000)
+
+
+class ResumeProfileStatus(BaseModel):
+    connected: bool
+    profile: ResumeProfile | None = None
+
+
+class ResumeProfileMessage(BaseModel):
+    message: str
+
+
 class GithubSkillEvidence(BaseModel):
     skill: str
     category: str
