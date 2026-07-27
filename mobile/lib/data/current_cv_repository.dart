@@ -155,6 +155,7 @@ class CurrentCvRepository extends ChangeNotifier {
       profile = extracted;
       _syncedToSession = true;
       await _saveMetadata();
+      notifyListeners();
       return true;
     } on ApiException catch (exception) {
       error = exception.message;
@@ -186,6 +187,7 @@ class CurrentCvRepository extends ChangeNotifier {
           Map<String, dynamic>.from(profileJson),
         );
         await _saveMetadata();
+        notifyListeners();
       } else {
         await api.post(
           '/v1/career/resume/sync',

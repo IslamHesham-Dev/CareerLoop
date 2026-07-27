@@ -9,9 +9,14 @@ import '../../data/current_cv_repository.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
 
-class ResumeProfileScreen extends StatelessWidget {
+class ResumeProfileScreen extends StatefulWidget {
   const ResumeProfileScreen({super.key});
 
+  @override
+  State<ResumeProfileScreen> createState() => _ResumeProfileScreenState();
+}
+
+class _ResumeProfileScreenState extends State<ResumeProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final repository = context.watch<CurrentCvRepository>();
@@ -25,9 +30,23 @@ class ResumeProfileScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: repository.hasProfile
-            ? _ExtractedProfile(repository: repository)
-            : _ResumeImport(repository: repository),
+        child: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 320),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: repository.hasProfile
+              ? _ExtractedProfile(
+                  key: const ValueKey('resume-profile'),
+                  repository: repository,
+                )
+              : _ResumeImport(
+                  key: const ValueKey('resume-import'),
+                  repository: repository,
+                  onImported: () {
+                    if (mounted) setState(() {});
+                  },
+                ),
+        ),
       ),
     );
   }
@@ -35,8 +54,13 @@ class ResumeProfileScreen extends StatelessWidget {
 
 class _ResumeImport extends StatelessWidget {
   final CurrentCvRepository repository;
+  final VoidCallback onImported;
 
-  const _ResumeImport({required this.repository});
+  const _ResumeImport({
+    super.key,
+    required this.repository,
+    required this.onImported,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -136,6 +160,7 @@ class _ResumeImport extends StatelessWidget {
                       : await repository.ensureSynced();
                   if (imported && context.mounted) {
                     context.read<AdvisorRepository>().clearLocal();
+                    onImported();
                   }
                 },
           icon: repository.selecting
@@ -163,7 +188,10 @@ class _ResumeImport extends StatelessWidget {
 class _ExtractedProfile extends StatelessWidget {
   final CurrentCvRepository repository;
 
-  const _ExtractedProfile({required this.repository});
+  const _ExtractedProfile({
+    super.key,
+    required this.repository,
+  });
 
   @override
   Widget build(BuildContext context) {
