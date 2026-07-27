@@ -192,6 +192,35 @@ def build_agent(student: StudentSession, settings: Settings):
             "question_count": len(questions),
         }
 
+    @tool
+    def search_tech_jobs(
+        role: str = "internship",
+        timeframe: str = "lastday",
+        location: str = "",
+    ) -> dict:
+        """Search for real-time tech internships or new-grad roles.
+        Arguments:
+        - role: "internship" (default) or "newgrad"
+        - timeframe: "lastday" (default), "lastweek", or "lastmonth"
+        - location: Filter by giving a single location like "Canada" or multiple locations like "Boston, Toronto"
+        """
+        import dataclasses
+        from swelist_connector import SwelistConnector
+
+        connector = SwelistConnector()
+        try:
+            r = role if role in ["internship", "newgrad"] else "internship"
+            t = timeframe if timeframe in ["lastday", "lastweek", "lastmonth"] else "lastday"
+            loc = location if location else None
+            jobs = connector.get_postings(role=r, timeframe=t, location=loc)
+            return {
+                "status": "success",
+                "count": len(jobs),
+                "jobs": [dataclasses.asdict(j) for j in jobs],
+            }
+        except Exception as e:
+            return {"error": str(e)}
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -219,6 +248,7 @@ def build_agent(student: StudentSession, settings: Settings):
         get_cms_video_transcript,
         read_cms_pdf,
         create_practice_set,
+        search_tech_jobs,
     ]
     cms_context = (
         "The CMS tools read the student's complete live GIU CMS course "
@@ -241,8 +271,9 @@ def build_agent(student: StudentSession, settings: Settings):
         "verified academic, learning, project, professional, and opportunity "
         "signals into explainable next actions. In the current build GIU "
         "portal, transcript, CMS, supplied video transcripts, local practice, "
+        "real-time tech job postings (via swelist), "
         "and an optional user-imported LinkedIn profile PDF are supported; "
-        "GitHub, live LinkedIn APIs, CV, company, job, email, and "
+        "GitHub, live LinkedIn APIs, CV, company, email, and "
         "course-provider connectors are not connected yet. Never "
         "imply that an unconnected source was inspected. Use portal tools for "
         "every factual claim about the student's records. "
@@ -348,6 +379,7 @@ def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
         "get_cms_video_transcript": "Supplemental video transcript",
         "read_cms_pdf": "GIU CMS PDF",
         "create_practice_set": "Interactive practice set",
+        "search_tech_jobs": "Tech job postings (swelist)",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:
