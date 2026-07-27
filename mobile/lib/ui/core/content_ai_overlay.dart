@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
+import 'capability_footer.dart';
 import 'notion_export_action.dart';
 import 'practice_launch_card.dart';
 
@@ -557,6 +558,12 @@ class _ContentMessageBubble extends StatelessWidget {
                     const SizedBox(height: 10),
                     PracticeLaunchCard(practiceSet: message.practiceSet!),
                   ],
+                  const SizedBox(height: 11),
+                  CapabilityFooter(
+                    tools: message.tools,
+                    sources: message.sources,
+                    compact: true,
+                  ),
                 ],
               ),
       ),

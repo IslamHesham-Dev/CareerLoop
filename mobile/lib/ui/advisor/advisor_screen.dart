@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
+import '../core/capability_footer.dart';
 import '../core/lens_components.dart';
 import '../core/notion_export_action.dart';
 import '../core/practice_launch_card.dart';
@@ -375,50 +376,19 @@ class _MessageBubble extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: NotionExportAction(message: message),
             ),
-            if (message.tools.any((tool) => tool.status == 'error')) ...[
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 7,
-                runSpacing: 7,
-                children: message.tools
-                    .where((tool) => tool.status == 'error')
-                    .map(
-                      (tool) => GradientPill(
-                        label: _friendlyToolName(tool.name),
-                        icon: tool.status == 'error'
-                            ? Icons.error_outline_rounded
-                            : Icons.check_circle_outline_rounded,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ],
-            if (message.sources.isNotEmpty) ...[
-              const SizedBox(height: 13),
-              Text(
-                'Sources · ${message.sources.join(' · ')}',
-                style: const TextStyle(
-                  color: LensColors.muted,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
             if (message.practiceSet != null) ...[
               const SizedBox(height: 13),
               PracticeLaunchCard(practiceSet: message.practiceSet!),
             ],
+            const SizedBox(height: 14),
+            CapabilityFooter(
+              tools: message.tools,
+              sources: message.sources,
+            ),
           ],
         ),
       ),
     );
-  }
-
-  String _friendlyToolName(String name) {
-    return name
-        .replaceAll('get_', '')
-        .replaceAll('list_', '')
-        .replaceAll('_', ' ');
   }
 }
 

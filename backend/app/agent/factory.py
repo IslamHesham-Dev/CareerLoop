@@ -394,26 +394,37 @@ def message_text(content: Any) -> str:
     return str(content)
 
 
-def tool_events(messages: list[Any]) -> tuple[list[dict[str, str]], list[str]]:
+def tool_events(
+    messages: list[Any],
+    university_label: str = "University",
+) -> tuple[list[dict[str, str]], list[str]]:
     events: list[dict[str, str]] = []
     sources: list[str] = []
     source_map = {
         "get_advisory_context": "Advisory context",
-        "list_advisory_courses": "University detailed-grade seasons",
-        "get_advisory_course_grades": "University detailed grades",
-        "get_advisory_transcript": "University transcript",
-        "get_full_transcript": "University transcript",
+        "list_advisory_courses": (
+            f"{university_label} detailed-grade seasons"
+        ),
+        "get_advisory_course_grades": (
+            f"{university_label} detailed grades"
+        ),
+        "get_advisory_transcript": f"{university_label} transcript",
+        "get_full_transcript": f"{university_label} transcript",
         "get_linkedin_pdf_profile": "Imported LinkedIn profile PDF",
-        "list_grade_seasons": "University detailed-grade seasons",
-        "list_courses_in_season": "University detailed-grade seasons",
-        "get_course_grades": "University detailed grades",
-        "get_transcript": "University transcript",
-        "find_transcript_course": "University transcript",
-        "list_cms_courses": "Live university CMS",
-        "get_cms_course_content": "Live university CMS resources",
-        "search_cms_content": "Live university CMS search",
+        "list_grade_seasons": (
+            f"{university_label} detailed-grade seasons"
+        ),
+        "list_courses_in_season": (
+            f"{university_label} detailed-grade seasons"
+        ),
+        "get_course_grades": f"{university_label} detailed grades",
+        "get_transcript": f"{university_label} transcript",
+        "find_transcript_course": f"{university_label} transcript",
+        "list_cms_courses": f"Live {university_label} CMS",
+        "get_cms_course_content": f"Live {university_label} CMS resources",
+        "search_cms_content": f"Live {university_label} CMS search",
         "get_cms_video_transcript": "Supplemental video transcript",
-        "read_cms_pdf": "University CMS PDF",
+        "read_cms_pdf": f"{university_label} CMS PDF",
         "create_practice_set": "Interactive practice set",
         "search_tech_jobs": "Tech job postings (swelist)",
         "get_company_jobs": "Company career page (LLM Extracted)",

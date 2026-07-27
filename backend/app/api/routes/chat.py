@@ -109,7 +109,10 @@ async def chat(
                 student.conversation = retry["messages"]
             new_messages = student.conversation[start:]
             answer = message_text(student.conversation[-1].content)
-            events, sources = tool_events(new_messages)
+            events, sources = tool_events(
+                new_messages,
+                student.university_label,
+            )
             if student.pending_practice_set is not None:
                 notes = student.pending_practice_set["study_notes"].strip()
                 answer = (

@@ -48,7 +48,7 @@ class _NotionExportActionState extends State<NotionExportAction> {
               color: LensColors.ink,
             ),
       label: Text(
-        widget.compact ? 'Notion' : 'Export to Notion',
+        'Export to Notion',
         style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
       ),
     );
