@@ -11,6 +11,8 @@ import '../ui/career/linkedin_import_screen.dart';
 import '../ui/career/github_profile_screen.dart';
 import '../ui/career/opportunities_screen.dart';
 import '../ui/career/opportunity_detail_screen.dart';
+import '../ui/career/quick_apply_screen.dart';
+import '../ui/career/resume_profile_screen.dart';
 import '../ui/core/app_shell.dart';
 import '../ui/core/lens_components.dart';
 import '../ui/courses/course_details_screen.dart';
@@ -158,6 +160,14 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
               },
             ),
           ],
+        ),
+        GoRoute(
+          path: '/quick-apply',
+          builder: (context, state) => const QuickApplyScreen(),
+        ),
+        GoRoute(
+          path: '/resume-profile',
+          builder: (context, state) => const ResumeProfileScreen(),
         ),
         GoRoute(
           path: '/settings',

@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
 from typing import Any
@@ -64,6 +65,8 @@ def extract_cv_profile_from_bytes(content: bytes, *, file_name: str) -> CVProfil
             raise CVExtractionError("Password-protected PDFs are not supported.")
     if not reader.pages:
         raise CVExtractionError("The PDF contains no pages.")
+    if len(reader.pages) > 25:
+        raise CVExtractionError("Choose a resume with 25 pages or fewer.")
 
     pages: list[str] = []
     for page in reader.pages:
@@ -83,7 +86,7 @@ def extract_cv_profile_from_text(
     file_name: str,
     page_count: int = 1,
 ) -> CVProfile:
-    normalized = _normalize_text(text)
+    normalized = _normalize_text(text)[:60_000]
     if len(normalized) < 40:
         raise CVExtractionError("No selectable text was found in the PDF.")
 
@@ -98,8 +101,8 @@ def extract_cv_profile_from_text(
     certifications = _extract_list_section(normalized, ["certifications", "licenses and certifications"])
 
     return CVProfile(
-        file_name=Path(file_name).name or "cv.pdf",
-        imported_at="",
+        file_name=(Path(file_name).name or "cv.pdf")[:240],
+        imported_at=datetime.now(UTC).isoformat(),
         page_count=page_count,
         name=name,
         headline=headline,
@@ -127,7 +130,7 @@ def _normalize_text(text: str) -> str:
 def _extract_name(text: str) -> str | None:
     first_line = text.splitlines()[0].strip() if text.splitlines() else ""
     if first_line and len(first_line.split()) <= 6:
-        return first_line
+        return first_line[:200]
     return None
 
 
@@ -135,7 +138,7 @@ def _extract_headline(text: str) -> str | None:
     lines = text.splitlines()
     for line in lines[1:6]:
         if len(line.split()) <= 12 and not re.search(r"@|\+\d|http", line):
-            return line
+            return line[:500]
     return None
 
 
@@ -146,7 +149,7 @@ def _extract_email(text: str) -> str | None:
 
 def _extract_phone(text: str) -> str | None:
     match = re.search(r"\+?\d[\d ()-]{7,}\d", text)
-    return match.group(0).strip() if match else None
+    return match.group(0).strip()[:100] if match else None
 
 
 def _extract_section(text: str, labels: list[str]) -> str | None:
@@ -154,23 +157,39 @@ def _extract_section(text: str, labels: list[str]) -> str | None:
     lowered = [line.casefold() for line in lines]
     for index, line in enumerate(lowered):
         for label in labels:
-            if line.startswith(label + ":") or line.casefold() == label:
-                section_lines = []
+            if line.startswith(label + ":") or line == label:
+                inline = lines[index].split(":", 1)
+                section_lines = (
+                    [inline[1].strip()]
+                    if len(inline) == 2 and inline[1].strip()
+                    else []
+                )
                 for follow in lines[index + 1 : index + 8]:
-                    if follow.casefold().startswith(tuple(labels)):
+                    if _is_section_heading(follow):
                         break
                     section_lines.append(follow)
-                return " ".join(section_lines).strip() or None
+                return " ".join(section_lines).strip()[:12_000] or None
     return None
 
 
 def _extract_skills(text: str) -> list[str]:
     lines = text.splitlines()
-    for line in lines:
+    for index, line in enumerate(lines):
         lowered = line.casefold()
         if lowered.startswith("skills:") or lowered.startswith("technical skills:"):
             value = line.split(":", 1)[1].strip()
             return [item.strip() for item in re.split(r"[,;|]", value) if item.strip()]
+        if lowered in {"skills", "technical skills"}:
+            values: list[str] = []
+            for follow in lines[index + 1 : index + 7]:
+                if _is_section_heading(follow):
+                    break
+                values.extend(
+                    item.strip()
+                    for item in re.split(r"[,;|•]", follow)
+                    if item.strip()
+                )
+            return values
     return []
 
 
@@ -179,12 +198,39 @@ def _extract_list_section(text: str, labels: list[str]) -> list[str]:
     lowered = [line.casefold() for line in lines]
     for index, line in enumerate(lowered):
         for label in labels:
-            if line.startswith(label + ":") or line.casefold() == label:
-                values = []
+            if line.startswith(label + ":") or line == label:
+                inline = lines[index].split(":", 1)
+                values = (
+                    [inline[1].strip()]
+                    if len(inline) == 2 and inline[1].strip()
+                    else []
+                )
                 for follow in lines[index + 1 : index + 8]:
-                    if follow.casefold().startswith(tuple(labels)):
+                    if _is_section_heading(follow):
                         break
                     if follow.strip():
                         values.append(follow.strip())
                 return values
     return []
+
+
+_SECTION_HEADINGS = {
+    "about",
+    "academic background",
+    "certifications",
+    "education",
+    "experience",
+    "licenses and certifications",
+    "profile",
+    "professional experience",
+    "projects",
+    "skills",
+    "summary",
+    "technical skills",
+    "work experience",
+}
+
+
+def _is_section_heading(value: str) -> bool:
+    normalized = value.strip().rstrip(":").casefold()
+    return normalized in _SECTION_HEADINGS

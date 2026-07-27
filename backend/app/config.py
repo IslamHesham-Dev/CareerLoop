@@ -80,6 +80,34 @@ class Settings(BaseSettings):
             "DEGREELENS_GITHUB_OAUTH_CLIENT_ID",
         ),
     )
+    google_oauth_client_id: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "GOOGLE_OAUTH_CLIENT_ID",
+            "DEGREELENS_GOOGLE_OAUTH_CLIENT_ID",
+        ),
+    )
+    google_oauth_client_secret: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias=AliasChoices(
+            "GOOGLE_OAUTH_CLIENT_SECRET",
+            "DEGREELENS_GOOGLE_OAUTH_CLIENT_SECRET",
+        ),
+    )
+    google_oauth_redirect_uri: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "GOOGLE_OAUTH_REDIRECT_URI",
+            "DEGREELENS_GOOGLE_OAUTH_REDIRECT_URI",
+        ),
+    )
+    prototype_application_recipient: str = Field(
+        default="islammheshamm7@gmail.com",
+        validation_alias=AliasChoices(
+            "CAREERLOOP_PROTOTYPE_APPLICATION_RECIPIENT",
+            "DEGREELENS_PROTOTYPE_APPLICATION_RECIPIENT",
+        ),
+    )
     session_ttl_minutes: int = 45
     advisory_year: str = "2024-2025"
     current_season: str = "Winter 2024"

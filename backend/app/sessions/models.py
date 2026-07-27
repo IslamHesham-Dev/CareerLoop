@@ -28,13 +28,22 @@ class StudentSession:
     notion_oauth_state: str | None = None
     notion_oauth_expires_at: float | None = None
     linkedin_profile: dict[str, Any] | None = None
-    cv_profile: dict[str, Any] | None = None
+    resume_profile: dict[str, Any] | None = None
     github_access_token: str | None = None
     github_profile: dict[str, Any] | None = None
     github_device_code: str | None = None
     github_device_expires_at: float | None = None
     github_poll_interval: int = 5
     github_last_poll_at: float | None = None
+    gmail_access_token: str | None = None
+    gmail_refresh_token: str | None = None
+    gmail_token_expires_at: float | None = None
+    gmail_email: str | None = None
+    gmail_oauth_state: str | None = None
+    gmail_oauth_expires_at: float | None = None
+    pending_application_drafts: dict[str, dict[str, Any]] = field(
+        default_factory=dict
+    )
     career_preferences: dict[str, Any] | None = None
     chat_lock: threading.RLock = field(default_factory=threading.RLock)
 
@@ -55,13 +64,20 @@ class StudentSession:
         self.notion_oauth_state = None
         self.notion_oauth_expires_at = None
         self.linkedin_profile = None
-        self.cv_profile = None
+        self.resume_profile = None
         self.github_access_token = None
         self.github_profile = None
         self.github_device_code = None
         self.github_device_expires_at = None
         self.github_poll_interval = 5
         self.github_last_poll_at = None
+        self.gmail_access_token = None
+        self.gmail_refresh_token = None
+        self.gmail_token_expires_at = None
+        self.gmail_email = None
+        self.gmail_oauth_state = None
+        self.gmail_oauth_expires_at = None
+        self.pending_application_drafts.clear()
         self.career_preferences = None
         self.academic.clear_cache()
         self.cms.close()

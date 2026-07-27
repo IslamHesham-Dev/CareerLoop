@@ -11,8 +11,12 @@ from fastapi.responses import HTMLResponse
 
 from app.config import Settings, get_settings
 from app.dependencies import get_student_session
+from app.gmail import GmailClient, GmailIntegrationError
 from app.notion import NotionClient, NotionIntegrationError
 from app.schemas.integrations import (
+    GmailConnectResponse,
+    GmailDisconnectResponse,
+    GmailStatusResponse,
     NotionConnectResponse,
     NotionExportRequest,
     NotionExportResponse,
@@ -36,6 +40,165 @@ def _oauth_configured(settings: Settings) -> bool:
             settings.notion_oauth_redirect_uri.strip(),
         )
     )
+
+
+def _gmail_oauth_configured(settings: Settings) -> bool:
+    return all(
+        (
+            settings.google_oauth_client_id.strip(),
+            settings.google_oauth_client_secret.get_secret_value().strip(),
+            settings.google_oauth_redirect_uri.strip(),
+        )
+    )
+
+
+def _gmail_configuration_message(settings: Settings) -> str | None:
+    values = (
+        settings.google_oauth_client_id.strip(),
+        settings.google_oauth_client_secret.get_secret_value().strip(),
+        settings.google_oauth_redirect_uri.strip(),
+    )
+    if not any(values):
+        return (
+            "Add the Google OAuth client ID, client secret, and callback URI "
+            "to the backend deployment."
+        )
+    if not all(values):
+        return (
+            "Google OAuth is incomplete. Add GOOGLE_OAUTH_CLIENT_ID, "
+            "GOOGLE_OAUTH_CLIENT_SECRET, and GOOGLE_OAUTH_REDIRECT_URI."
+        )
+    return None
+
+
+@router.get("/gmail/status", response_model=GmailStatusResponse)
+def gmail_status(
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GmailStatusResponse:
+    available = _gmail_oauth_configured(settings)
+    return GmailStatusResponse(
+        available=available,
+        connected=available and bool(student.gmail_access_token),
+        email=student.gmail_email,
+        configuration_message=_gmail_configuration_message(settings),
+    )
+
+
+@router.post("/gmail/connect", response_model=GmailConnectResponse)
+def connect_gmail(
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> GmailConnectResponse:
+    if student.gmail_access_token and student.gmail_email:
+        return GmailConnectResponse(connected=True)
+    if not _gmail_oauth_configured(settings):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=_gmail_configuration_message(settings)
+            or "Gmail sending has not been configured.",
+        )
+    oauth_state = secrets.token_urlsafe(32)
+    student.gmail_oauth_state = oauth_state
+    student.gmail_oauth_expires_at = time.time() + 10 * 60
+    return GmailConnectResponse(
+        connected=False,
+        authorization_url=GmailClient.authorization_url(
+            client_id=settings.google_oauth_client_id,
+            redirect_uri=settings.google_oauth_redirect_uri,
+            state=oauth_state,
+        ),
+    )
+
+
+@router.get("/gmail/callback", response_class=HTMLResponse)
+async def gmail_callback(
+    code: str | None = Query(default=None),
+    state: str | None = Query(default=None),
+    error: str | None = Query(default=None),
+    settings: Settings = Depends(get_settings),
+) -> HTMLResponse:
+    if error:
+        return _callback_page(
+            "Connection cancelled",
+            "Gmail access was not granted. You can close this page.",
+            success=False,
+        )
+    if not code or not state:
+        return _callback_page(
+            "Invalid connection",
+            "The Google authorization response was incomplete.",
+            success=False,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    student = session_store.find_by_gmail_oauth_state(state)
+    if student is None:
+        return _callback_page(
+            "Connection expired",
+            "Return to CareerLoop and connect Gmail again.",
+            success=False,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        result = await run_in_threadpool(
+            GmailClient.exchange_code,
+            client_id=settings.google_oauth_client_id,
+            client_secret=(
+                settings.google_oauth_client_secret.get_secret_value()
+            ),
+            redirect_uri=settings.google_oauth_redirect_uri,
+            code=code,
+        )
+        access_token = result.get("access_token")
+        if not isinstance(access_token, str) or not access_token:
+            raise GmailIntegrationError(
+                "Google did not return a Gmail access token."
+            )
+        student.gmail_access_token = access_token
+        refresh_token = result.get("refresh_token")
+        if isinstance(refresh_token, str) and refresh_token:
+            student.gmail_refresh_token = refresh_token
+        expires_in = result.get("expires_in")
+        student.gmail_token_expires_at = (
+            time.time() + float(expires_in)
+            if isinstance(expires_in, (int, float))
+            else None
+        )
+        student.gmail_email = await run_in_threadpool(
+            GmailClient.user_email,
+            access_token,
+        )
+        student.gmail_oauth_state = None
+        student.gmail_oauth_expires_at = None
+    except (GmailIntegrationError, ValueError) as exc:
+        student.gmail_access_token = None
+        student.gmail_refresh_token = None
+        student.gmail_token_expires_at = None
+        student.gmail_email = None
+        return _callback_page(
+            "Connection failed",
+            str(exc),
+            success=False,
+            status_code=status.HTTP_502_BAD_GATEWAY,
+        )
+    return _callback_page(
+        "Gmail connected",
+        "Return to CareerLoop. Your application is ready for review.",
+        success=True,
+    )
+
+
+@router.post("/gmail/disconnect", response_model=GmailDisconnectResponse)
+def disconnect_gmail(
+    student: StudentSession = Depends(get_student_session),
+) -> GmailDisconnectResponse:
+    student.gmail_access_token = None
+    student.gmail_refresh_token = None
+    student.gmail_token_expires_at = None
+    student.gmail_email = None
+    student.gmail_oauth_state = None
+    student.gmail_oauth_expires_at = None
+    return GmailDisconnectResponse(message="Gmail disconnected.")
 
 
 def _configuration_message(settings: Settings) -> str | None:

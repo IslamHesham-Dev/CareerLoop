@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'career_profile_repository.dart';
+import 'current_cv_repository.dart';
 import 'github_profile_repository.dart';
 import 'models.dart';
 import 'practice_repository.dart';
@@ -413,6 +414,7 @@ class AdvisorRepository extends ChangeNotifier {
   final PracticeRepository practiceRepository;
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
+  final CurrentCvRepository currentCvRepository;
 
   final List<ChatMessage> messages = [];
   bool isSending = false;
@@ -423,6 +425,7 @@ class AdvisorRepository extends ChangeNotifier {
     required this.practiceRepository,
     required this.careerProfileRepository,
     required this.githubProfileRepository,
+    required this.currentCvRepository,
   });
 
   Future<ChatMessage?> send(String text) {
@@ -449,6 +452,13 @@ class AdvisorRepository extends ChangeNotifier {
     try {
       await careerProfileRepository.ensureSynced();
       await githubProfileRepository.ensureSynced();
+      final resumeReady = await currentCvRepository.ensureSynced();
+      if (currentCvRepository.hasProfile && !resumeReady) {
+        throw const ApiException(
+          'Your resume could not be loaded into this session. Try replacing '
+          'the PDF or signing in again.',
+        );
+      }
       final json = await api.post('/v1/chat', body: {'message': agent});
       final practiceJson = json['practice_set'];
       final practiceSet = practiceJson is Map

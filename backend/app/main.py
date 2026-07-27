@@ -5,7 +5,16 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import academic, auth, career, chat, cms, health, integrations
+from app.api.routes import (
+    academic,
+    applications,
+    auth,
+    career,
+    chat,
+    cms,
+    health,
+    integrations,
+)
 from app.config import get_settings
 from app.state import session_store
 
@@ -43,3 +52,4 @@ app.include_router(cms.router, prefix="/v1")
 app.include_router(chat.router, prefix="/v1")
 app.include_router(integrations.router, prefix="/v1")
 app.include_router(career.router, prefix="/v1")
+app.include_router(applications.router, prefix="/v1")

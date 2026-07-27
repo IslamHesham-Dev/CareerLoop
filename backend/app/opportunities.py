@@ -286,6 +286,7 @@ class OpportunityService:
         transcript: dict[str, Any] | None,
         linkedin_profile: dict[str, Any] | None,
         github_profile: dict[str, Any] | None = None,
+        resume_profile: dict[str, Any] | None = None,
         limit: int = 24,
     ) -> dict[str, Any]:
         resolved_location = self._location_filter(
@@ -303,10 +304,12 @@ class OpportunityService:
             academic_ready,
             linkedin_ready,
             github_ready,
+            resume_ready,
         ) = self._evidence_text(
             transcript,
             linkedin_profile,
             github_profile,
+            resume_profile,
         )
         known_skills = self._skills_in(evidence_text)
         normalized_keywords = [
@@ -391,7 +394,7 @@ class OpportunityService:
                 "academic_transcript": academic_ready,
                 "linkedin_pdf": linkedin_ready,
                 "github": github_ready,
-                "resume": False,
+                "resume": resume_ready,
             },
             "jobs": matches,
             "recommended_courses": courses,
@@ -402,16 +405,25 @@ class OpportunityService:
                     "description. Skill gaps are role-family inferences and "
                     "must be confirmed on the employer application page."
                 ),
-                (
-                    (
-                        "Resume evidence is not connected yet and was not "
-                        "used in the ranking."
-                    )
+                *(
+                    []
+                    if resume_ready
+                    else [
+                        (
+                            "Resume evidence is not connected yet and was "
+                            "not used in the ranking."
+                        )
+                    ]
+                ),
+                *(
+                    []
                     if github_ready
-                    else (
-                        "GitHub and resume evidence are not connected yet "
-                        "and were not used in the ranking."
-                    )
+                    else [
+                        (
+                            "GitHub project evidence is not connected yet "
+                            "and was not used in the ranking."
+                        )
+                    ]
                 ),
                 (
                     "Swelist has no dedicated remote/hybrid/on-site field; "
@@ -436,13 +448,15 @@ class OpportunityService:
         transcript: dict[str, Any] | None,
         linkedin_profile: dict[str, Any] | None,
         github_profile: dict[str, Any] | None,
-    ) -> tuple[str, bool, bool, bool]:
+        resume_profile: dict[str, Any] | None = None,
+    ) -> tuple[str, bool, bool, bool, bool]:
         pieces: list[str] = []
         academic_ready = bool(transcript and transcript.get("courses"))
         linkedin_ready = bool(linkedin_profile)
         github_ready = bool(
             github_profile and github_profile.get("repositories")
         )
+        resume_ready = bool(resume_profile and resume_profile.get("raw_text"))
         if transcript:
             pieces.extend(
                 str(course.get("course", ""))
@@ -480,11 +494,26 @@ class OpportunityService:
                         "detected_skills",
                     )
                 )
+        if resume_profile:
+            for field in (
+                "headline",
+                "summary",
+                "skills",
+                "experience",
+                "education",
+                "certifications",
+            ):
+                value = resume_profile.get(field)
+                if isinstance(value, list):
+                    pieces.extend(str(item) for item in value)
+                elif value:
+                    pieces.append(str(value))
         return (
             " ".join(pieces).casefold(),
             academic_ready,
             linkedin_ready,
             github_ready,
+            resume_ready,
         )
 
     @staticmethod

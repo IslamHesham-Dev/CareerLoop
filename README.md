@@ -120,8 +120,9 @@ inferences that must be confirmed on the employer page.
 
 Recommended learning paths come from
 `backend/content/career/course_catalog.json`, the deployable structured subset
-of `docs/Courses resources.txt`. Resume and Adzuna are intentionally shown as
-upcoming evidence/connectors rather than being implied as live.
+of `docs/Courses resources.txt`. Imported resume evidence now participates in
+matching when connected. Adzuna remains an upcoming connector rather than being
+implied as live.
 
 ## GitHub project evidence
 
@@ -143,6 +144,56 @@ manifests. A maximum of 12 recent owned/collaborative repositories is analyzed
 per refresh. The extracted snapshot is stored in the app's private support
 directory and rehydrated into short-lived CareerLoop sessions. The agent calls
 `get_github_project_profile` when technical project evidence is relevant.
+
+## Resume evidence
+
+**Career Studio → Resume evidence** accepts a text-based resume or CV PDF up to
+10 MB. The backend extracts name, headline, contact details, summary, skills,
+experience, education, and certifications into the current short-lived
+CareerLoop session. The original PDF and its structured snapshot are stored in
+the mobile app's private support directory; the backend does not persist the
+original file.
+
+The mobile app rehydrates the structured snapshot into every new university
+session before chat, opportunity matching, or application drafting. The agent
+uses `get_resume_profile` when relevant and can combine it with
+`get_full_transcript`, `get_linkedin_pdf_profile`, and
+`get_github_project_profile`. Resume text is treated as untrusted user data,
+not as instructions, and source conflicts must be disclosed instead of merged
+silently.
+
+## LinkedIn post to reviewed Gmail application
+
+**Career Studio → Post to Application** turns a public LinkedIn job-post link
+into an editable application email. CareerLoop uses pasted post text first when
+provided; otherwise it reads only public Open Graph metadata and asks for a
+paste when LinkedIn does not expose the post. It does not log in to, scrape, or
+claim private LinkedIn post access.
+
+The current CV is selected once and stored in the mobile app's private support
+directory. The backend combines the post with connected LinkedIn PDF and GitHub
+evidence to prepare a bounded draft, then pauses. The candidate can edit the
+subject and body and must tap **Approve & send application** before the PDF is
+uploaded and Gmail is called.
+
+For the prototype, the backend ignores any contact email found in a post and
+enforces `islammheshamm7@gmail.com` as the recipient. Configure that lock and
+Google OAuth on the Render backend service:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=your_google_web_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_web_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=https://careerloop.onrender.com/v1/integrations/gmail/callback
+CAREERLOOP_PROTOTYPE_APPLICATION_RECIPIENT=islammheshamm7@gmail.com
+```
+
+In Google Cloud, enable the Gmail API, configure the OAuth consent screen, add
+the Gmail accounts used for the demo as test users while the app is in testing,
+and create a **Web application** OAuth client. Add the redirect URI above
+exactly under **Authorized redirect URIs**. CareerLoop requests identity plus
+the narrow `gmail.send` permission; it cannot read the inbox through this
+connection. Keep the client secret only in `backend/.env` locally and Render
+Environment in deployment—never in Flutter or GitHub Actions.
 
 ## Notion response export
 

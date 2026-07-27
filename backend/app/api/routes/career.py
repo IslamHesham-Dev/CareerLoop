@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
 
 from app.config import Settings, get_settings
+from cv_connector import CVExtractionError, extract_cv_profile_from_bytes
 from app.dependencies import get_student_session
 from app.github_profile import (
     GithubConfigurationError,
@@ -28,6 +29,9 @@ from app.schemas.career import (
     LinkedInProfile,
     LinkedInProfileMessage,
     LinkedInProfileStatus,
+    ResumeProfile,
+    ResumeProfileMessage,
+    ResumeProfileStatus,
     GithubAuthorizationPoll,
     GithubDeviceAuthorization,
     GithubProfileEvidence,
@@ -38,6 +42,7 @@ from app.sessions.models import StudentSession
 
 router = APIRouter(prefix="/career", tags=["career evidence"])
 opportunity_service = OpportunityService()
+MAX_RESUME_PDF_BYTES = 10 * 1024 * 1024
 
 
 @router.get(
@@ -107,6 +112,69 @@ def remove_linkedin_profile(
 ) -> LinkedInProfileMessage:
     _replace_profile(student, None)
     return LinkedInProfileMessage(message="LinkedIn PDF profile removed.")
+
+
+@router.get("/resume", response_model=ResumeProfileStatus)
+def resume_profile_status(
+    student: StudentSession = Depends(get_student_session),
+) -> ResumeProfileStatus:
+    profile = (
+        ResumeProfile.model_validate(student.resume_profile)
+        if student.resume_profile
+        else None
+    )
+    return ResumeProfileStatus(connected=profile is not None, profile=profile)
+
+
+@router.post("/resume/import", response_model=ResumeProfileStatus)
+async def import_resume_profile(
+    file: UploadFile = File(...),
+    student: StudentSession = Depends(get_student_session),
+) -> ResumeProfileStatus:
+    file_name = file.filename or "Current_CV.pdf"
+    if not file_name.casefold().endswith(".pdf"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Choose your resume or CV as a PDF.",
+        )
+    content = await file.read(MAX_RESUME_PDF_BYTES + 1)
+    await file.close()
+    if len(content) > MAX_RESUME_PDF_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Choose a resume that is 10 MB or smaller.",
+        )
+    try:
+        extracted = await run_in_threadpool(
+            extract_cv_profile_from_bytes,
+            content,
+            file_name=file_name,
+        )
+        profile = ResumeProfile.model_validate(extracted.to_dict())
+    except CVExtractionError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from None
+    _replace_resume_profile(student, profile)
+    return ResumeProfileStatus(connected=True, profile=profile)
+
+
+@router.post("/resume/sync", response_model=ResumeProfileStatus)
+def sync_resume_profile(
+    profile: ResumeProfile,
+    student: StudentSession = Depends(get_student_session),
+) -> ResumeProfileStatus:
+    _replace_resume_profile(student, profile)
+    return ResumeProfileStatus(connected=True, profile=profile)
+
+
+@router.post("/resume/remove", response_model=ResumeProfileMessage)
+def remove_resume_profile(
+    student: StudentSession = Depends(get_student_session),
+) -> ResumeProfileMessage:
+    _replace_resume_profile(student, None)
+    return ResumeProfileMessage(message="Resume profile removed.")
 
 
 @router.get(
@@ -364,6 +432,7 @@ async def search_opportunities(
             transcript=transcript,
             linkedin_profile=student.linkedin_profile,
             github_profile=student.github_profile,
+            resume_profile=student.resume_profile,
             limit=payload.limit,
         )
 
@@ -393,6 +462,16 @@ def _replace_github_profile(
     student.github_profile = profile.model_dump() if profile else None
     student.conversation.clear()
     student.agent = None
+
+
+def _replace_resume_profile(
+    student: StudentSession,
+    profile: ResumeProfile | None,
+) -> None:
+    with student.chat_lock:
+        student.resume_profile = profile.model_dump() if profile else None
+        student.conversation.clear()
+        student.agent = None
 
 
 def _clear_github_device_flow(student: StudentSession) -> None:
