@@ -2,7 +2,16 @@
 
 from __future__ import annotations
 
+import io
+from datetime import datetime
+
 from langchain_anthropic import ChatAnthropic
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
 
 
 class CoverLetterGenerator:
@@ -109,6 +118,92 @@ Generate only the cover letter text, without any additional commentary or metada
             lines.append(f"Posting Link: {posting['link']}")
         return "\n".join(lines)
 
+    def generate_cover_letter_pdf(
+        self,
+        career_data: dict,
+        job_posting: dict,
+        custom_input: str = "",
+        filename: str | None = None,
+    ) -> bytes:
+        """Generate a cover letter as a PDF file.
+        
+        Args:
+            career_data: Extracted CV/profile with name, skills, experience, education, summary
+            job_posting: Job posting with title, description, company, requirements
+            custom_input: User-provided context, preferences, or specific details
+            filename: Optional filename for the PDF (used in metadata)
+            
+        Returns:
+            PDF file as bytes
+        """
+        # Generate the cover letter text first
+        cover_letter_text = self.generate_cover_letter(career_data, job_posting, custom_input)
+        
+        # Create PDF in memory
+        pdf_buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            pdf_buffer,
+            pagesize=letter,
+            rightMargin=0.75 * inch,
+            leftMargin=0.75 * inch,
+            topMargin=0.75 * inch,
+            bottomMargin=0.75 * inch,
+            title=filename or "Cover Letter",
+        )
+        
+        # Build the PDF elements
+        elements = []
+        
+        # Get styles and create custom style for cover letter
+        styles = getSampleStyleSheet()
+        cover_letter_style = ParagraphStyle(
+            name='CoverLetter',
+            parent=styles['Normal'],
+            fontSize=11,
+            leading=16,
+            alignment=TA_JUSTIFY,
+            spaceAfter=12,
+            fontName='Helvetica',
+        )
+        
+        # Add candidate name and date at top (if available)
+        candidate_name = career_data.get("name", "")
+        if candidate_name:
+            name_style = ParagraphStyle(
+                name='CandidateName',
+                parent=styles['Heading1'],
+                fontSize=12,
+                textColor=colors.HexColor('#333333'),
+                spaceAfter=6,
+                alignment=TA_LEFT,
+            )
+            elements.append(Paragraph(candidate_name, name_style))
+            elements.append(Spacer(1, 0.1 * inch))
+        
+        # Add date
+        date_str = datetime.now().strftime("%B %d, %Y")
+        date_style = ParagraphStyle(
+            name='DateStyle',
+            parent=styles['Normal'],
+            fontSize=10,
+            textColor=colors.HexColor('#666666'),
+            spaceAfter=12,
+            alignment=TA_LEFT,
+        )
+        elements.append(Paragraph(date_str, date_style))
+        elements.append(Spacer(1, 0.2 * inch))
+        
+        # Add the cover letter paragraphs
+        # Split by double newlines to preserve paragraph structure
+        paragraphs = cover_letter_text.split('\n\n')
+        for para_text in paragraphs:
+            if para_text.strip():
+                elements.append(Paragraph(para_text.strip(), cover_letter_style))
+        
+        # Build PDF
+        doc.build(elements)
+        return pdf_buffer.getvalue()
+
 
 def generate_cover_letter(
     career_data: dict,
@@ -131,3 +226,28 @@ def generate_cover_letter(
         raise ValueError("ANTHROPIC_API_KEY is required")
     generator = CoverLetterGenerator(anthropic_api_key=anthropic_api_key)
     return generator.generate_cover_letter(career_data, job_posting, custom_input)
+
+
+def generate_cover_letter_pdf(
+    career_data: dict,
+    job_posting: dict,
+    custom_input: str = "",
+    anthropic_api_key: str = "",
+    filename: str | None = None,
+) -> bytes:
+    """Standalone function to generate a cover letter PDF.
+    
+    Args:
+        career_data: Extracted CV/profile with name, skills, experience, education, summary
+        job_posting: Job posting with title, description, company, requirements
+        custom_input: User-provided context, preferences, or specific details
+        anthropic_api_key: Anthropic API key
+        filename: Optional filename for PDF metadata
+        
+    Returns:
+        PDF file as bytes
+    """
+    if not anthropic_api_key:
+        raise ValueError("ANTHROPIC_API_KEY is required")
+    generator = CoverLetterGenerator(anthropic_api_key=anthropic_api_key)
+    return generator.generate_cover_letter_pdf(career_data, job_posting, custom_input, filename)

@@ -377,6 +377,63 @@ def build_agent(student: StudentSession, settings: Settings):
                 "message": str(exc),
             }
 
+    @tool
+    def export_cover_letter_as_pdf(
+        cover_letter_text: str,
+        job_title: str = "",
+        company_name: str = "",
+    ) -> dict:
+        """Export a cover letter as a downloadable PDF file.
+        Use this after generating a cover letter to create a PDF version.
+        Returns the PDF as base64-encoded data that can be downloaded."""
+        from cover_letter_generator import CoverLetterGenerator
+        import base64
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+
+        try:
+            career_data = student.linkedin_profile or {}
+            if not career_data and student.cv_profile:
+                career_data = student.cv_profile
+
+            if not career_data:
+                return {
+                    "status": "error",
+                    "message": "No CV or LinkedIn profile loaded.",
+                }
+
+            # Extract candidate name from career data
+            candidate_name = career_data.get("name", "Candidate")
+            filename = f"{candidate_name.replace(' ', '_')}_Cover_Letter.pdf"
+
+            generator = CoverLetterGenerator(anthropic_api_key=api_key)
+            pdf_bytes = generator.generate_cover_letter_pdf(
+                career_data=career_data,
+                job_posting={
+                    "title": job_title,
+                    "company": company_name,
+                },
+                custom_input="",
+                filename=filename,
+            )
+
+            # Encode PDF as base64 for transmission
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+
+            return {
+                "status": "success",
+                "filename": filename,
+                "pdf_base64": pdf_base64,
+                "message": f"PDF cover letter created: {filename}",
+            }
+        except Exception as exc:
+            return {
+                "status": "error",
+                "message": str(exc),
+            }
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -409,6 +466,7 @@ def build_agent(student: StudentSession, settings: Settings):
         search_tech_jobs,
         get_company_jobs,
         generate_cover_letter_for_job,
+        export_cover_letter_as_pdf,
     ]
     if cms.connected:
         cms_context = (
@@ -582,6 +640,7 @@ def tool_events(
         ],
         "get_company_jobs": "Company career page (LLM Extracted)",
         "generate_cover_letter_for_job": "Generated cover letter (AI)",
+        "export_cover_letter_as_pdf": "Cover letter PDF export",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:
