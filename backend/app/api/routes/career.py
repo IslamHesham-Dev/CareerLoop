@@ -32,12 +32,16 @@ from app.schemas.career import (
     ResumeProfile,
     ResumeProfileMessage,
     ResumeProfileStatus,
+    ToneAnswers,
+    ToneMessage,
+    ToneStatus,
     GithubAuthorizationPoll,
     GithubDeviceAuthorization,
     GithubProfileEvidence,
     GithubProfileMessage,
     GithubProfileStatus,
 )
+from app.tone import ONBOARDING_QUESTIONS
 from app.sessions.models import StudentSession
 
 router = APIRouter(prefix="/career", tags=["career evidence"])
@@ -175,6 +179,37 @@ def remove_resume_profile(
 ) -> ResumeProfileMessage:
     _replace_resume_profile(student, None)
     return ResumeProfileMessage(message="Resume profile removed.")
+
+
+@router.get("/tone/questions", response_model=list[str])
+def tone_onboarding_questions() -> list[str]:
+    """The fixed prompts the app should ask to elicit the student's voice."""
+    return list(ONBOARDING_QUESTIONS)
+
+
+@router.get("/tone", response_model=ToneStatus)
+def tone_status(
+    student: StudentSession = Depends(get_student_session),
+) -> ToneStatus:
+    answers = student.tone_profile or {}
+    return ToneStatus(connected=bool(answers), answers=answers)
+
+
+@router.post("/tone/sync", response_model=ToneStatus)
+def sync_tone_answers(
+    payload: ToneAnswers,
+    student: StudentSession = Depends(get_student_session),
+) -> ToneStatus:
+    _replace_tone_profile(student, payload.answers or None)
+    return ToneStatus(connected=bool(payload.answers), answers=payload.answers)
+
+
+@router.post("/tone/remove", response_model=ToneMessage)
+def remove_tone_answers(
+    student: StudentSession = Depends(get_student_session),
+) -> ToneMessage:
+    _replace_tone_profile(student, None)
+    return ToneMessage(message="Tone answers removed.")
 
 
 @router.get(
@@ -470,6 +505,16 @@ def _replace_resume_profile(
 ) -> None:
     with student.chat_lock:
         student.resume_profile = profile.model_dump() if profile else None
+        student.conversation.clear()
+        student.agent = None
+
+
+def _replace_tone_profile(
+    student: StudentSession,
+    answers: dict[str, str] | None,
+) -> None:
+    with student.chat_lock:
+        student.tone_profile = answers
         student.conversation.clear()
         student.agent = None
 

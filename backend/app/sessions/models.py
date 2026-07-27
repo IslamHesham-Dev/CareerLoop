@@ -29,6 +29,7 @@ class StudentSession:
     notion_oauth_expires_at: float | None = None
     linkedin_profile: dict[str, Any] | None = None
     resume_profile: dict[str, Any] | None = None
+    tone_profile: dict[str, str] | None = None
     github_access_token: str | None = None
     github_profile: dict[str, Any] | None = None
     github_device_code: str | None = None
@@ -65,6 +66,7 @@ class StudentSession:
         self.notion_oauth_expires_at = None
         self.linkedin_profile = None
         self.resume_profile = None
+        self.tone_profile = None
         self.github_access_token = None
         self.github_profile = None
         self.github_device_code = None

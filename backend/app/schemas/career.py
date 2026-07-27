@@ -29,6 +29,27 @@ class LinkedInProfileMessage(BaseModel):
     message: str
 
 
+class ToneAnswers(BaseModel):
+    """The student's raw answers to app.tone.ONBOARDING_QUESTIONS.
+
+    Keyed by the question text itself rather than an index, so a question
+    can be reworded/reordered later without invalidating already-saved
+    answers. Deliberately not required to cover every question — a partial
+    set still improves generation, per app.tone.prompt.build_tone_reference.
+    """
+
+    answers: dict[str, str] = Field(default_factory=dict, max_length=10)
+
+
+class ToneStatus(BaseModel):
+    connected: bool
+    answers: dict[str, str] = Field(default_factory=dict)
+
+
+class ToneMessage(BaseModel):
+    message: str
+
+
 class ResumeProfile(BaseModel):
     file_name: str = Field(min_length=1, max_length=240)
     imported_at: str
