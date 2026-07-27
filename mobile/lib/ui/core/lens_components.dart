@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
@@ -23,12 +24,12 @@ class LensLogo extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * .27),
+            borderRadius: BorderRadius.circular(size * .28),
             boxShadow: [
               BoxShadow(
-                color: LensColors.indigo.withValues(alpha: .28),
-                blurRadius: 22,
-                offset: const Offset(0, 9),
+                color: LensColors.indigo.withValues(alpha: .25),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -47,8 +48,8 @@ class LensLogo extends StatelessWidget {
             style: TextStyle(
               color: wordmarkColor ?? LensColors.ink,
               fontWeight: FontWeight.w900,
-              letterSpacing: -.55,
-              fontSize: size * .46,
+              letterSpacing: -1.2,
+              fontSize: size * .5,
             ),
           ),
         ],
@@ -68,39 +69,46 @@ class AuroraBackground extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: dark ? LensColors.ink : LensColors.canvas,
-        gradient: dark
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF081126),
-                  Color(0xFF151A3E),
-                  Color(0xFF101C35),
-                ],
-              )
-            : const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFF8F8FF), LensColors.canvas],
-              ),
       ),
       child: Stack(
         children: [
+          // Dynamic Orbs
           Positioned(
-            top: -120,
-            right: -110,
+            top: -180,
+            right: -120,
             child: _GlowOrb(
-              size: 300,
+              size: 500,
               color: (dark ? LensColors.violet : LensColors.indigo)
-                  .withValues(alpha: dark ? .26 : .11),
+                  .withValues(alpha: dark ? .16 : .1),
             ),
           ),
           Positioned(
-            top: 260,
-            left: -150,
+            top: 250,
+            left: -200,
             child: _GlowOrb(
-              size: 320,
-              color: LensColors.aqua.withValues(alpha: dark ? .17 : .09),
+              size: 450,
+              color: LensColors.aqua.withValues(alpha: dark ? .12 : .08),
+            ),
+          ),
+          Positioned(
+            bottom: -150,
+            right: -100,
+            child: _GlowOrb(
+              size: 400,
+              color: LensColors.violet.withValues(alpha: dark ? .1 : .06),
+            ),
+          ),
+          // Subtle Grain/Noise Overlay simulation
+          Opacity(
+            opacity: 0.015,
+            child: Container(
+              decoration: const BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage('assets/branding/careerloop-icon.png'), // Placeholder for noise
+                  repeat: ImageRepeat.repeat,
+                  opacity: 0.1,
+                ),
+              ),
             ),
           ),
           child,
@@ -136,40 +144,77 @@ class LensCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final Color? color;
   final VoidCallback? onTap;
+  final bool isGlass;
+  final double blur;
+  final double borderRadius;
 
   const LensCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding = const EdgeInsets.all(24),
     this.color,
     this.onTap,
+    this.isGlass = false,
+    this.blur = 12,
+    this.borderRadius = 28,
   });
 
   @override
   Widget build(BuildContext context) {
-    final content = Container(
+    final cardColor = color ?? (isGlass ? Colors.white.withValues(alpha: 0.5) : Colors.white);
+    
+    Widget content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withValues(alpha: .94),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withValues(alpha: .9)),
+        color: cardColor,
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: Border.all(
+          color: isGlass 
+              ? Colors.white.withValues(alpha: 0.4) 
+              : LensColors.line.withValues(alpha: 0.5),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: LensColors.ink.withValues(alpha: .065),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
+            color: LensColors.ink.withValues(alpha: .03),
+            blurRadius: 40,
+            offset: const Offset(0, 16),
           ),
         ],
       ),
       child: child,
     );
+
+    if (isGlass) {
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: content,
+        ),
+      );
+    }
+
     if (onTap == null) return content;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(26),
-        onTap: onTap,
-        child: content,
+    
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        boxShadow: [
+          BoxShadow(
+            color: LensColors.ink.withValues(alpha: .04),
+            blurRadius: 32,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(borderRadius),
+          onTap: onTap,
+          child: content,
+        ),
       ),
     );
   }

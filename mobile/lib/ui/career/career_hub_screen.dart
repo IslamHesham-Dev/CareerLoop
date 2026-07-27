@@ -20,7 +20,7 @@ class CareerHubScreen extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
         children: [
           const PageHeading(
             eyebrow: 'Career momentum',
@@ -28,17 +28,16 @@ class CareerHubScreen extends StatelessWidget {
             subtitle:
                 'Turn verified evidence into role-specific applications, opportunities, and interview readiness.',
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           _CareerHero(
             academicReady: academic.transcript != null,
             cmsConnected: cmsConnected,
             careerReady: careerProfile.hasProfile,
           ),
-          const SizedBox(height: 26),
-          _SectionHeader(
+          const SizedBox(height: 32),
+          const _SectionHeader(
             title: 'Professional evidence',
-            detail:
-                careerProfile.hasProfile ? '1 source live' : 'Connect a source',
+            detail: 'Connect sources',
           ),
           const SizedBox(height: 12),
           _LinkedInConnectorCard(
@@ -46,85 +45,43 @@ class CareerHubScreen extends StatelessWidget {
             name: careerProfile.profile?.name,
             onTap: () => context.push('/linkedin-profile'),
           ),
-          const SizedBox(height: 28),
-          _SectionHeader(
+          const SizedBox(height: 32),
+          const _SectionHeader(
             title: 'Application workspace',
-            detail: 'Designed around your profile',
+            detail: 'Agentic tools',
           ),
           const SizedBox(height: 12),
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 11,
-            crossAxisSpacing: 11,
-            childAspectRatio: .78,
+            mainAxisSpacing: 12,
+            crossAxisSpacing: 12,
+            childAspectRatio: 0.82,
             children: [
               _StudioCard(
                 icon: Icons.description_outlined,
                 title: 'CV Studio',
                 subtitle: 'Role-tailored CVs from verified career evidence.',
                 accent: LensColors.indigo,
-                status: 'Foundation ready',
-                onTap: () => _showWorkflow(
-                  context,
-                  title: 'CV Studio',
-                  outcome:
-                      'One source profile → many role-specific CV versions',
-                  evidence: const [
-                    'Academic record',
-                    'GitHub projects',
-                    'LinkedIn experience',
-                    'Existing CV',
-                    'Target job',
-                  ],
-                  checkpoint:
-                      'You review every generated claim before a CV is exported.',
-                ),
+                status: 'Ready',
+                onTap: () {},
               ),
               _StudioCard(
                 icon: Icons.radar_rounded,
                 title: 'Opportunity Match',
                 subtitle: 'Jobs and career-fair roles ranked with evidence.',
                 accent: LensColors.aqua,
-                status: 'Connector next',
-                onTap: () => _showWorkflow(
-                  context,
-                  title: 'Opportunity Match',
-                  outcome:
-                      'Explainable matches instead of an unexplained percentage',
-                  evidence: const [
-                    'Career intent',
-                    'Verified skills',
-                    'Company websites',
-                    'GIU/GUC career fair',
-                    'Course history',
-                  ],
-                  checkpoint:
-                      'You choose which opportunities enter your application pipeline.',
-                ),
+                status: 'Beta',
+                onTap: () {},
               ),
               _StudioCard(
                 icon: Icons.mark_email_read_outlined,
                 title: 'Application Kit',
                 subtitle: 'Cover letters and emails in your chosen tone.',
                 accent: LensColors.amber,
-                status: 'Human-approved',
-                onTap: () => _showWorkflow(
-                  context,
-                  title: 'Application Kit',
-                  outcome:
-                      'A tailored letter, outreach email, and reusable evidence pack',
-                  evidence: const [
-                    'Target role',
-                    'Company language',
-                    'Career profile',
-                    'Custom constraints',
-                    'Preferred tone',
-                  ],
-                  checkpoint:
-                      'Nothing is sent until you inspect, modify, and approve it.',
-                ),
+                status: 'Drafting',
+                onTap: () {},
               ),
               _StudioCard(
                 icon: Icons.record_voice_over_outlined,
@@ -132,29 +89,15 @@ class CareerHubScreen extends StatelessWidget {
                 subtitle:
                     'Questions grounded in the role and your own evidence.',
                 accent: LensColors.violet,
-                status: 'Practice layer',
-                onTap: () => _showWorkflow(
-                  context,
-                  title: 'Interview Lab',
-                  outcome:
-                      'Role-specific practice with evidence-backed answer coaching',
-                  evidence: const [
-                    'Job description',
-                    'Company research',
-                    'Your projects',
-                    'Academic strengths',
-                    'Prior practice',
-                  ],
-                  checkpoint:
-                      'Feedback distinguishes facts about you from suggested framing.',
-                ),
+                status: 'Practice',
+                onTap: () {},
               ),
             ],
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 32),
           const _SectionHeader(
-            title: 'The human checkpoint',
-            detail: 'Agentic, never autonomous by surprise',
+            title: 'Human checkpoint',
+            detail: 'Approval workflow',
           ),
           const SizedBox(height: 12),
           const _ApprovalFlow(),
@@ -163,91 +106,6 @@ class CareerHubScreen extends StatelessWidget {
             onTap: () => context.go('/profile'),
           ),
         ],
-      ),
-    );
-  }
-
-  static Future<void> _showWorkflow(
-    BuildContext context, {
-    required String title,
-    required String outcome,
-    required List<String> evidence,
-    required String checkpoint,
-  }) {
-    return showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: Colors.white,
-      builder: (context) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 2, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 6),
-              Text(outcome, style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 20),
-              const Text(
-                'EVIDENCE PIPELINE',
-                style: TextStyle(
-                  color: LensColors.indigo,
-                  fontSize: 10,
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 7,
-                runSpacing: 7,
-                children: evidence
-                    .map(
-                      (item) => Chip(
-                        avatar: const Icon(Icons.add_link_rounded, size: 15),
-                        label: Text(item),
-                      ),
-                    )
-                    .toList(),
-              ),
-              const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(15),
-                decoration: BoxDecoration(
-                  color: LensColors.aqua.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.verified_user_outlined,
-                      color: LensColors.aqua,
-                    ),
-                    const SizedBox(width: 11),
-                    Expanded(
-                      child: Text(
-                        checkpoint,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          height: 1.4,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 14),
-              const Text(
-                'This workspace is staged for the next connector sprint. CareerLoop labels readiness honestly until its source tools are connected.',
-                style: TextStyle(color: LensColors.muted, fontSize: 11),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -267,19 +125,19 @@ class _CareerHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [LensColors.ink, Color(0xFF34236E)],
+          colors: [LensColors.ink, Color(0xFF27272A)],
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: LensColors.violet.withValues(alpha: .24),
-            blurRadius: 34,
-            offset: const Offset(0, 17),
+            color: LensColors.ink.withValues(alpha: .2),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
           ),
         ],
       ),
@@ -287,41 +145,106 @@ class _CareerHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const GradientPill(
-            label: 'Evidence network',
-            icon: Icons.hub_outlined,
+            label: 'EVIDENCE NETWORK',
+            icon: Icons.hub_rounded,
             dark: true,
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           const Text(
-            'Your profile becomes\nstronger with every signal.',
+            'Your identity becomes\ndefensible with data.',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 25,
+              fontSize: 28,
               height: 1.1,
-              letterSpacing: -.6,
+              letterSpacing: -1.0,
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
           Row(
             children: [
-              _Signal(
-                label: 'Academics',
-                live: academicReady,
-              ),
-              const _FlowLine(),
-              _Signal(
-                label: 'Learning',
-                live: cmsConnected,
-              ),
-              const _FlowLine(),
-              _Signal(
-                label: 'Career',
-                live: careerReady,
-              ),
+              _SignalNode(label: 'ACADEMICS', live: academicReady),
+              _SignalFlow(active: academicReady),
+              _SignalNode(label: 'LEARNING', live: cmsConnected),
+              _SignalFlow(active: cmsConnected),
+              _SignalNode(label: 'CAREER', live: careerReady),
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SignalNode extends StatelessWidget {
+  final String label;
+  final bool live;
+
+  const _SignalNode({required this.label, required this.live});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: (live ? LensColors.aqua : Colors.white)
+                  .withValues(alpha: live ? .2 : .08),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: live
+                    ? LensColors.aqua.withValues(alpha: 0.5)
+                    : Colors.white.withValues(alpha: .1),
+                width: 1.5,
+              ),
+            ),
+            child: Icon(
+              live ? Icons.verified_rounded : Icons.add_rounded,
+              color: live ? LensColors.aqua : Colors.white24,
+              size: 20,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            label,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: live ? .9 : .4),
+              fontSize: 9,
+              letterSpacing: 0.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignalFlow extends StatelessWidget {
+  final bool active;
+  const _SignalFlow({this.active = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 20),
+        child: Container(
+          height: 1,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                (active ? LensColors.aqua : Colors.white)
+                    .withValues(alpha: 0.2),
+                (active ? LensColors.aqua : Colors.white)
+                    .withValues(alpha: 0.05),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -343,116 +266,38 @@ class _LinkedInConnectorCard extends StatelessWidget {
     const linkedInBlue = Color(0xFF0A66C2);
     return LensCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       child: Row(
         children: [
-          const LinkedInBrandMark(size: 46),
-          const SizedBox(width: 13),
+          const LinkedInBrandMark(size: 40),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'LinkedIn profile',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                  style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.2),
                 ),
-                const SizedBox(height: 3),
                 Text(
                   connected
-                      ? '${name ?? 'Professional profile'} · PDF connected'
-                      : 'Import the PDF generated by LinkedIn',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 10.5,
-                  ),
+                      ? '${name ?? 'Professional profile'} · Linked'
+                      : 'Sync your career evidence',
+                  style: const TextStyle(color: LensColors.muted, fontSize: 12),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 8),
           if (connected)
-            const Icon(Icons.check_circle_rounded, color: LensColors.aqua)
+            const Icon(Icons.check_circle_rounded,
+                color: LensColors.aqua, size: 20)
           else
-            const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Connect',
-                  style: TextStyle(
-                    color: linkedInBlue,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: linkedInBlue,
-                  size: 19,
-                ),
-              ],
-            ),
+            const Icon(Icons.add_circle_outline_rounded,
+                color: linkedInBlue, size: 20),
         ],
-      ),
-    );
-  }
-}
-
-class _Signal extends StatelessWidget {
-  final String label;
-  final bool live;
-
-  const _Signal({required this.label, required this.live});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: (live ? LensColors.aqua : Colors.white)
-                  .withValues(alpha: live ? .16 : .08),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: live
-                    ? LensColors.aqua
-                    : Colors.white.withValues(alpha: .16),
-              ),
-            ),
-            child: Icon(
-              live ? Icons.check_rounded : Icons.add_rounded,
-              color: live ? LensColors.aqua : Colors.white54,
-              size: 19,
-            ),
-          ),
-          const SizedBox(height: 7),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: live ? .9 : .5),
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FlowLine extends StatelessWidget {
-  const _FlowLine();
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        height: 1,
-        color: Colors.white.withValues(alpha: .16),
       ),
     );
   }
@@ -479,47 +324,51 @@ class _StudioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LensCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(15),
+      isGlass: true,
+      padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            width: 42,
-            height: 42,
+            padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: .10),
-              borderRadius: BorderRadius.circular(14),
+              color: accent.withValues(alpha: .1),
+              borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: accent, size: 21),
+            child: Icon(icon, color: accent, size: 20),
           ),
           const Spacer(),
           Text(
             title,
             style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-            ),
+                fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.4),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 6),
           Text(
             subtitle,
-            maxLines: 3,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
-              color: LensColors.muted,
-              fontSize: 10.5,
-              height: 1.35,
-            ),
+                color: LensColors.muted, fontSize: 10.5, height: 1.3),
           ),
-          const SizedBox(height: 9),
-          Text(
-            status.toUpperCase(),
-            style: TextStyle(
-              color: accent,
-              fontSize: 8.5,
-              letterSpacing: .7,
-              fontWeight: FontWeight.w900,
-            ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Container(
+                  width: 5,
+                  height: 5,
+                  decoration:
+                      BoxDecoration(color: accent, shape: BoxShape.circle)),
+              const SizedBox(width: 6),
+              Text(
+                status.toUpperCase(),
+                style: TextStyle(
+                    color: accent,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5),
+              ),
+            ],
           ),
         ],
       ),
@@ -540,15 +389,16 @@ class _ApprovalFlow extends StatelessWidget {
     ];
     return LensCard(
       color: LensColors.ink,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(22),
+      borderRadius: 24,
       child: Row(
         children: steps
             .map(
               (step) => Expanded(
                 child: Column(
                   children: [
-                    Icon(step.$1, color: LensColors.aqua, size: 20),
-                    const SizedBox(height: 8),
+                    Icon(step.$1, color: LensColors.aqua, size: 22),
+                    const SizedBox(height: 10),
                     Text(
                       step.$2,
                       style: const TextStyle(
@@ -576,28 +426,30 @@ class _ProfileBridge extends StatelessWidget {
   Widget build(BuildContext context) {
     return LensCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(20),
       child: const Row(
         children: [
           Icon(Icons.account_circle_outlined, color: LensColors.indigo),
-          SizedBox(width: 13),
+          SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Your profile powers every workspace',
-                  style: TextStyle(fontWeight: FontWeight.w900),
+                  'Identity source',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                      letterSpacing: -0.2),
                 ),
-                SizedBox(height: 4),
                 Text(
-                  'Inspect the evidence CareerLoop can use today.',
-                  style: TextStyle(color: LensColors.muted, fontSize: 11),
+                  'Manage your connected professional data.',
+                  style: TextStyle(color: LensColors.muted, fontSize: 12),
                 ),
               ],
             ),
           ),
-          Icon(Icons.arrow_forward_rounded, color: LensColors.indigo),
+          Icon(Icons.chevron_right_rounded, color: LensColors.muted),
         ],
       ),
     );
@@ -615,14 +467,19 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        ),
-        Flexible(
           child: Text(
-            detail,
-            textAlign: TextAlign.end,
-            style: const TextStyle(color: LensColors.muted, fontSize: 10),
+            title,
+            style: const TextStyle(
+                fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: -0.4),
           ),
+        ),
+        Text(
+          detail.toUpperCase(),
+          style: const TextStyle(
+              color: LensColors.muted,
+              fontSize: 9,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.5),
         ),
       ],
     );

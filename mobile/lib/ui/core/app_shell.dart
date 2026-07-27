@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -19,51 +20,77 @@ class AppShell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: AuroraBackground(child: navigationShell),
-      bottomNavigationBar: DecoratedBox(
+      bottomNavigationBar: Container(
+        margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
         decoration: BoxDecoration(
-          color: Colors.white,
-          border: const Border(top: BorderSide(color: LensColors.line)),
+          color: Colors.white.withValues(alpha: 0.92),
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
           boxShadow: [
             BoxShadow(
-              color: LensColors.ink.withValues(alpha: .06),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
+              color: LensColors.ink.withValues(alpha: .08),
+              blurRadius: 32,
+              offset: const Offset(0, 8),
             ),
           ],
         ),
-        child: SafeArea(
-          top: false,
-          child: NavigationBar(
-            selectedIndex: navigationShell.currentIndex,
-            onDestinationSelected: _select,
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.all_inclusive_outlined),
-                selectedIcon: Icon(Icons.all_inclusive_rounded),
-                label: 'Loop',
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: NavigationBar(
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                height: 68,
+                selectedIndex: navigationShell.currentIndex,
+                onDestinationSelected: _select,
+                indicatorColor: LensColors.ink.withValues(alpha: 0.05),
+                destinations: [
+                  const NavigationDestination(
+                    icon: Icon(Icons.all_inclusive_outlined, size: 22),
+                    selectedIcon: Icon(Icons.all_inclusive_rounded, size: 22, color: LensColors.ink),
+                    label: 'Loop',
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.auto_stories_outlined, size: 22),
+                    selectedIcon: Icon(Icons.auto_stories_rounded, size: 22, color: LensColors.ink),
+                    label: 'Learn',
+                  ),
+                  NavigationDestination(
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: LensColors.ink,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: LensColors.ink.withValues(alpha: 0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(Icons.auto_awesome_rounded, size: 20, color: Colors.white),
+                    ),
+                    label: 'Copilot',
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.rocket_launch_outlined, size: 22),
+                    selectedIcon: Icon(Icons.rocket_launch_rounded, size: 22, color: LensColors.violet),
+                    label: 'Career',
+                  ),
+                  const NavigationDestination(
+                    icon: Icon(Icons.person_outline_rounded, size: 22),
+                    selectedIcon: Icon(Icons.person_rounded, size: 22, color: LensColors.ink),
+                    label: 'Profile',
+                  ),
+                ],
               ),
-              NavigationDestination(
-                icon: Icon(Icons.auto_stories_outlined),
-                selectedIcon: Icon(Icons.auto_stories_rounded),
-                label: 'Learn',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.auto_awesome_outlined),
-                selectedIcon: Icon(Icons.auto_awesome_rounded),
-                label: 'Copilot',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.rocket_launch_outlined),
-                selectedIcon: Icon(Icons.rocket_launch_rounded),
-                label: 'Career',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline_rounded),
-                selectedIcon: Icon(Icons.person_rounded),
-                label: 'Profile',
-              ),
-            ],
+            ),
           ),
         ),
       ),
