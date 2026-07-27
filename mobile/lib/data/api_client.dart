@@ -101,12 +101,14 @@ class ApiClient {
     required String fieldName,
     required String filePath,
     required String filename,
+    Map<String, String> fields = const {},
   }) async {
     final request = http.MultipartRequest('POST', _uri(path));
     request.headers.addAll({
       'Accept': 'application/json',
       if (_token != null) 'Authorization': 'Bearer $_token',
     });
+    request.fields.addAll(fields);
     request.files.add(
       await http.MultipartFile.fromPath(
         fieldName,

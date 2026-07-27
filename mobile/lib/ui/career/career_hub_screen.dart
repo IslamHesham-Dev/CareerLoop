@@ -105,26 +105,13 @@ class CareerHubScreen extends StatelessWidget {
                 onTap: () => context.push('/opportunities'),
               ),
               _StudioCard(
-                icon: Icons.mark_email_read_outlined,
-                title: 'Application Kit',
-                subtitle: 'Cover letters and emails in your chosen tone.',
+                icon: Icons.forward_to_inbox_rounded,
+                title: 'Post to Application',
+                subtitle:
+                    'Turn a LinkedIn job post into a reviewed Gmail application.',
                 accent: LensColors.amber,
-                status: 'Human-approved',
-                onTap: () => _showWorkflow(
-                  context,
-                  title: 'Application Kit',
-                  outcome:
-                      'A tailored letter, outreach email, and reusable evidence pack',
-                  evidence: const [
-                    'Target role',
-                    'Company language',
-                    'Career profile',
-                    'Custom constraints',
-                    'Preferred tone',
-                  ],
-                  checkpoint:
-                      'Nothing is sent until you inspect, modify, and approve it.',
-                ),
+                status: 'Gmail action',
+                onTap: () => context.push('/quick-apply'),
               ),
               _StudioCard(
                 icon: Icons.record_voice_over_outlined,

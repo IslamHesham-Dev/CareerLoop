@@ -98,6 +98,22 @@ class SessionStore:
                     return session
         return None
 
+    def find_by_gmail_oauth_state(
+        self,
+        state: str,
+    ) -> StudentSession | None:
+        now = time.time()
+        with self._lock:
+            self._purge_expired_locked(now)
+            for session in self._sessions.values():
+                if (
+                    session.gmail_oauth_state == state
+                    and session.gmail_oauth_expires_at is not None
+                    and session.gmail_oauth_expires_at > now
+                ):
+                    return session
+        return None
+
     def _purge_expired_locked(self, now: float) -> None:
         expired = [
             digest

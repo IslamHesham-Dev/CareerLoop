@@ -26,3 +26,19 @@ class NotionExportResponse(BaseModel):
     page_id: str
     page_url: str
     title: str
+
+
+class GmailStatusResponse(BaseModel):
+    available: bool
+    connected: bool
+    email: str | None = None
+    configuration_message: str | None = None
+
+
+class GmailConnectResponse(BaseModel):
+    connected: bool
+    authorization_url: str | None = None
+
+
+class GmailDisconnectResponse(BaseModel):
+    message: str

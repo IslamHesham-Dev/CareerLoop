@@ -4,7 +4,9 @@ import 'package:provider/provider.dart';
 import 'app/app.dart';
 import 'core/environment.dart';
 import 'data/api_client.dart';
+import 'data/application_repository.dart';
 import 'data/career_profile_repository.dart';
+import 'data/current_cv_repository.dart';
 import 'data/github_profile_repository.dart';
 import 'data/opportunity_repository.dart';
 import 'data/repositories.dart';
@@ -28,6 +30,8 @@ Future<void> main() async {
   await careerProfile.loadLocal();
   final githubProfile = GithubProfileRepository(api: api);
   await githubProfile.loadLocal();
+  final currentCv = CurrentCvRepository();
+  await currentCv.loadLocal();
   final advisor = AdvisorRepository(
     api: api,
     practiceRepository: practice,
@@ -39,6 +43,12 @@ Future<void> main() async {
     api: api,
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
+  );
+  final applications = ApplicationRepository(
+    api: api,
+    careerProfileRepository: careerProfile,
+    githubProfileRepository: githubProfile,
+    currentCvRepository: currentCv,
   );
 
   await auth.restoreSession();
@@ -55,6 +65,8 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: careerProfile),
         ChangeNotifierProvider.value(value: githubProfile),
         ChangeNotifierProvider.value(value: opportunities),
+        ChangeNotifierProvider.value(value: currentCv),
+        ChangeNotifierProvider.value(value: applications),
       ],
       child: const CareerLoopApp(),
     ),

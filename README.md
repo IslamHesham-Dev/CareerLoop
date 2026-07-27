@@ -144,6 +144,39 @@ per refresh. The extracted snapshot is stored in the app's private support
 directory and rehydrated into short-lived CareerLoop sessions. The agent calls
 `get_github_project_profile` when technical project evidence is relevant.
 
+## LinkedIn post to reviewed Gmail application
+
+**Career Studio → Post to Application** turns a public LinkedIn job-post link
+into an editable application email. CareerLoop uses pasted post text first when
+provided; otherwise it reads only public Open Graph metadata and asks for a
+paste when LinkedIn does not expose the post. It does not log in to, scrape, or
+claim private LinkedIn post access.
+
+The current CV is selected once and stored in the mobile app's private support
+directory. The backend combines the post with connected LinkedIn PDF and GitHub
+evidence to prepare a bounded draft, then pauses. The candidate can edit the
+subject and body and must tap **Approve & send application** before the PDF is
+uploaded and Gmail is called.
+
+For the prototype, the backend ignores any contact email found in a post and
+enforces `islammheshamm7@gmail.com` as the recipient. Configure that lock and
+Google OAuth on the Render backend service:
+
+```env
+GOOGLE_OAUTH_CLIENT_ID=your_google_web_client_id
+GOOGLE_OAUTH_CLIENT_SECRET=your_google_web_client_secret
+GOOGLE_OAUTH_REDIRECT_URI=https://careerloop.onrender.com/v1/integrations/gmail/callback
+CAREERLOOP_PROTOTYPE_APPLICATION_RECIPIENT=islammheshamm7@gmail.com
+```
+
+In Google Cloud, enable the Gmail API, configure the OAuth consent screen, add
+the Gmail accounts used for the demo as test users while the app is in testing,
+and create a **Web application** OAuth client. Add the redirect URI above
+exactly under **Authorized redirect URIs**. CareerLoop requests identity plus
+the narrow `gmail.send` permission; it cannot read the inbox through this
+connection. Keep the client secret only in `backend/.env` locally and Render
+Environment in deployment—never in Flutter or GitHub Actions.
+
 ## Notion response export
 
 Every Copilot answer, including answers from the floating content assistant,

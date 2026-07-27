@@ -81,6 +81,23 @@ The backend keeps the device code and eventual OAuth token inside the
 short-lived student session. Flutter persists only the extracted public profile
 snapshot and can sync that snapshot into a new university session.
 
+## Reviewed Gmail applications
+
+- `GET /v1/integrations/gmail/status`
+- `POST /v1/integrations/gmail/connect`
+- `GET /v1/integrations/gmail/callback`
+- `POST /v1/integrations/gmail/disconnect`
+- `POST /v1/career/applications/preview`
+- `POST /v1/career/applications/send` as multipart form data with
+  `application_id`, `subject`, `body`, and PDF field `cv`
+
+The preview accepts `linkedin_post_url` and optional `post_text`. The resulting
+draft is temporary and does not send anything. The send route requires the
+reviewed draft ID, the candidate's connected Gmail, and a valid PDF up to
+10 MB. It ignores all client/post recipient values and uses the
+server-configured prototype recipient. A reviewed draft is deleted only after
+Gmail returns a message ID and cannot be reused.
+
 ## CMS learning content
 
 - `GET /v1/cms/courses?refresh=false&season=Winter%202024` (defaults to the
