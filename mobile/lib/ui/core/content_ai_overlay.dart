@@ -138,8 +138,8 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                     button: true,
                     label: 'Open ${widget.title}',
                     child: Material(
-                      elevation: 12,
-                      shadowColor: LensColors.indigo.withValues(alpha: .4),
+                      elevation: 4,
+                      shadowColor: LensColors.ink.withValues(alpha: .18),
                       shape: const CircleBorder(),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
@@ -149,11 +149,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                           height: _bubbleSize,
                           decoration: const BoxDecoration(
                             shape: BoxShape.circle,
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [LensColors.indigo, LensColors.violet],
-                            ),
+                            color: LensColors.indigo,
                           ),
                           child: const Icon(
                             Icons.auto_awesome_rounded,
@@ -344,14 +340,12 @@ class _ChatPanel extends StatelessWidget {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [LensColors.indigo, LensColors.violet],
-                            ),
-                            borderRadius: BorderRadius.circular(14),
+                            color: LensColors.indigo.withValues(alpha: .1),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.auto_awesome_rounded,
-                            color: Colors.white,
+                            color: LensColors.indigo,
                             size: 20,
                           ),
                         ),
@@ -375,7 +369,7 @@ class _ChatPanel extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: LensColors.muted,
-                                  fontSize: 10.5,
+                                  fontSize: 11,
                                 ),
                               ),
                             ],
@@ -585,12 +579,7 @@ class _ContentMessageBubble extends StatelessWidget {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
-          gradient: message.isUser
-              ? const LinearGradient(
-                  colors: [LensColors.indigo, LensColors.violet],
-                )
-              : null,
-          color: message.isUser ? null : Colors.white,
+          color: message.isUser ? LensColors.indigo : Colors.white,
           border: message.isUser ? null : Border.all(color: LensColors.line),
           borderRadius: BorderRadius.circular(18),
         ),

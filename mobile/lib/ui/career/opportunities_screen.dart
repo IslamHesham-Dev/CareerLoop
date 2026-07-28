@@ -3,8 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
-import '../../data/career_profile_repository.dart';
-import '../../data/github_profile_repository.dart';
 import '../../data/models.dart';
 import '../../data/opportunity_repository.dart';
 import '../../data/repositories.dart';
@@ -105,114 +103,258 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
     final opportunities = context.watch<OpportunityRepository>();
     final result = opportunities.result;
     return Scaffold(
-      body: AuroraBackground(
-        child: SafeArea(
-          child: GestureDetector(
-            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-            child: ListView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.fromLTRB(18, 10, 18, 44),
-              children: [
-                _TopBar(onBack: () => context.pop()),
-                const SizedBox(height: 22),
-                const _OpportunityHero(),
-                const SizedBox(height: 18),
-                _EvidenceRail(evidence: result?.evidence),
-                const SizedBox(height: 24),
-                _SearchPanel(
-                  roleType: _roleType,
-                  targetMarket: _targetMarket,
-                  workModes: _workModes,
-                  roleInterests: _roleInterests,
-                  technologies: _technologies,
-                  preferredLocations: _preferredLocations,
-                  keywords: _keywords,
-                  locations: _locations,
-                  loading: opportunities.loading,
-                  onRoleChanged: (value) => setState(() => _roleType = value),
-                  onMarketChanged: (value) =>
-                      setState(() => _targetMarket = value),
-                  onRoleInterestChanged: (value, selected) => setState(() {
-                    selected
-                        ? _roleInterests.add(value)
-                        : _roleInterests.remove(value);
-                  }),
-                  onTechnologyChanged: (value, selected) => setState(() {
-                    selected
-                        ? _technologies.add(value)
-                        : _technologies.remove(value);
-                  }),
-                  onLocationChanged: (value, selected) => setState(() {
-                    selected
-                        ? _preferredLocations.add(value)
-                        : _preferredLocations.remove(value);
-                  }),
-                  onWorkModeChanged: (value, selected) => setState(() {
-                    selected ? _workModes.add(value) : _workModes.remove(value);
-                  }),
-                  onSearch: _search,
+      backgroundColor: LensColors.canvas,
+      appBar: AppBar(
+        backgroundColor: LensColors.canvas,
+        surfaceTintColor: Colors.white,
+        scrolledUnderElevation: 1,
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        title: const Text('Opportunities'),
+        actions: [
+          IconButton(
+            tooltip: 'Edit filters',
+            onPressed: opportunities.loading ? null : _openFilters,
+            icon: const Icon(Icons.tune_rounded),
+          ),
+          const SizedBox(width: 6),
+        ],
+      ),
+      body: GestureDetector(
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: ListView(
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 40),
+          children: [
+            _FilterSummaryCard(
+              roleType: _roleType,
+              targetMarket: _targetMarket,
+              workModes: _workModes,
+              roleInterests: _roleInterests,
+              technologies: _technologies,
+              preferredLocations: _preferredLocations,
+              customKeywords: _csv(_keywords.text),
+              customLocations: _csv(_locations.text),
+              onEdit: opportunities.loading ? null : _openFilters,
+            ),
+            if (opportunities.error != null) ...[
+              const SizedBox(height: 16),
+              LensError(
+                message: opportunities.error!,
+                onRetry: _search,
+              ),
+            ],
+            if (opportunities.loading) ...[
+              const SizedBox(height: 20),
+              const LensCard(
+                child: LensLoading(
+                  label: 'Finding roles and checking profile fit…',
                 ),
-                if (opportunities.error != null) ...[
-                  const SizedBox(height: 16),
-                  LensError(
-                    message: opportunities.error!,
-                    onRetry: _search,
-                  ),
-                ],
-                if (opportunities.loading) ...[
-                  const SizedBox(height: 22),
-                  const LensCard(
-                    child: LensLoading(
-                      label: 'Scanning live roles and matching your evidence…',
-                    ),
-                  ),
-                ] else if (result != null) ...[
-                  const SizedBox(height: 28),
-                  _ResultHeader(result: result),
-                  const SizedBox(height: 12),
-                  if (result.jobs.isEmpty)
-                    LensCard(
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.manage_search_rounded,
-                            color: LensColors.indigo,
-                            size: 30,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            result.message ??
-                                'No roles matched these preferences.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ],
+              ),
+            ] else if (result == null) ...[
+              const SizedBox(height: 36),
+              _SearchEmptyState(onSearch: _openFilters),
+            ] else ...[
+              const SizedBox(height: 24),
+              _ResultHeader(result: result),
+              const SizedBox(height: 12),
+              if (result.jobs.isEmpty)
+                LensCard(
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.manage_search_rounded,
+                        color: LensColors.indigo,
+                        size: 30,
                       ),
-                    )
-                  else
-                    ...result.jobs.map(
-                      (job) => Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: _JobCard(
+                      const SizedBox(height: 10),
+                      Text(
+                        result.message ?? 'No roles matched these preferences.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      TextButton.icon(
+                        onPressed: _openFilters,
+                        icon: const Icon(Icons.tune_rounded),
+                        label: const Text('Adjust filters'),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                ...result.jobs.map(
+                  (job) => Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _JobCard(
+                      job: job,
+                      onOpen: () => context.push(
+                        '/opportunities/job/${Uri.encodeComponent(job.id)}',
+                        extra: OpportunityDetailArgs(
                           job: job,
-                          onOpen: () => context.push(
-                            '/opportunities/job/${Uri.encodeComponent(job.id)}',
-                            extra: OpportunityDetailArgs(
-                              job: job,
-                              evidence: result.evidence,
-                              courses: result.courses,
-                              limitations: result.limitations,
-                            ),
-                          ),
+                          evidence: result.evidence,
+                          courses: result.courses,
+                          limitations: result.limitations,
                         ),
                       ),
                     ),
-                ],
-              ],
-            ),
-          ),
+                  ),
+                ),
+            ],
+          ],
         ),
       ),
     );
+  }
+
+  Future<void> _openFilters() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    var roleType = _roleType;
+    var targetMarket = _targetMarket;
+    final workModes = {..._workModes};
+    final roleInterests = {..._roleInterests};
+    final technologies = {..._technologies};
+    final preferredLocations = {..._preferredLocations};
+    final keywords = TextEditingController(text: _keywords.text);
+    final locations = TextEditingController(text: _locations.text);
+
+    final apply = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SizedBox(
+              height: MediaQuery.sizeOf(context).height * .88,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 8, 10),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Search filters',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Choose what matters for your next role.',
+                                style: TextStyle(
+                                  color: LensColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+                      child: _SearchPanel(
+                        roleType: roleType,
+                        targetMarket: targetMarket,
+                        workModes: workModes,
+                        roleInterests: roleInterests,
+                        technologies: technologies,
+                        preferredLocations: preferredLocations,
+                        keywords: keywords,
+                        locations: locations,
+                        onRoleChanged: (value) =>
+                            setSheetState(() => roleType = value),
+                        onMarketChanged: (value) =>
+                            setSheetState(() => targetMarket = value),
+                        onRoleInterestChanged: (value, selected) {
+                          setSheetState(() {
+                            selected
+                                ? roleInterests.add(value)
+                                : roleInterests.remove(value);
+                          });
+                        },
+                        onTechnologyChanged: (value, selected) {
+                          setSheetState(() {
+                            selected
+                                ? technologies.add(value)
+                                : technologies.remove(value);
+                          });
+                        },
+                        onLocationChanged: (value, selected) {
+                          setSheetState(() {
+                            selected
+                                ? preferredLocations.add(value)
+                                : preferredLocations.remove(value);
+                          });
+                        },
+                        onWorkModeChanged: (value, selected) {
+                          setSheetState(() {
+                            selected
+                                ? workModes.add(value)
+                                : workModes.remove(value);
+                          });
+                        },
+                        onSearch: () => Navigator.of(sheetContext).pop(true),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (!mounted) {
+      keywords.dispose();
+      locations.dispose();
+      return;
+    }
+    if (apply == true) {
+      setState(() {
+        _roleType = roleType;
+        _targetMarket = targetMarket;
+        _workModes
+          ..clear()
+          ..addAll(workModes);
+        _roleInterests
+          ..clear()
+          ..addAll(roleInterests);
+        _technologies
+          ..clear()
+          ..addAll(technologies);
+        _preferredLocations
+          ..clear()
+          ..addAll(preferredLocations);
+        _keywords.text = keywords.text;
+        _locations.text = locations.text;
+      });
+      await _search();
+    }
+    keywords.dispose();
+    locations.dispose();
   }
 
   Future<void> _search() {
@@ -241,200 +383,174 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
       .toList();
 }
 
-class _TopBar extends StatelessWidget {
-  final VoidCallback onBack;
+class _FilterSummaryCard extends StatelessWidget {
+  final String roleType;
+  final String targetMarket;
+  final Set<String> workModes;
+  final Set<String> roleInterests;
+  final Set<String> technologies;
+  final Set<String> preferredLocations;
+  final List<String> customKeywords;
+  final List<String> customLocations;
+  final VoidCallback? onEdit;
 
-  const _TopBar({required this.onBack});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        IconButton.filledTonal(
-          tooltip: 'Back to Career Studio',
-          onPressed: onBack,
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        const SizedBox(width: 12),
-        const Expanded(
-          child: Text(
-            'Opportunity Match',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
-          ),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-          decoration: BoxDecoration(
-            color: LensColors.aqua.withValues(alpha: .1),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(
-              color: LensColors.aqua.withValues(alpha: .22),
-            ),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.radar_rounded, size: 14, color: LensColors.aqua),
-              SizedBox(width: 5),
-              Text(
-                'Live market',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _OpportunityHero extends StatelessWidget {
-  const _OpportunityHero();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [LensColors.ink, Color(0xFF273273)],
-        ),
-        borderRadius: BorderRadius.circular(28),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'FROM OPENING TO\nEXPLAINABLE FIT',
-            style: TextStyle(
-              color: LensColors.aqua,
-              fontSize: 10,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.35,
-            ),
-          ),
-          SizedBox(height: 12),
-          Text(
-            'Search the market through your own evidence.',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 25,
-              height: 1.08,
-              fontWeight: FontWeight.w900,
-              letterSpacing: -.5,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'CareerLoop ranks live roles with your preferences, transcript, '
-            'and imported professional profile—then turns gaps into action.',
-            style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _EvidenceRail extends StatelessWidget {
-  final OpportunityEvidence? evidence;
-
-  const _EvidenceRail({required this.evidence});
-
-  @override
-  Widget build(BuildContext context) {
-    final academic = evidence?.academicTranscript ??
-        (context.watch<AcademicRepository>().transcript != null);
-    final linkedIn = evidence?.linkedInPdf ??
-        context.watch<CareerProfileRepository>().hasProfile;
-    final github =
-        evidence?.github ?? context.watch<GithubProfileRepository>().hasProfile;
-    return Row(
-      children: [
-        Expanded(
-          child: _EvidenceCell(
-            icon: Icons.history_edu_outlined,
-            label: 'Transcript',
-            state: academic ? 'Used' : 'Loads on search',
-            live: academic,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _EvidenceCell(
-            icon: Icons.badge_outlined,
-            label: 'LinkedIn PDF',
-            state: linkedIn ? 'Used' : 'Optional',
-            live: linkedIn,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _EvidenceCell(
-            icon: Icons.code_rounded,
-            label: 'GitHub',
-            state: github ? 'Used' : 'Optional',
-            live: github,
-          ),
-        ),
-        const SizedBox(width: 8),
-        const Expanded(
-          child: _EvidenceCell(
-            icon: Icons.description_outlined,
-            label: 'Resume',
-            state: 'Next',
-            live: false,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _EvidenceCell extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String state;
-  final bool live;
-
-  const _EvidenceCell({
-    required this.icon,
-    required this.label,
-    required this.state,
-    required this.live,
+  const _FilterSummaryCard({
+    required this.roleType,
+    required this.targetMarket,
+    required this.workModes,
+    required this.roleInterests,
+    required this.technologies,
+    required this.preferredLocations,
+    required this.customKeywords,
+    required this.customLocations,
+    required this.onEdit,
   });
 
   @override
   Widget build(BuildContext context) {
+    const markets = {
+      'europe': 'Europe',
+      'local': 'Egypt / local',
+      'remote': 'Remote market',
+      'global': 'Global',
+    };
+    final filters = <String>[
+      roleType == 'internship' ? 'Internship' : 'New graduate',
+      ...roleInterests.map((value) => _roleChoices[value] ?? value),
+      ...technologies.map((value) => _technologyChoices[value] ?? value),
+      markets[targetMarket] ?? targetMarket,
+      ...preferredLocations,
+      ...customLocations,
+      ...workModes.map(_displayWorkMode),
+      ...customKeywords,
+    ];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(16, 12, 12, 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .88),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: live ? LensColors.aqua.withValues(alpha: .3) : LensColors.line,
-        ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: LensColors.line),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            live ? Icons.check_circle_rounded : icon,
-            size: 18,
-            color: live ? LensColors.aqua : LensColors.muted,
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Search preferences',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onEdit,
+                icon: const Icon(Icons.tune_rounded, size: 17),
+                label: const Text('Edit'),
+              ),
+            ],
           ),
-          const SizedBox(height: 5),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 8.5, fontWeight: FontWeight.w800),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: filters
+                .take(5)
+                .map((label) => _SummaryChip(label: label))
+                .toList(),
           ),
+          if (filters.length > 5) ...[
+            const SizedBox(height: 8),
+            Text(
+              '+${filters.length - 5} more filters',
+              style: const TextStyle(
+                color: LensColors.muted,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  static String _displayWorkMode(String value) => switch (value) {
+        'onsite' => 'On-site',
+        'hybrid' => 'Hybrid',
+        _ => 'Remote',
+      };
+}
+
+class _SummaryChip extends StatelessWidget {
+  final String label;
+
+  const _SummaryChip({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: LensColors.canvas,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: LensColors.ink,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchEmptyState extends StatelessWidget {
+  final VoidCallback onSearch;
+
+  const _SearchEmptyState({required this.onSearch});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      child: Column(
+        children: [
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              color: LensColors.indigo.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.work_outline_rounded,
+              color: LensColors.indigo,
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
-            state,
-            maxLines: 1,
-            style: const TextStyle(color: LensColors.muted, fontSize: 7.8),
+            'Find roles that fit your profile',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 7),
+          const Text(
+            'Set your role, market, and work preferences. CareerLoop will '
+            'rank openings against your connected profile.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: LensColors.muted,
+              fontSize: 12,
+              height: 1.45,
+            ),
+          ),
+          const SizedBox(height: 18),
+          FilledButton.icon(
+            onPressed: onSearch,
+            icon: const Icon(Icons.tune_rounded),
+            label: const Text('Set filters and search'),
           ),
         ],
       ),
@@ -451,7 +567,6 @@ class _SearchPanel extends StatelessWidget {
   final Set<String> preferredLocations;
   final TextEditingController keywords;
   final TextEditingController locations;
-  final bool loading;
   final ValueChanged<String> onRoleChanged;
   final ValueChanged<String> onMarketChanged;
   final void Function(String, bool) onRoleInterestChanged;
@@ -469,7 +584,6 @@ class _SearchPanel extends StatelessWidget {
     required this.preferredLocations,
     required this.keywords,
     required this.locations,
-    required this.loading,
     required this.onRoleChanged,
     required this.onMarketChanged,
     required this.onRoleInterestChanged,
@@ -482,182 +596,168 @@ class _SearchPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
-    return LensCard(
-      padding: const EdgeInsets.all(17),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'SEARCH INTENT',
-            style: TextStyle(
-              color: LensColors.indigo,
-              fontSize: 9,
-              letterSpacing: 1.25,
-              fontWeight: FontWeight.w900,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(
+              value: 'newgrad',
+              label: Text('New graduate'),
+              icon: Icon(Icons.school_outlined, size: 17),
             ),
-          ),
-          const SizedBox(height: 13),
-          SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(
-                value: 'newgrad',
-                label: Text('New graduate'),
-                icon: Icon(Icons.school_outlined, size: 17),
-              ),
-              ButtonSegment(
-                value: 'internship',
-                label: Text('Internship'),
-                icon: Icon(Icons.work_outline_rounded, size: 17),
-              ),
-            ],
-            selected: {roleType},
-            showSelectedIcon: false,
-            onSelectionChanged: (value) => onRoleChanged(value.first),
-          ),
-          const SizedBox(height: 17),
-          const _FieldLabel('Role interests'),
-          const SizedBox(height: 7),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: _roleChoices.entries
-                .map(
-                  (entry) => FilterChip(
-                    label: Text(entry.value),
-                    selected: roleInterests.contains(entry.key),
-                    onSelected: (selected) =>
-                        onRoleInterestChanged(entry.key, selected),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 15),
-          const _FieldLabel('Technologies'),
-          const SizedBox(height: 7),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: _technologyChoices.entries
-                .map(
-                  (entry) => FilterChip(
-                    label: Text(entry.value),
-                    selected: technologies.contains(entry.key),
-                    onSelected: (selected) =>
-                        onTechnologyChanged(entry.key, selected),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 15),
-          TextField(
-            controller: keywords,
-            textInputAction: TextInputAction.next,
-            decoration: InputDecoration(
-              labelText: 'Add custom role or skill',
-              hintText: 'e.g. LangGraph, fintech, iOS',
-              prefixIcon: const Icon(Icons.add_circle_outline_rounded),
-              helperText: 'Optional · separate multiple terms with commas.',
-              suffixIcon: keyboardVisible
-                  ? IconButton(
-                      tooltip: 'Hide keyboard',
-                      onPressed: () =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      icon: const Icon(Icons.keyboard_hide_rounded),
-                    )
-                  : null,
+            ButtonSegment(
+              value: 'internship',
+              label: Text('Internship'),
+              icon: Icon(Icons.work_outline_rounded, size: 17),
             ),
+          ],
+          selected: {roleType},
+          showSelectedIcon: false,
+          onSelectionChanged: (value) => onRoleChanged(value.first),
+        ),
+        const SizedBox(height: 20),
+        const _FieldLabel('Role interests'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: _roleChoices.entries
+              .map(
+                (entry) => FilterChip(
+                  label: Text(entry.value),
+                  selected: roleInterests.contains(entry.key),
+                  onSelected: (selected) =>
+                      onRoleInterestChanged(entry.key, selected),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 20),
+        const _FieldLabel('Technologies'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: _technologyChoices.entries
+              .map(
+                (entry) => FilterChip(
+                  label: Text(entry.value),
+                  selected: technologies.contains(entry.key),
+                  onSelected: (selected) =>
+                      onTechnologyChanged(entry.key, selected),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: keywords,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: 'Custom role or skill',
+            hintText: 'LangGraph, fintech, iOS',
+            prefixIcon: const Icon(Icons.add_circle_outline_rounded),
+            helperText: 'Optional · separate terms with commas.',
+            suffixIcon: keyboardVisible
+                ? IconButton(
+                    tooltip: 'Hide keyboard',
+                    onPressed: () =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    icon: const Icon(Icons.keyboard_hide_rounded),
+                  )
+                : null,
           ),
-          const SizedBox(height: 17),
-          const _FieldLabel('Target market'),
-          const SizedBox(height: 7),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: const {
-              'europe': 'Europe',
-              'local': 'Egypt / local',
-              'remote': 'Remote',
-              'global': 'Global',
-            }
-                .entries
-                .map(
-                  (entry) => ChoiceChip(
-                    label: Text(entry.value),
-                    selected: targetMarket == entry.key,
-                    onSelected: (_) => onMarketChanged(entry.key),
-                  ),
-                )
-                .toList(),
+        ),
+        const SizedBox(height: 20),
+        const _FieldLabel('Target market'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: const {
+            'europe': 'Europe',
+            'local': 'Egypt / local',
+            'remote': 'Remote',
+            'global': 'Global',
+          }
+              .entries
+              .map(
+                (entry) => ChoiceChip(
+                  label: Text(entry.value),
+                  selected: targetMarket == entry.key,
+                  onSelected: (_) => onMarketChanged(entry.key),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 20),
+        const _FieldLabel('Preferred locations'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: _locationChoices
+              .map(
+                (value) => FilterChip(
+                  label: Text(value),
+                  selected: preferredLocations.contains(value),
+                  onSelected: (selected) => onLocationChanged(value, selected),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 14),
+        TextField(
+          controller: locations,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            labelText: 'Another location',
+            hintText: 'Munich, Stockholm',
+            prefixIcon: const Icon(Icons.location_on_outlined),
+            helperText: 'Optional · separate places with commas.',
+            suffixIcon: keyboardVisible
+                ? IconButton(
+                    tooltip: 'Hide keyboard',
+                    onPressed: () =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    icon: const Icon(Icons.keyboard_hide_rounded),
+                  )
+                : null,
           ),
-          const SizedBox(height: 15),
-          const _FieldLabel('Preferred locations'),
-          const SizedBox(height: 7),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: _locationChoices
-                .map(
-                  (value) => FilterChip(
-                    label: Text(value),
-                    selected: preferredLocations.contains(value),
-                    onSelected: (selected) =>
-                        onLocationChanged(value, selected),
-                  ),
-                )
-                .toList(),
+        ),
+        const SizedBox(height: 20),
+        const _FieldLabel('Work mode'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 7,
+          runSpacing: 7,
+          children: const {
+            'remote': 'Remote',
+            'hybrid': 'Hybrid',
+            'onsite': 'On-site',
+          }
+              .entries
+              .map(
+                (entry) => FilterChip(
+                  label: Text(entry.value),
+                  selected: workModes.contains(entry.key),
+                  onSelected: (selected) =>
+                      onWorkModeChanged(entry.key, selected),
+                ),
+              )
+              .toList(),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: onSearch,
+            icon: const Icon(Icons.search_rounded),
+            label: const Text('Show matches'),
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: locations,
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => onSearch(),
-            decoration: InputDecoration(
-              labelText: 'Add another location',
-              hintText: 'e.g. Munich, Stockholm',
-              prefixIcon: const Icon(Icons.location_on_outlined),
-              helperText: 'Optional · separate multiple places with commas.',
-              suffixIcon: keyboardVisible
-                  ? IconButton(
-                      tooltip: 'Hide keyboard',
-                      onPressed: () =>
-                          FocusManager.instance.primaryFocus?.unfocus(),
-                      icon: const Icon(Icons.keyboard_hide_rounded),
-                    )
-                  : null,
-            ),
-          ),
-          const SizedBox(height: 15),
-          const _FieldLabel('Work nature'),
-          const SizedBox(height: 7),
-          Wrap(
-            spacing: 7,
-            children: const {
-              'remote': 'Remote',
-              'hybrid': 'Hybrid',
-              'onsite': 'On-site',
-            }
-                .entries
-                .map(
-                  (entry) => FilterChip(
-                    label: Text(entry.value),
-                    selected: workModes.contains(entry.key),
-                    onSelected: (selected) =>
-                        onWorkModeChanged(entry.key, selected),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 18),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              onPressed: loading ? null : onSearch,
-              icon: const Icon(Icons.radar_rounded),
-              label: const Text('Find evidence-backed matches'),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -670,7 +770,7 @@ class _FieldLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
         text,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
       );
 }
 
@@ -682,33 +782,29 @@ class _ResultHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'LIVE MATCHES',
-                style: TextStyle(
-                  color: LensColors.aqua,
-                  fontSize: 9,
-                  letterSpacing: 1.3,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 3),
-              Text(
-                '${result.jobs.length} positions ranked',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-            ],
+          child: Text(
+            result.jobs.length == 1
+                ? '1 matching position'
+                : '${result.jobs.length} matching positions',
+            style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        const Icon(
-          Icons.arrow_downward_rounded,
-          color: LensColors.muted,
-          size: 18,
+        const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.swap_vert_rounded,
+              size: 17,
+              color: LensColors.muted,
+            ),
+            SizedBox(width: 4),
+            Text(
+              'Best fit first',
+              style: TextStyle(color: LensColors.muted, fontSize: 11),
+            ),
+          ],
         ),
       ],
     );
@@ -749,8 +845,8 @@ class _JobCard extends StatelessWidget {
                       job.company,
                       style: const TextStyle(
                         color: LensColors.muted,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -758,8 +854,8 @@ class _JobCard extends StatelessWidget {
                       job.title,
                       style: const TextStyle(
                         fontSize: 15,
-                        height: 1.2,
-                        fontWeight: FontWeight.w900,
+                        height: 1.25,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -767,26 +863,19 @@ class _JobCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
                   color: LensColors.indigo.withValues(alpha: .08),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Column(
-                  children: [
-                    Text(
-                      '${job.matchScore}',
-                      style: const TextStyle(
-                        color: LensColors.indigo,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const Text(
-                      'signal',
-                      style: TextStyle(color: LensColors.muted, fontSize: 7.5),
-                    ),
-                  ],
+                child: Text(
+                  '${job.matchScore}% fit',
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
@@ -817,58 +906,47 @@ class _JobCard extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: 12),
-          ...job.matchReasons.take(3).map(
-                (reason) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline_rounded,
-                        color: LensColors.aqua,
-                        size: 15,
-                      ),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: Text(
-                          reason,
-                          style: const TextStyle(fontSize: 10.5, height: 1.3),
+          if (job.matchReasons.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ...job.matchReasons.take(2).map(
+                  (reason) => Padding(
+                    padding: const EdgeInsets.only(bottom: 7),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: LensColors.aqua,
+                          size: 16,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          const SizedBox(height: 13),
-          Container(
-            padding: const EdgeInsets.fromLTRB(11, 9, 8, 9),
-            decoration: BoxDecoration(
-              color: LensColors.indigo.withValues(alpha: .055),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.auto_awesome_rounded,
-                  color: LensColors.indigo,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${job.inferredSkillGaps.length} gaps to verify · '
-                    '${job.recommendedCourseIds.length} targeted courses',
-                    style: const TextStyle(
-                      color: LensColors.indigo,
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            reason,
+                            style: const TextStyle(fontSize: 12, height: 1.35),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                const Icon(Icons.chevron_right_rounded, size: 20),
-              ],
-            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${job.inferredSkillGaps.length} gaps · '
+                  '${job.recommendedCourseIds.length} recommended courses',
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded, size: 21),
+            ],
           ),
         ],
       ),
@@ -903,16 +981,16 @@ class _JobFact extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(maxWidth: 220),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      constraints: const BoxConstraints(maxWidth: 230),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       decoration: BoxDecoration(
         color: LensColors.canvas,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: LensColors.muted),
+          Icon(icon, size: 14, color: LensColors.muted),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
@@ -921,8 +999,8 @@ class _JobFact extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: LensColors.muted,
-                fontSize: 8.8,
-                fontWeight: FontWeight.w700,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),

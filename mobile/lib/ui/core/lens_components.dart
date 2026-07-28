@@ -24,13 +24,7 @@ class LensLogo extends StatelessWidget {
           height: size,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(size * .27),
-            boxShadow: [
-              BoxShadow(
-                color: LensColors.indigo.withValues(alpha: .28),
-                blurRadius: 22,
-                offset: const Offset(0, 9),
-              ),
-            ],
+            border: Border.all(color: LensColors.line),
           ),
           clipBehavior: Clip.antiAlias,
           child: Image.asset(
@@ -68,65 +62,8 @@ class AuroraBackground extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: dark ? LensColors.ink : LensColors.canvas,
-        gradient: dark
-            ? const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF081126),
-                  Color(0xFF151A3E),
-                  Color(0xFF101C35),
-                ],
-              )
-            : const LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFFF8F8FF), LensColors.canvas],
-              ),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -120,
-            right: -110,
-            child: _GlowOrb(
-              size: 300,
-              color: (dark ? LensColors.violet : LensColors.indigo)
-                  .withValues(alpha: dark ? .26 : .11),
-            ),
-          ),
-          Positioned(
-            top: 260,
-            left: -150,
-            child: _GlowOrb(
-              size: 320,
-              color: LensColors.aqua.withValues(alpha: dark ? .17 : .09),
-            ),
-          ),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _GlowOrb extends StatelessWidget {
-  final double size;
-  final Color color;
-
-  const _GlowOrb({required this.size, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [color, color.withValues(alpha: 0)],
-        ),
-      ),
+      child: child,
     );
   }
 }
@@ -150,14 +87,14 @@ class LensCard extends StatelessWidget {
     final content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? Colors.white.withValues(alpha: .94),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withValues(alpha: .9)),
+        color: color ?? LensColors.card,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: LensColors.line),
         boxShadow: [
           BoxShadow(
-            color: LensColors.ink.withValues(alpha: .065),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
+            color: LensColors.ink.withValues(alpha: .025),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -167,7 +104,7 @@ class LensCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: content,
       ),
@@ -192,14 +129,10 @@ class GradientPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: dark
-            ? Colors.white.withValues(alpha: .09)
-            : LensColors.indigo.withValues(alpha: .09),
-        borderRadius: BorderRadius.circular(999),
+        color: dark ? Colors.white.withValues(alpha: .08) : LensColors.canvas,
+        borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: dark
-              ? Colors.white.withValues(alpha: .12)
-              : LensColors.indigo.withValues(alpha: .12),
+          color: dark ? Colors.white.withValues(alpha: .16) : LensColors.line,
         ),
       ),
       child: Row(
@@ -217,7 +150,7 @@ class GradientPill extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: dark ? Colors.white : LensColors.indigo,
-                fontSize: 12,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -252,12 +185,12 @@ class PageHeading extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                eyebrow.toUpperCase(),
+                eyebrow,
                 style: const TextStyle(
                   color: LensColors.indigo,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 1.5,
-                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: .1,
+                  fontSize: 13,
                 ),
               ),
               const SizedBox(height: 7),

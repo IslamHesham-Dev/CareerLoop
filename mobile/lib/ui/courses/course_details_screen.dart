@@ -33,114 +33,122 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
     final university =
         context.watch<AuthRepository>().session?.universityLabel ??
             'University';
+
     return Scaffold(
-      body: AuroraBackground(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          widget.course.code,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  IconButton.filledTonal(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_rounded),
-                  ),
-                  const Spacer(),
-                  GradientPill(
-                    label: academic.context?.currentSeason ?? 'Winter 2024',
-                    icon: Icons.calendar_today_rounded,
-                  ),
-                ],
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(height: 26),
+              const SizedBox(width: 7),
               Text(
-                widget.course.code,
-                style: const TextStyle(
-                  color: LensColors.indigo,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
-                  fontSize: 12,
-                ),
+                academic.context?.currentSeason ?? 'Winter 2024',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                widget.course.title,
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(widget.course.track,
-                  style: Theme.of(context).textTheme.bodyMedium),
-              const SizedBox(height: 24),
-              if (loading && grades == null)
-                LensCard(
-                  child: LensLoading(
-                    label: 'Reading detailed grades from $university…',
-                  ),
-                )
-              else if (academic.error != null && grades == null)
-                LensError(
-                  message: academic.error!,
-                  onRetry: () => academic.loadCourseGrades(
-                    widget.course,
-                    force: true,
-                  ),
-                )
-              else if (grades != null) ...[
-                _CoursePulse(grades: grades, university: university),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'Assessment detail',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                    ),
-                    Text(
-                      '${grades.assessments.length} items',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                if (grades.assessments.isEmpty)
-                  const LensCard(
-                    child: Text(
-                      'No detailed assessment rows were displayed by the portal.',
-                    ),
-                  )
-                else
-                  ...grades.assessments.map(
-                    (assessment) => Padding(
-                      padding: const EdgeInsets.only(bottom: 11),
-                      child: _AssessmentCard(assessment: assessment),
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                FilledButton.icon(
-                  onPressed: () {
-                    context.read<AdvisorRepository>().send(
-                          'Analyze ${widget.course.code}. Explain the grades, identify the weakest assessment, and make a practical improvement plan.',
-                        );
-                    context.go('/advisor');
-                  },
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('Ask CareerLoop about this course'),
-                ),
-              ],
             ],
           ),
-        ),
+          const SizedBox(height: 12),
+          Text(
+            widget.course.title,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  height: 1.2,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          if (widget.course.track.isNotEmpty) ...[
+            const SizedBox(height: 7),
+            Text(
+              widget.course.track,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+          const SizedBox(height: 24),
+          if (loading && grades == null)
+            LensCard(
+              child: LensLoading(
+                label: 'Reading detailed grades from $university…',
+              ),
+            )
+          else if (academic.error != null && grades == null)
+            LensError(
+              message: academic.error!,
+              onRetry: () => academic.loadCourseGrades(
+                widget.course,
+                force: true,
+              ),
+            )
+          else if (grades != null) ...[
+            _CourseSummary(grades: grades, university: university),
+            const SizedBox(height: 28),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Assessments',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Text(
+                  '${grades.assessments.length} items',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (grades.assessments.isEmpty)
+              const LensCard(
+                child: Text(
+                  'No detailed assessment rows were displayed by the portal.',
+                ),
+              )
+            else
+              ...grades.assessments.map(
+                (assessment) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _AssessmentCard(assessment: assessment),
+                ),
+              ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () {
+                context.read<AdvisorRepository>().send(
+                      'Analyze ${widget.course.code}. Explain the grades, identify the weakest assessment, and make a practical improvement plan.',
+                    );
+                context.go('/advisor');
+              },
+              icon: const Icon(Icons.auto_awesome_outlined),
+              label: const Text('Discuss this course'),
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-class _CoursePulse extends StatelessWidget {
+class _CourseSummary extends StatelessWidget {
   final CourseGrades grades;
   final String university;
 
-  const _CoursePulse({
+  const _CourseSummary({
     required this.grades,
     required this.university,
   });
@@ -149,55 +157,53 @@ class _CoursePulse extends StatelessWidget {
   Widget build(BuildContext context) {
     final ratio = grades.averageRatio;
     final percentage = ratio == null ? '—' : '${(ratio * 100).round()}%';
+    final scheme = Theme.of(context).colorScheme;
+
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [LensColors.ink, Color(0xFF29336D)],
-        ),
-        borderRadius: BorderRadius.circular(28),
+        color: scheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: LensColors.line),
       ),
       child: Row(
         children: [
           SizedBox(
-            width: 82,
-            height: 82,
+            width: 72,
+            height: 72,
             child: Stack(
               fit: StackFit.expand,
               children: [
                 CircularProgressIndicator(
                   value: ratio ?? 0,
-                  strokeWidth: 8,
-                  backgroundColor: Colors.white.withValues(alpha: .09),
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(LensColors.aqua),
+                  strokeWidth: 7,
+                  backgroundColor: scheme.primary.withValues(alpha: .10),
+                  valueColor: AlwaysStoppedAnimation<Color>(scheme.primary),
                   strokeCap: StrokeCap.round,
                 ),
                 Center(
                   child: Text(
                     percentage,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18,
+                    style: TextStyle(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 20),
+          const SizedBox(width: 18),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Assessment pulse',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                  ),
+                Text(
+                  'Current assessment average',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
                 const SizedBox(height: 7),
                 Text(
@@ -205,12 +211,10 @@ class _CoursePulse extends StatelessWidget {
                       ? 'Scores are shown exactly as $university returned them.'
                       : ratio < .65
                           ? 'This course has room for a focused recovery plan.'
-                          : 'Use the detailed rows to protect your strongest work.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: .65),
-                    fontSize: 12,
-                    height: 1.45,
-                  ),
+                          : 'Review the detailed rows to protect your strongest work.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        height: 1.4,
+                      ),
                 ),
               ],
             ),
@@ -236,38 +240,44 @@ class _AssessmentCard extends StatelessWidget {
             : ratio < .8
                 ? LensColors.amber
                 : LensColors.aqua;
+    final title = assessment.element.isNotEmpty
+        ? assessment.element
+        : assessment.assessment.isNotEmpty
+            ? assessment.assessment
+            : 'Assessment';
+
     return LensCard(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 10,
-                height: 10,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(shape: BoxShape.circle, color: color),
               ),
               const SizedBox(width: 9),
               Expanded(
                 child: Text(
-                  assessment.element.isEmpty
-                      ? assessment.assessment
-                      : assessment.element,
+                  title,
                   style: const TextStyle(fontWeight: FontWeight.w700),
                 ),
               ),
+              const SizedBox(width: 12),
               Text(
                 assessment.grade,
                 style: TextStyle(
                   color: color,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   fontSize: 16,
                 ),
               ),
             ],
           ),
-          if (assessment.assessment.isNotEmpty) ...[
+          if (assessment.assessment.isNotEmpty &&
+              assessment.assessment != title) ...[
             const SizedBox(height: 7),
             Text(
               assessment.assessment,
@@ -283,9 +293,9 @@ class _AssessmentCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: ratio,
-                minHeight: 6,
-                backgroundColor: color.withValues(alpha: .11),
-                valueColor: AlwaysStoppedAnimation(color),
+                minHeight: 5,
+                backgroundColor: color.withValues(alpha: .10),
+                valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
           ],

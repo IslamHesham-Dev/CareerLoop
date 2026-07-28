@@ -35,7 +35,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
     title: 'General graduate opportunities',
     location: '',
     url: Uri(),
-    source: 'Profile Studio',
+    source: 'CareerLoop profile',
     category: 'master resume',
     roleFamily: 'general',
     matchScore: 0,
@@ -174,22 +174,24 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
     final transcriptReady = transcript != null && transcript.courses.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Resume Studio')),
+      appBar: AppBar(title: const Text('Master resume')),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            const PageHeading(
-              eyebrow: 'Master career document',
-              title: 'Build once.\nRefine continuously.',
-              subtitle:
-                  'Generate a one-page resume from your complete academic history and every connected career source—even when you did not import a CV.',
+            Text(
+              'Create your master resume',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 6),
+            const Text(
+              'Build a one-page resume from your academic history and connected profile sources.',
+              style: TextStyle(color: LensColors.muted, height: 1.45),
+            ),
+            const SizedBox(height: 16),
             LensCard(
-              color: LensColors.ink,
               child: Column(
                 children: [
                   _EvidenceLine(
@@ -200,7 +202,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                         : 'Loading enrollment history…',
                     ready: transcriptReady,
                   ),
-                  const Divider(color: Colors.white12, height: 24),
+                  const Divider(height: 24),
                   _EvidenceLine(
                     icon: Icons.description_outlined,
                     title: 'Existing resume',
@@ -210,7 +212,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                     ready: currentCv.hasProfile,
                     optional: true,
                   ),
-                  const Divider(color: Colors.white12, height: 24),
+                  const Divider(height: 24),
                   _EvidenceLine(
                     icon: Icons.graphic_eq_rounded,
                     title: 'Writing voice',
@@ -323,7 +325,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
               'email attachments.',
               style: TextStyle(
                 color: LensColors.muted,
-                fontSize: 10.5,
+                fontSize: 11,
                 height: 1.4,
               ),
             ),
@@ -362,16 +364,16 @@ class _EvidenceLine extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
+                  color: LensColors.ink,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 2),
               Text(
                 value,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .58),
-                  fontSize: 10.5,
+                style: const TextStyle(
+                  color: LensColors.muted,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -383,7 +385,7 @@ class _EvidenceLine extends StatelessWidget {
               : optional
                   ? Icons.remove_circle_outline_rounded
                   : Icons.sync_rounded,
-          color: ready ? LensColors.aqua : Colors.white38,
+          color: ready ? LensColors.aqua : LensColors.muted,
           size: 18,
         ),
       ],

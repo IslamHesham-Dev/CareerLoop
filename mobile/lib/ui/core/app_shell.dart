@@ -24,13 +24,6 @@ class AppShell extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           border: const Border(top: BorderSide(color: LensColors.line)),
-          boxShadow: [
-            BoxShadow(
-              color: LensColors.ink.withValues(alpha: .06),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
-            ),
-          ],
         ),
         child: SafeArea(
           top: false,
@@ -39,9 +32,9 @@ class AppShell extends StatelessWidget {
             onDestinationSelected: _select,
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.all_inclusive_outlined),
-                selectedIcon: Icon(Icons.all_inclusive_rounded),
-                label: 'Loop',
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home_rounded),
+                label: 'Home',
               ),
               NavigationDestination(
                 icon: Icon(Icons.auto_stories_outlined),

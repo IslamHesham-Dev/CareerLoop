@@ -7,7 +7,6 @@ import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
-import '../../data/practice_repository.dart';
 import '../../data/repositories.dart';
 import '../../data/tone_profile_repository.dart';
 import '../core/brand_marks.dart';
@@ -32,7 +31,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
-    final practiceCount = context.watch<PracticeRepository>().sets.length;
     final academicReady = academic.transcript != null;
     final careerProfile = context.watch<CareerProfileRepository>();
     final linkedInReady = careerProfile.hasProfile;
@@ -52,12 +50,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
         children: [
           Row(
             children: [
-              const Expanded(
-                child: PageHeading(
-                  eyebrow: 'Unified candidate profile',
-                  title: 'Your evidence,\none identity.',
-                  subtitle:
-                      'Academic achievements and career signals stay traceable, reusable, and under your control.',
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Profile',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'The information CareerLoop can use on your behalf.',
+                      style: TextStyle(color: LensColors.muted),
+                    ),
+                  ],
                 ),
               ),
               IconButton.filledTonal(
@@ -76,7 +82,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 26),
           _Header(
             title: 'Evidence sources',
-            detail: '$liveSignals live · 4 designed',
+            detail: '$liveSignals of 4 connected',
           ),
           const SizedBox(height: 12),
           _EvidenceSource(
@@ -85,6 +91,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: 'Transcript, grades, and semester history',
             status: academicReady ? 'LIVE' : 'SYNCING',
             color: LensColors.indigo,
+            onTap: () => context.push('/transcript'),
           ),
           const SizedBox(height: 9),
           _GithubConnectorCard(
@@ -107,10 +114,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => context.push('/resume-profile'),
           ),
           const SizedBox(height: 26),
-          _Header(
-            title: 'Personalize your voice',
-            detail: tone.configured ? 'Agent ready' : 'Optional',
-          ),
+          const _Header(title: 'Preferences and tools', detail: ''),
           const SizedBox(height: 12),
           _ToneConnectorCard(
             connected: tone.configured,
@@ -118,64 +122,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 tone.answers.values.where((a) => a.trim().isNotEmpty).length,
             onTap: () => context.push('/writing-voice'),
           ),
-          const SizedBox(height: 26),
-          const _Header(
-            title: 'Create & communicate',
-            detail: 'AI + human approval',
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 9),
           _EvidenceSource(
             icon: Icons.auto_awesome_rounded,
-            title: 'Resume Studio',
+            title: 'Master resume',
             subtitle: resumeReady
-                ? 'Build or refine from your complete evidence profile'
-                : 'Generate a resume directly from your academic record',
-            status: resumeReady ? 'READY' : 'BUILD',
+                ? 'Build or refine from your complete profile'
+                : 'Create a resume from your connected evidence',
+            status: 'OPEN',
             color: LensColors.indigo,
             onTap: () => context.push('/master-resume'),
           ),
           const SizedBox(height: 9),
           _EvidenceSource(
-            icon: Icons.forward_to_inbox_rounded,
-            title: 'Email Studio',
-            subtitle:
-                'Draft academic or career emails, review, then send with Gmail',
+            icon: Icons.mail_outline_rounded,
+            title: 'Email composer',
+            subtitle: 'Draft with context, review it, then send with Gmail',
             status: 'OPEN',
-            color: LensColors.rose,
+            color: LensColors.violet,
             onTap: () => context.push('/email-studio'),
           ),
           const SizedBox(height: 26),
           const _Header(
-            title: 'Profile layers',
-            detail: 'One source of truth',
+            title: 'Account',
+            detail: '',
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _LayerCard(
-                  icon: Icons.analytics_outlined,
-                  title: 'Academic',
-                  value: '${academic.courses.length} courses',
-                  color: LensColors.indigo,
-                  onTap: () => context.push('/transcript'),
-                ),
-              ),
-              const SizedBox(width: 11),
-              Expanded(
-                child: _LayerCard(
-                  icon: Icons.quiz_outlined,
-                  title: 'Practice',
-                  value: '$practiceCount saved sets',
-                  color: LensColors.violet,
-                  onTap: () => context.push('/practice'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 11),
-          _CareerIntentCard(
-            onTap: () => context.go('/career'),
+          _EvidenceSource(
+            icon: Icons.settings_outlined,
+            title: 'Settings and integrations',
+            subtitle: 'Notion, privacy, data controls, and sign out',
+            status: 'OPEN',
+            color: LensColors.muted,
+            onTap: () => context.push('/settings'),
           ),
         ],
       ),
@@ -197,40 +176,31 @@ class _ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = liveSignals / totalSignals;
-    return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [LensColors.ink, Color(0xFF223D57)],
-        ),
-        borderRadius: BorderRadius.circular(30),
-      ),
+    return LensCard(
+      padding: const EdgeInsets.all(18),
       child: Row(
         children: [
           SizedBox(
-            width: 84,
-            height: 84,
+            width: 66,
+            height: 66,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  width: 78,
-                  height: 78,
+                  width: 62,
+                  height: 62,
                   child: CircularProgressIndicator(
                     value: progress,
-                    strokeWidth: 7,
-                    backgroundColor: Colors.white.withValues(alpha: .09),
+                    strokeWidth: 6,
+                    backgroundColor: LensColors.line,
                     color: LensColors.aqua,
                   ),
                 ),
                 Text(
                   '${(progress * 100).round()}%',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -241,30 +211,19 @@ class _ProfileHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'PROFILE SIGNALS',
-                  style: TextStyle(
-                    color: LensColors.aqua,
-                    fontSize: 9,
-                    letterSpacing: 1.1,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 6),
                 Text(
-                  '$liveSignals of $totalSignals evidence layers connected',
+                  '$liveSignals of $totalSignals sources connected',
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     height: 1.3,
                   ),
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  'Current academic GPA $gpa',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: .58),
-                    fontSize: 11,
+                  'Current GPA $gpa',
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 12,
                   ),
                 ),
               ],
@@ -329,28 +288,31 @@ class _EvidenceSource extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],
             ),
           ),
           const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: .08),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              status,
-              style: TextStyle(
-                color: color,
-                fontSize: 8.5,
-                fontWeight: FontWeight.w900,
-                letterSpacing: .6,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                status.toLowerCase(),
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
+              if (onTap != null)
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: LensColors.muted,
+                  size: 19,
+                ),
+            ],
           ),
         ],
       ),
@@ -399,7 +361,7 @@ class _LinkedInConnectorCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -416,7 +378,7 @@ class _LinkedInConnectorCard extends StatelessWidget {
                   'Connect',
                   style: TextStyle(
                     color: linkedInBlue,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -485,7 +447,7 @@ class _GithubConnectorCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -502,7 +464,7 @@ class _GithubConnectorCard extends StatelessWidget {
                   'Connect',
                   style: TextStyle(
                     color: LensColors.ink,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -585,7 +547,7 @@ class _ResumeConnectorCard extends StatelessWidget {
                           'AGENT READY',
                           style: TextStyle(
                             color: Color(0xFF168D80),
-                            fontSize: 7.5,
+                            fontSize: 11,
                             letterSpacing: .6,
                             fontWeight: FontWeight.w900,
                           ),
@@ -602,7 +564,7 @@ class _ResumeConnectorCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: connected ? LensColors.ink : LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: connected ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
@@ -612,7 +574,7 @@ class _ResumeConnectorCard extends StatelessWidget {
                     'PDF uploaded · $skillCount skills extracted',
                     style: const TextStyle(
                       color: LensColors.muted,
-                      fontSize: 9.5,
+                      fontSize: 11,
                     ),
                   ),
                 ],
@@ -628,7 +590,7 @@ class _ResumeConnectorCard extends StatelessWidget {
                   'Import',
                   style: TextStyle(
                     color: LensColors.indigo,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -707,7 +669,7 @@ class _ToneConnectorCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -724,7 +686,7 @@ class _ToneConnectorCard extends StatelessWidget {
                   'Add',
                   style: TextStyle(
                     color: LensColors.indigo,
-                    fontSize: 10.5,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -735,84 +697,6 @@ class _ToneConnectorCard extends StatelessWidget {
                 ),
               ],
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LayerCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String value;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _LayerCard({
-    required this.icon,
-    required this.title,
-    required this.value,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LensCard(
-      onTap: onTap,
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color),
-          const SizedBox(height: 18),
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(color: LensColors.muted, fontSize: 10.5),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CareerIntentCard extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _CareerIntentCard({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return LensCard(
-      onTap: onTap,
-      color: LensColors.indigo,
-      padding: const EdgeInsets.all(18),
-      child: const Row(
-        children: [
-          Icon(Icons.explore_outlined, color: Colors.white),
-          SizedBox(width: 13),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Shape your career intent',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Roles, companies, constraints, and preferred direction.',
-                  style: TextStyle(color: Colors.white70, fontSize: 10.5),
-                ),
-              ],
-            ),
-          ),
-          Icon(Icons.arrow_forward_rounded, color: Colors.white),
         ],
       ),
     );
@@ -834,7 +718,7 @@ class _Header extends StatelessWidget {
         ),
         Text(
           detail,
-          style: const TextStyle(color: LensColors.muted, fontSize: 10),
+          style: const TextStyle(color: LensColors.muted, fontSize: 11),
         ),
       ],
     );

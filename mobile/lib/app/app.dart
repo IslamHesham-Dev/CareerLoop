@@ -15,7 +15,6 @@ import '../ui/career/opportunity_detail_screen.dart';
 import '../ui/career/quick_apply_screen.dart';
 import '../ui/career/resume_profile_screen.dart';
 import '../ui/core/app_shell.dart';
-import '../ui/core/lens_components.dart';
 import '../ui/courses/course_details_screen.dart';
 import '../ui/courses/cms_course_screen.dart';
 import '../ui/courses/courses_screen.dart';
@@ -215,11 +214,7 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         ),
         GoRoute(
           path: '/transcript',
-          builder: (context, state) => const Scaffold(
-            body: AuroraBackground(
-              child: TranscriptScreen(),
-            ),
-          ),
+          builder: (context, state) => const TranscriptScreen(),
         ),
         GoRoute(
           path: '/practice',

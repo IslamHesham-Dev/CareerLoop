@@ -47,12 +47,10 @@ Future<void> showAiAssistSheet(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [LensColors.indigo, LensColors.violet],
-                    ),
-                    borderRadius: BorderRadius.circular(15),
+                    color: LensColors.indigo.withValues(alpha: .1),
+                    borderRadius: BorderRadius.circular(13),
                   ),
-                  child: Icon(icon, color: Colors.white, size: 21),
+                  child: Icon(icon, color: LensColors.indigo, size: 21),
                 ),
                 const SizedBox(width: 13),
                 Expanded(
@@ -132,7 +130,7 @@ Future<void> showAiAssistSheet(
                                   style: Theme.of(sheetContext)
                                       .textTheme
                                       .bodyMedium
-                                      ?.copyWith(fontSize: 10.5),
+                                      ?.copyWith(fontSize: 11),
                                 ),
                               ],
                             ),

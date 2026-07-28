@@ -17,120 +17,115 @@ class PracticeLibraryScreen extends StatelessWidget {
     final sets = context.watch<PracticeRepository>().sets;
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
         title: const Text('Practice library'),
       ),
-      body: AuroraBackground(
-        child: sets.isEmpty
-            ? const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.style_outlined,
-                        size: 50,
-                        color: LensColors.violet,
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        'Your practice sets will appear here',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Ask CareerLoop to prepare you for a quiz, midterm, or final.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: LensColors.muted),
-                      ),
-                    ],
-                  ),
-                ),
-              )
-            : ListView.separated(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-                itemCount: sets.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 11),
-                itemBuilder: (context, index) {
-                  final set = sets[index];
-                  return Dismissible(
-                    key: ValueKey(set.id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 20),
-                      decoration: BoxDecoration(
-                        color: LensColors.rose,
-                        borderRadius: BorderRadius.circular(22),
-                      ),
-                      child:
-                          const Icon(Icons.delete_outline, color: Colors.white),
+      body: sets.isEmpty
+          ? const Center(
+              child: Padding(
+                padding: EdgeInsets.all(28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.quiz_outlined,
+                      size: 44,
+                      color: LensColors.indigo,
                     ),
-                    onDismissed: (_) =>
-                        context.read<PracticeRepository>().remove(set.id),
-                    child: LensCard(
-                      onTap: () =>
-                          context.push('/practice/session', extra: set),
-                      padding: const EdgeInsets.all(17),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  LensColors.indigo,
-                                  LensColors.violet,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Icon(
-                              Icons.quiz_rounded,
-                              color: Colors.white,
-                            ),
+                    SizedBox(height: 16),
+                    Text(
+                      'No practice quizzes yet',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Ask CareerLoop to prepare you for a quiz, midterm, or final.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: LensColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
+              itemCount: sets.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 11),
+              itemBuilder: (context, index) {
+                final set = sets[index];
+                return Dismissible(
+                  key: ValueKey(set.id),
+                  direction: DismissDirection.endToStart,
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    decoration: BoxDecoration(
+                      color: LensColors.rose,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child:
+                        const Icon(Icons.delete_outline, color: Colors.white),
+                  ),
+                  onDismissed: (_) =>
+                      context.read<PracticeRepository>().remove(set.id),
+                  child: LensCard(
+                    onTap: () => context.push('/practice/session', extra: set),
+                    padding: const EdgeInsets.all(17),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: LensColors.indigo.withValues(alpha: .10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
-                          const SizedBox(width: 13),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  set.title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  '${set.questions.length} MCQs · '
-                                  '${DateFormat.MMMd().format(set.createdAt)}',
-                                  style: const TextStyle(
-                                    color: LensColors.muted,
-                                    fontSize: 10.5,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_rounded,
+                          child: const Icon(
+                            Icons.quiz_outlined,
                             color: LensColors.indigo,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 13),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                set.title,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 5),
+                              Text(
+                                '${set.questions.length} MCQs · '
+                                '${DateFormat.MMMd().format(set.createdAt)}',
+                                style: const TextStyle(
+                                  color: LensColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: LensColors.muted,
+                        ),
+                      ],
                     ),
-                  );
-                },
-              ),
-      ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
@@ -165,6 +160,10 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF3F4FA),
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 64,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -177,7 +176,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
               widget.practiceSet.course,
               style: const TextStyle(
                 color: LensColors.muted,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -343,21 +342,20 @@ class _QuestionView extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           Text(
-            question.concept.toUpperCase(),
+            question.concept,
             style: const TextStyle(
-              color: LensColors.violet,
-              fontSize: 10,
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w900,
+              color: LensColors.indigo,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 9),
           Text(
             question.question,
             style: const TextStyle(
-              fontSize: 21,
+              fontSize: 20,
               height: 1.35,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 12),
@@ -367,7 +365,7 @@ class _QuestionView extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onExplainQuestion,
                 icon: const Icon(Icons.auto_awesome_rounded, size: 17),
-                label: const Text('Explain the question — no answer'),
+                label: const Text('Explain without revealing the answer'),
               ),
             ),
           const SizedBox(height: 8),
@@ -390,7 +388,11 @@ class _QuestionView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: (correct ? LensColors.aqua : LensColors.rose)
                     .withValues(alpha: .09),
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: (correct ? LensColors.aqua : LensColors.rose)
+                      .withValues(alpha: .24),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -399,7 +401,7 @@ class _QuestionView extends StatelessWidget {
                     correct ? 'Correct' : 'Not quite',
                     style: TextStyle(
                       color: correct ? LensColors.aqua : LensColors.rose,
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   if (!correct) ...[
@@ -458,10 +460,10 @@ class _OptionTile extends StatelessWidget {
     return Material(
       color:
           isCorrect || isSelected ? color.withValues(alpha: .08) : Colors.white,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: answered ? null : onTap,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(14),
         child: Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
@@ -469,7 +471,7 @@ class _OptionTile extends StatelessWidget {
               color: isCorrect || isSelected ? color : LensColors.line,
               width: isCorrect || isSelected ? 1.5 : 1,
             ),
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Row(
             children: [
@@ -483,14 +485,17 @@ class _OptionTile extends StatelessWidget {
                 ),
                 child: Text(
                   String.fromCharCode(65 + index),
-                  style: TextStyle(color: color, fontWeight: FontWeight.w900),
+                  style: TextStyle(color: color, fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   text,
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    height: 1.35,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               if (isCorrect)
@@ -530,14 +535,14 @@ class _CompletionView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(
-                Icons.workspace_premium_rounded,
-                color: LensColors.violet,
-                size: 54,
+                Icons.check_circle_outline_rounded,
+                color: LensColors.indigo,
+                size: 46,
               ),
               const SizedBox(height: 14),
               const Text(
                 'Session complete',
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+                style: TextStyle(fontSize: 21, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               Text(

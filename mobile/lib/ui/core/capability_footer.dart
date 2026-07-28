@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../app/theme.dart';
 import '../../data/models.dart';
 
-class CapabilityFooter extends StatelessWidget {
+class CapabilityFooter extends StatefulWidget {
   final List<ToolActivity> tools;
   final List<String> sources;
   final bool compact;
@@ -16,6 +16,13 @@ class CapabilityFooter extends StatelessWidget {
   });
 
   @override
+  State<CapabilityFooter> createState() => _CapabilityFooterState();
+}
+
+class _CapabilityFooterState extends State<CapabilityFooter> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
     final items = <_CapabilityItem>[];
     final seen = <String>{};
@@ -26,7 +33,7 @@ class CapabilityFooter extends StatelessWidget {
       }
     }
 
-    for (final source in sources) {
+    for (final source in widget.sources) {
       add(
         _CapabilityItem(
           kind: 'Connector',
@@ -35,7 +42,7 @@ class CapabilityFooter extends StatelessWidget {
         ),
       );
     }
-    for (final tool in tools) {
+    for (final tool in widget.tools) {
       add(
         _CapabilityItem(
           kind: 'Tool',
@@ -57,7 +64,7 @@ class CapabilityFooter extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.only(top: compact ? 9 : 12),
+      padding: EdgeInsets.only(top: widget.compact ? 7 : 10),
       decoration: const BoxDecoration(
         border: Border(
           top: BorderSide(color: LensColors.line),
@@ -66,27 +73,72 @@ class CapabilityFooter extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'USED IN THIS ANSWER',
-            style: TextStyle(
-              color: LensColors.muted,
-              fontSize: compact ? 8.5 : 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.05,
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => setState(() => _expanded = !_expanded),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  vertical: widget.compact ? 3 : 5,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.account_tree_outlined,
+                      size: widget.compact ? 14 : 16,
+                      color: LensColors.muted,
+                    ),
+                    const SizedBox(width: 7),
+                    Expanded(
+                      child: Text(
+                        'Sources & tools (${items.length})',
+                        style: TextStyle(
+                          color: LensColors.muted,
+                          fontSize: widget.compact ? 10 : 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: _expanded ? .5 : 0,
+                      duration: const Duration(milliseconds: 180),
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: widget.compact ? 18 : 20,
+                        color: LensColors.muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          SizedBox(height: compact ? 6 : 8),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: items
-                .map(
-                  (item) => _CapabilityChip(
-                    item: item,
-                    compact: compact,
-                  ),
-                )
-                .toList(),
+          AnimatedCrossFade(
+            firstChild: const SizedBox(width: double.infinity),
+            secondChild: Padding(
+              padding: EdgeInsets.only(
+                top: widget.compact ? 5 : 7,
+                bottom: widget.compact ? 2 : 4,
+              ),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: items
+                    .map(
+                      (item) => _CapabilityChip(
+                        item: item,
+                        compact: widget.compact,
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
+            duration: const Duration(milliseconds: 180),
+            sizeCurve: Curves.easeOutCubic,
           ),
         ],
       ),
@@ -233,7 +285,7 @@ class _CapabilityChip extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           Text(
-            '${item.kind} · ${item.label}${item.failed ? ' failed' : ''}',
+            '${item.kind} \u00B7 ${item.label}${item.failed ? ' failed' : ''}',
             style: TextStyle(
               color: item.failed ? LensColors.rose : LensColors.ink,
               fontSize: compact ? 9 : 9.5,

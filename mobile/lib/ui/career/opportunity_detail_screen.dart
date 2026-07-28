@@ -52,15 +52,8 @@ class CompanyLogo extends StatelessWidget {
       padding: EdgeInsets.all(size * .16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(size * .28),
+        borderRadius: BorderRadius.circular(size * .25),
         border: Border.all(color: LensColors.line),
-        boxShadow: [
-          BoxShadow(
-            color: LensColors.ink.withValues(alpha: .07),
-            blurRadius: 16,
-            offset: const Offset(0, 7),
-          ),
-        ],
       ),
       child: url.isEmpty
           ? fallback
@@ -86,65 +79,47 @@ class OpportunityDetailScreen extends StatelessWidget {
         .where((course) => job.recommendedCourseIds.contains(course.id))
         .toList();
     return Scaffold(
+      backgroundColor: LensColors.canvas,
+      appBar: AppBar(
+        backgroundColor: LensColors.canvas,
+        surfaceTintColor: Colors.white,
+        scrolledUnderElevation: 1,
+        leading: IconButton(
+          tooltip: 'Back to matches',
+          onPressed: () => context.pop(),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        title: const Text('Job match'),
+      ),
       bottomNavigationBar: _ActionBar(
         onAskAi: () => _askAi(context),
         onApply: () => _open(job.url),
       ),
-      body: AuroraBackground(
-        child: SafeArea(
-          bottom: false,
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                backgroundColor: Colors.transparent,
-                surfaceTintColor: Colors.transparent,
-                pinned: true,
-                title: const Text(
-                  'Position intelligence',
-                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w900),
-                ),
-                leading: IconButton.filledTonal(
-                  tooltip: 'Back to matches',
-                  onPressed: () => context.pop(),
-                  icon: const Icon(Icons.arrow_back_rounded),
-                ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(18, 10, 18, 130),
-                sliver: SliverList.list(
-                  children: [
-                    _PositionHero(job: job),
-                    const SizedBox(height: 14),
-                    _ListingFacts(job: job),
-                    const SizedBox(height: 20),
-                    const _SectionTitle(
-                      eyebrow: 'CAREERLOOP EVALUATION',
-                      title: 'Why this role reached your shortlist',
-                      subtitle:
-                          'A transparent signal built from your selected intent and connected evidence.',
-                    ),
-                    const SizedBox(height: 11),
-                    _FitCard(job: job, evidence: args.evidence),
-                    const SizedBox(height: 20),
-                    _ApplicationStudio(
-                      job: job,
-                      evidence: args.evidence,
-                    ),
-                    const SizedBox(height: 22),
-                    _SkillMap(job: job),
-                    const SizedBox(height: 22),
-                    _QualificationPath(courses: courses, job: job),
-                    const SizedBox(height: 20),
-                    _EvidenceDisclosure(
-                      evidence: args.evidence,
-                      limitations: args.limitations,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+        children: [
+          _PositionHeader(job: job),
+          const SizedBox(height: 14),
+          _ListingFacts(job: job),
+          const SizedBox(height: 24),
+          const _SectionTitle(
+            title: 'Why this role matches',
+            subtitle: 'Based on your search preferences and connected profile.',
           ),
-        ),
+          const SizedBox(height: 11),
+          _FitCard(job: job, evidence: args.evidence),
+          const SizedBox(height: 24),
+          _ApplicationDocuments(job: job),
+          const SizedBox(height: 24),
+          _SkillMap(job: job),
+          const SizedBox(height: 24),
+          _QualificationPath(courses: courses),
+          const SizedBox(height: 18),
+          _EvidenceDisclosure(
+            evidence: args.evidence,
+            limitations: args.limitations,
+          ),
+        ],
       ),
     );
   }
@@ -153,14 +128,15 @@ class OpportunityDetailScreen extends StatelessWidget {
     context.read<AdvisorRepository>().send(
           'Deep-evaluate my fit for ${job.title} at ${job.company}. Use my '
           'full transcript, imported LinkedIn PDF, and connected GitHub '
-          'project evidence. The live application '
-          'page is ${job.url}. Known listing metadata: category '
-          '${job.category ?? 'not supplied'}, locations ${job.location}, '
-          'sponsorship ${job.sponsorship ?? 'not supplied'}, and degrees '
+          'project evidence. The live application page is ${job.url}. '
+          'Known listing metadata: category ${job.category ?? 'not supplied'}, '
+          'locations ${job.location}, sponsorship '
+          '${job.sponsorship ?? 'not supplied'}, and degrees '
           '${job.degrees.isEmpty ? 'not supplied' : job.degrees.join(', ')}. '
-          'Validate the current inferred gaps (${job.inferredSkillGaps.join(', ')}) '
-          'against my evidence, clearly separate facts from inferences, and '
-          'build a focused qualification and application plan.',
+          'Validate the current inferred gaps '
+          '(${job.inferredSkillGaps.join(', ')}) against my evidence, clearly '
+          'separate facts from inferences, and build a focused qualification '
+          'and application plan.',
         );
     context.go('/advisor');
   }
@@ -171,22 +147,19 @@ class OpportunityDetailScreen extends StatelessWidget {
   }
 }
 
-class _PositionHero extends StatelessWidget {
+class _PositionHeader extends StatelessWidget {
   final JobOpportunity job;
 
-  const _PositionHero({required this.job});
+  const _PositionHeader({required this.job});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(21),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [LensColors.ink, Color(0xFF273273)],
-        ),
-        borderRadius: BorderRadius.circular(28),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: LensColors.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,22 +178,21 @@ class _PositionHero extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      job.company.toUpperCase(),
+                      job.company,
                       style: const TextStyle(
-                        color: LensColors.aqua,
-                        fontSize: 9,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w900,
+                        color: LensColors.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 5),
                     Text(
                       job.title,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        height: 1.12,
-                        fontWeight: FontWeight.w900,
+                        color: LensColors.ink,
+                        fontSize: 21,
+                        height: 1.18,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
@@ -231,84 +203,42 @@ class _PositionHero extends StatelessWidget {
           const SizedBox(height: 18),
           Row(
             children: [
+              const Icon(
+                Icons.location_on_outlined,
+                size: 17,
+                color: LensColors.muted,
+              ),
+              const SizedBox(width: 7),
               Expanded(
-                child: _HeroFact(
-                  icon: Icons.location_on_outlined,
-                  value: job.location,
+                child: Text(
+                  job.location,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 12,
+                    height: 1.35,
+                  ),
                 ),
               ),
-              const SizedBox(width: 10),
-              _SignalGauge(score: job.matchScore),
+              const SizedBox(width: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${job.matchScore}% profile fit',
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroFact extends StatelessWidget {
-  final IconData icon;
-  final String value;
-
-  const _HeroFact({required this.icon, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 16, color: Colors.white60),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            value,
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 11,
-              height: 1.35,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SignalGauge extends StatelessWidget {
-  final int score;
-
-  const _SignalGauge({required this.score});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withValues(alpha: .12)),
-      ),
-      child: Column(
-        children: [
-          Text(
-            '$score%',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const Text(
-            'FIT SIGNAL',
-            style: TextStyle(
-              color: LensColors.aqua,
-              fontSize: 7,
-              letterSpacing: .7,
-              fontWeight: FontWeight.w900,
-            ),
           ),
         ],
       ),
@@ -361,58 +291,55 @@ class _ListingFacts extends StatelessWidget {
       ),
     ];
     if (facts.isEmpty) return const SizedBox.shrink();
-    return SizedBox(
-      height: 86,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: facts.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 9),
-        itemBuilder: (context, index) {
-          final fact = facts[index];
-          return Container(
-            width: 138,
-            padding: const EdgeInsets.all(13),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .9),
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: LensColors.line),
-            ),
-            child: Row(
-              children: [
-                Icon(fact.icon, size: 18, color: LensColors.indigo),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fact.label.toUpperCase(),
-                        style: const TextStyle(
-                          color: LensColors.muted,
-                          fontSize: 7.5,
-                          letterSpacing: .6,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        fact.value,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          height: 1.2,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: LensColors.line),
+      ),
+      child: Column(
+        children: [
+          for (var index = 0; index < facts.length; index++) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    facts[index].icon,
+                    size: 19,
+                    color: LensColors.indigo,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 11),
+                  SizedBox(
+                    width: 88,
+                    child: Text(
+                      facts[index].label,
+                      style: const TextStyle(
+                        color: LensColors.muted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      facts[index].value,
+                      textAlign: TextAlign.end,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        height: 1.3,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          );
-        },
+            if (index != facts.length - 1) const Divider(height: 1, indent: 30),
+          ],
+        ],
       ),
     );
   }
@@ -448,34 +375,43 @@ class _FitCard extends StatelessWidget {
       padding: const EdgeInsets.all(17),
       child: Column(
         children: [
-          ...job.matchReasons.map(
-            (reason) => _ReasonRow(
-              icon: Icons.check_circle_rounded,
-              color: LensColors.aqua,
-              text: reason,
+          if (job.matchReasons.isEmpty)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'No specific match reasons were returned for this role.',
+                style: TextStyle(color: LensColors.muted, fontSize: 12),
+              ),
+            )
+          else
+            ...job.matchReasons.map(
+              (reason) => _ReasonRow(
+                icon: Icons.check_circle_rounded,
+                color: LensColors.aqua,
+                text: reason,
+              ),
             ),
-          ),
           const Divider(height: 24),
           Row(
             children: [
               Expanded(
                 child: _EvidenceCount(
                   value: '${job.profileSkillMatches.length}',
-                  label: 'profile signals',
+                  label: 'Profile signals',
                 ),
               ),
               Container(width: 1, height: 36, color: LensColors.line),
               Expanded(
                 child: _EvidenceCount(
                   value: '${job.keywordMatches.length}',
-                  label: 'intent matches',
+                  label: 'Preference matches',
                 ),
               ),
               Container(width: 1, height: 36, color: LensColors.line),
               Expanded(
                 child: _EvidenceCount(
                   value: '${_connectedCount(evidence)}',
-                  label: 'sources used',
+                  label: 'Sources used',
                 ),
               ),
             ],
@@ -516,7 +452,7 @@ class _ReasonRow extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 11.5, height: 1.35),
+              style: const TextStyle(fontSize: 12, height: 1.4),
             ),
           ),
         ],
@@ -540,27 +476,24 @@ class _EvidenceCount extends StatelessWidget {
           style: const TextStyle(
             color: LensColors.indigo,
             fontSize: 18,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
           ),
         ),
+        const SizedBox(height: 2),
         Text(
           label,
           textAlign: TextAlign.center,
-          style: const TextStyle(color: LensColors.muted, fontSize: 8.5),
+          style: const TextStyle(color: LensColors.muted, fontSize: 11),
         ),
       ],
     );
   }
 }
 
-class _ApplicationStudio extends StatelessWidget {
+class _ApplicationDocuments extends StatelessWidget {
   final JobOpportunity job;
-  final OpportunityEvidence evidence;
 
-  const _ApplicationStudio({
-    required this.job,
-    required this.evidence,
-  });
+  const _ApplicationDocuments({required this.job});
 
   @override
   Widget build(BuildContext context) {
@@ -568,125 +501,73 @@ class _ApplicationStudio extends StatelessWidget {
       builder: (context, repository, _) {
         final resume = repository.documentFor(job, 'resume');
         final coverLetter = repository.documentFor(job, 'cover_letter');
-        return Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFF162045), Color(0xFF34419A)],
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const _SectionTitle(
+              title: 'Application documents',
+              subtitle:
+                  'Generate role-specific files, then review and refine them before applying.',
             ),
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Row(
+            const SizedBox(height: 11),
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: LensColors.line),
+              ),
+              child: Column(
                 children: [
-                  Icon(
-                    Icons.auto_awesome_rounded,
-                    color: LensColors.aqua,
-                    size: 18,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'APPLICATION STUDIO',
-                    style: TextStyle(
-                      color: LensColors.aqua,
-                      fontSize: 9,
-                      letterSpacing: 1.05,
-                      fontWeight: FontWeight.w900,
+                  _DocumentRow(
+                    icon: Icons.description_outlined,
+                    title: 'Tailored resume',
+                    subtitle: resume == null
+                        ? 'Projects, experience, and skills selected for this role'
+                        : 'Version ${resume.version} · PDF ready',
+                    ready: resume != null,
+                    loading: repository.isBusy(job, 'resume'),
+                    onTap: () => _open(
+                      context,
+                      repository,
+                      kind: 'resume',
+                      document: resume,
                     ),
                   ),
+                  const SizedBox(height: 9),
+                  _DocumentRow(
+                    icon: Icons.mail_outline_rounded,
+                    title: 'Tailored cover letter',
+                    subtitle: coverLetter == null
+                        ? 'Your evidence aligned to ${job.company}'
+                        : 'Version ${coverLetter.version} · PDF ready',
+                    ready: coverLetter != null,
+                    loading: repository.isBusy(job, 'cover_letter'),
+                    onTap: () => _open(
+                      context,
+                      repository,
+                      kind: 'cover_letter',
+                      document: coverLetter,
+                    ),
+                  ),
+                  if (repository.error != null) ...[
+                    const SizedBox(height: 10),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        repository.error!,
+                        style: const TextStyle(
+                          color: LensColors.rose,
+                          fontSize: 12,
+                          height: 1.35,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-              const SizedBox(height: 8),
-              const Text(
-                'Build the evidence for this role',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'CareerLoop selects role-relevant proof, fills your fixed '
-                'LaTeX templates, and compiles review-ready PDFs.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .68),
-                  fontSize: 11,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 13),
-              Wrap(
-                spacing: 7,
-                runSpacing: 7,
-                children: [
-                  _StudioEvidencePill(
-                    label: 'CV',
-                    available: evidence.resume,
-                  ),
-                  _StudioEvidencePill(
-                    label: 'LinkedIn',
-                    available: evidence.linkedInPdf,
-                  ),
-                  _StudioEvidencePill(
-                    label: 'GitHub',
-                    available: evidence.github,
-                  ),
-                  _StudioEvidencePill(
-                    label: 'Transcript',
-                    available: evidence.academicTranscript,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              _StudioDocumentCard(
-                icon: Icons.description_outlined,
-                title: 'Role-tailored resume',
-                subtitle: resume == null
-                    ? 'Relevant projects, stack, experience and role summary'
-                    : 'Version ${resume.version} · PDF ready',
-                ready: resume != null,
-                loading: repository.isBusy(job, 'resume'),
-                onTap: () => _open(
-                  context,
-                  repository,
-                  kind: 'resume',
-                  document: resume,
-                ),
-              ),
-              const SizedBox(height: 9),
-              _StudioDocumentCard(
-                icon: Icons.mail_outline_rounded,
-                title: 'Tailored cover letter',
-                subtitle: coverLetter == null
-                    ? 'Candidate evidence aligned to ${job.company}'
-                    : 'Version ${coverLetter.version} · PDF ready',
-                ready: coverLetter != null,
-                loading: repository.isBusy(job, 'cover_letter'),
-                onTap: () => _open(
-                  context,
-                  repository,
-                  kind: 'cover_letter',
-                  document: coverLetter,
-                ),
-              ),
-              if (repository.error != null) ...[
-                const SizedBox(height: 10),
-                Text(
-                  repository.error!,
-                  style: const TextStyle(
-                    color: Color(0xFFFFC8CD),
-                    fontSize: 10.5,
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -735,50 +616,7 @@ class _ApplicationStudio extends StatelessWidget {
   }
 }
 
-class _StudioEvidencePill extends StatelessWidget {
-  final String label;
-  final bool available;
-
-  const _StudioEvidencePill({
-    required this.label,
-    required this.available,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: available ? .11 : .05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: available ? .18 : .08),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            available ? Icons.check_circle_rounded : Icons.circle_outlined,
-            size: 12,
-            color: available ? LensColors.aqua : Colors.white38,
-          ),
-          const SizedBox(width: 5),
-          Text(
-            label,
-            style: TextStyle(
-              color: available ? Colors.white : Colors.white54,
-              fontSize: 9.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StudioDocumentCard extends StatelessWidget {
+class _DocumentRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
@@ -786,7 +624,7 @@ class _StudioDocumentCard extends StatelessWidget {
   final bool loading;
   final VoidCallback onTap;
 
-  const _StudioDocumentCard({
+  const _DocumentRow({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -798,25 +636,25 @@ class _StudioDocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: .09),
-      borderRadius: BorderRadius.circular(17),
+      color: LensColors.canvas,
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: loading ? null : onTap,
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(14),
         child: Padding(
           padding: const EdgeInsets.all(13),
           child: Row(
             children: [
               Container(
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .1),
-                  borderRadius: BorderRadius.circular(12),
+                  color: LensColors.indigo.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(11),
                 ),
-                child: Icon(icon, color: Colors.white, size: 19),
+                child: Icon(icon, color: LensColors.indigo, size: 20),
               ),
-              const SizedBox(width: 11),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -824,17 +662,16 @@ class _StudioDocumentCard extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: const TextStyle(
-                        color: Colors.white60,
-                        fontSize: 9.5,
+                        color: LensColors.muted,
+                        fontSize: 11,
                         height: 1.3,
                       ),
                     ),
@@ -844,28 +681,17 @@ class _StudioDocumentCard extends StatelessWidget {
               const SizedBox(width: 8),
               if (loading)
                 const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: LensColors.aqua,
-                  ),
+                  width: 19,
+                  height: 19,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 )
               else
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: ready ? LensColors.aqua : Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Text(
-                    ready ? 'VIEW' : 'GENERATE',
-                    style: const TextStyle(
-                      color: LensColors.ink,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
-                    ),
+                Text(
+                  ready ? 'Open' : 'Generate',
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
             ],
@@ -887,8 +713,7 @@ class _SkillMap extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionTitle(
-          eyebrow: 'SIGNAL MAP',
-          title: 'Known strengths and gaps to verify',
+          title: 'Strengths and gaps',
           subtitle:
               'Gaps are inferred from the role family until the employer page is reviewed.',
         ),
@@ -899,15 +724,15 @@ class _SkillMap extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _TagGroup(
-                label: 'EVIDENCED IN YOUR PROFILE',
+                label: 'Supported by your profile',
                 emptyLabel: 'No explicit matching skill was detected yet.',
                 values: job.profileSkillMatches,
                 color: LensColors.aqua,
                 icon: Icons.verified_rounded,
               ),
-              const SizedBox(height: 17),
+              const SizedBox(height: 18),
               _TagGroup(
-                label: 'INFERRED GAPS — VERIFY FIRST',
+                label: 'Gaps to verify',
                 emptyLabel: 'No role-family gaps were inferred.',
                 values: job.inferredSkillGaps,
                 color: LensColors.amber,
@@ -943,18 +768,13 @@ class _TagGroup extends StatelessWidget {
       children: [
         Text(
           label,
-          style: TextStyle(
-            color: color,
-            fontSize: 8.5,
-            letterSpacing: .8,
-            fontWeight: FontWeight.w900,
-          ),
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
         if (values.isEmpty)
           Text(
             emptyLabel,
-            style: const TextStyle(color: LensColors.muted, fontSize: 10.5),
+            style: const TextStyle(color: LensColors.muted, fontSize: 12),
           )
         else
           Wrap(
@@ -963,7 +783,7 @@ class _TagGroup extends StatelessWidget {
             children: values
                 .map(
                   (value) => Chip(
-                    avatar: Icon(icon, size: 13, color: color),
+                    avatar: Icon(icon, size: 14, color: color),
                     label: Text(value),
                     visualDensity: VisualDensity.compact,
                   ),
@@ -977,9 +797,8 @@ class _TagGroup extends StatelessWidget {
 
 class _QualificationPath extends StatelessWidget {
   final List<CareerCourseRecommendation> courses;
-  final JobOpportunity job;
 
-  const _QualificationPath({required this.courses, required this.job});
+  const _QualificationPath({required this.courses});
 
   @override
   Widget build(BuildContext context) {
@@ -987,10 +806,8 @@ class _QualificationPath extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionTitle(
-          eyebrow: 'QUALIFICATION PATH',
-          title: 'Close the gaps for this position',
-          subtitle:
-              'Mapped only to the inferred gaps above—not generic course recommendations.',
+          title: 'Recommended learning',
+          subtitle: 'Courses mapped to the inferred gaps for this role.',
         ),
         const SizedBox(height: 11),
         if (courses.isEmpty)
@@ -1041,7 +858,7 @@ class _CourseStep extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: const Color(0xFF0056D2).withValues(alpha: .09),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   SimpleIcons.coursera,
@@ -1059,8 +876,8 @@ class _CourseStep extends StatelessWidget {
                     '$number',
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 8,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                 ),
@@ -1073,12 +890,11 @@ class _CourseStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  course.provider.toUpperCase(),
+                  course.provider,
                   style: const TextStyle(
                     color: LensColors.indigo,
-                    fontSize: 8,
-                    letterSpacing: .7,
-                    fontWeight: FontWeight.w900,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1087,7 +903,7 @@ class _CourseStep extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 13,
                     height: 1.25,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -1095,16 +911,16 @@ class _CourseStep extends StatelessWidget {
                   '${course.level} · ${course.duration}',
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 9.5,
+                    fontSize: 11,
                   ),
                 ),
                 if (course.addressesSkills.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Closes: ${course.addressesSkills.join(', ')}',
+                    'Addresses ${course.addressesSkills.join(', ')}',
                     style: const TextStyle(
                       color: LensColors.aqua,
-                      fontSize: 9.5,
+                      fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -1136,36 +952,52 @@ class _EvidenceDisclosure extends StatelessWidget {
       if (evidence.github) 'GitHub',
       if (evidence.resume) 'Resume',
     ];
-    return ExpansionTile(
-      tilePadding: const EdgeInsets.symmetric(horizontal: 2),
-      title: const Text(
-        'How this evaluation was made',
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: LensColors.line),
       ),
-      subtitle: Text(
-        used.isEmpty ? 'Preference signals only' : used.join(' + '),
-        style: const TextStyle(color: LensColors.muted, fontSize: 10),
-      ),
-      children: [
-        ...limitations.map(
-          (item) => _ReasonRow(
-            icon: Icons.info_outline_rounded,
-            color: LensColors.muted,
-            text: item,
-          ),
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        title: const Text(
+          'Evidence used',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         ),
-      ],
+        subtitle: Text(
+          used.isEmpty ? 'Preference signals only' : used.join(' · '),
+          style: const TextStyle(color: LensColors.muted, fontSize: 11),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        children: [
+          if (limitations.isEmpty)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'No additional limitations were reported.',
+                style: TextStyle(color: LensColors.muted, fontSize: 12),
+              ),
+            )
+          else
+            ...limitations.map(
+              (item) => _ReasonRow(
+                icon: Icons.info_outline_rounded,
+                color: LensColors.muted,
+                text: item,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
 
 class _SectionTitle extends StatelessWidget {
-  final String eyebrow;
   final String title;
   final String subtitle;
 
   const _SectionTitle({
-    required this.eyebrow,
     required this.title,
     required this.subtitle,
   });
@@ -1176,16 +1008,6 @@ class _SectionTitle extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          eyebrow,
-          style: const TextStyle(
-            color: LensColors.indigo,
-            fontSize: 8.5,
-            letterSpacing: 1.1,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
           title,
           style: Theme.of(context).textTheme.titleLarge,
         ),
@@ -1194,8 +1016,8 @@ class _SectionTitle extends StatelessWidget {
           subtitle,
           style: const TextStyle(
             color: LensColors.muted,
-            fontSize: 10.5,
-            height: 1.35,
+            fontSize: 12,
+            height: 1.4,
           ),
         ),
       ],
@@ -1211,32 +1033,23 @@ class _ActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: LensColors.line),
-          boxShadow: [
-            BoxShadow(
-              color: LensColors.ink.withValues(alpha: .12),
-              blurRadius: 28,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: LensColors.line)),
+      ),
+      child: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 10, 16, 12),
         child: Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: onAskAi,
                 icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                label: const Text('Deep evaluate'),
+                label: const Text('Ask CareerLoop'),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 10),
             Expanded(
               child: FilledButton.icon(
                 onPressed: onApply,

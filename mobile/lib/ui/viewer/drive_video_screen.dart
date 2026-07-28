@@ -66,6 +66,8 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
       appBar: AppBar(
         backgroundColor: LensColors.ink,
         foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 64,
         titleSpacing: 4,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,8 +77,8 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
                 color: Colors.white,
               ),
             ),
@@ -86,7 +88,7 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: .56),
-                fontSize: 10,
+                fontSize: 12,
               ),
             ),
           ],

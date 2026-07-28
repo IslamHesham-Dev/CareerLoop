@@ -7,7 +7,6 @@ import '../../app/theme.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/capability_footer.dart';
-import '../core/lens_components.dart';
 import '../core/notion_export_action.dart';
 import '../core/practice_launch_card.dart';
 
@@ -95,16 +94,17 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
             child: Row(
               children: [
                 Container(
-                  width: 45,
-                  height: 45,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [LensColors.indigo, LensColors.violet],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
+                    color: LensColors.indigo.withValues(alpha: .1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.auto_awesome_rounded,
-                      color: Colors.white),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: LensColors.indigo,
+                    size: 21,
+                  ),
                 ),
                 const SizedBox(width: 13),
                 const Expanded(
@@ -119,18 +119,12 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                         ),
                       ),
                       SizedBox(height: 2),
-                      Row(
-                        children: [
-                          _OnlineDot(),
-                          SizedBox(width: 6),
-                          Text(
-                            'Academic evidence active',
-                            style: TextStyle(
-                              color: LensColors.muted,
-                              fontSize: 11.5,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'Academic and career context',
+                        style: TextStyle(
+                          color: LensColors.muted,
+                          fontSize: 11.5,
+                        ),
                       ),
                     ],
                   ),
@@ -201,25 +195,6 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 ),
               ),
             ),
-          if (advisor.messages.isNotEmpty)
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 18),
-                scrollDirection: Axis.horizontal,
-                itemCount: _suggestions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (context, index) => ActionChip(
-                  onPressed: advisor.isSending
-                      ? null
-                      : () => _send(_suggestions[index]),
-                  label: Text(
-                    _suggestions[index],
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-              ),
-            ),
           _Composer(
             controller: _controller,
             isSending: advisor.isSending,
@@ -257,22 +232,6 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
   }
 }
 
-class _OnlineDot extends StatelessWidget {
-  const _OnlineDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 7,
-      height: 7,
-      decoration: const BoxDecoration(
-        shape: BoxShape.circle,
-        color: LensColors.aqua,
-      ),
-    );
-  }
-}
-
 class _AdvisorWelcome extends StatelessWidget {
   final ValueChanged<String> onPrompt;
 
@@ -281,61 +240,55 @@ class _AdvisorWelcome extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(22, 32, 22, 24),
+      padding: const EdgeInsets.fromLTRB(22, 36, 22, 24),
       children: [
-        Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [LensColors.indigo, LensColors.violet],
-              ),
-              borderRadius: BorderRadius.circular(23),
-              boxShadow: [
-                BoxShadow(
-                  color: LensColors.indigo.withValues(alpha: .25),
-                  blurRadius: 30,
-                  offset: const Offset(0, 14),
-                ),
-              ],
-            ),
-            child: const Icon(Icons.auto_awesome_rounded,
-                color: Colors.white, size: 30),
-          ),
-        ),
-        const SizedBox(height: 24),
         Text(
-          'Ask with context.\nDecide with clarity.',
-          style: Theme.of(context).textTheme.headlineMedium,
+          'How can I help?',
+          style: Theme.of(context).textTheme.headlineSmall,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Text(
-          'I connect your verified academic evidence to study decisions, profile insights, and practical career next steps.',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          'Ask about your academic record, course progress, or career profile.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: LensColors.muted,
               ),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
         ..._AdvisorScreenState._suggestions.map(
           (suggestion) => Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: LensCard(
-              onTap: () => onPrompt(suggestion),
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  const Icon(Icons.north_east_rounded,
-                      color: LensColors.indigo, size: 19),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      suggestion,
-                      style: const TextStyle(fontWeight: FontWeight.w700),
-                    ),
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                side: const BorderSide(color: LensColors.line),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => onPrompt(suggestion),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 15, vertical: 14),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          suggestion,
+                          style: const TextStyle(
+                            color: LensColors.ink,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Icon(
+                        Icons.arrow_forward_rounded,
+                        color: LensColors.muted,
+                        size: 18,
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
@@ -357,17 +310,15 @@ class _MessageBubble extends StatelessWidget {
         alignment: Alignment.centerRight,
         child: Container(
           constraints: const BoxConstraints(maxWidth: 330),
-          margin: const EdgeInsets.only(left: 44, bottom: 15),
-          padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 13),
+          margin: const EdgeInsets.only(left: 44, bottom: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [LensColors.indigo, LensColors.violet],
-            ),
+            color: LensColors.indigo,
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(21),
-              topRight: Radius.circular(21),
-              bottomLeft: Radius.circular(21),
-              bottomRight: Radius.circular(6),
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(5),
             ),
           ),
           child: Text(
@@ -377,56 +328,63 @@ class _MessageBubble extends StatelessWidget {
         ),
       );
     }
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 380),
-        margin: const EdgeInsets.only(right: 12, bottom: 18),
-        padding: const EdgeInsets.all(17),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(6),
-            topRight: Radius.circular(23),
-            bottomLeft: Radius.circular(23),
-            bottomRight: Radius.circular(23),
-          ),
-          border: Border.all(color: LensColors.line),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            MarkdownBody(
-              data: message.text,
-              selectable: true,
-              styleSheet: MarkdownStyleSheet(
-                p: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: LensColors.ink,
-                      fontSize: 14,
-                    ),
-                h2: Theme.of(context).textTheme.titleLarge,
-                h3: Theme.of(context).textTheme.titleMedium,
-                listBullet: const TextStyle(color: LensColors.indigo),
-                tableBorder: TableBorder.all(color: LensColors.line),
-                tableCellsPadding: const EdgeInsets.all(8),
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 16,
+                color: LensColors.indigo,
               ),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: NotionExportAction(message: message),
-            ),
-            if (message.practiceSet != null) ...[
-              const SizedBox(height: 13),
-              PracticeLaunchCard(practiceSet: message.practiceSet!),
+              SizedBox(width: 7),
+              Text(
+                'CareerLoop',
+                style: TextStyle(
+                  color: LensColors.ink,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
-            const SizedBox(height: 14),
-            CapabilityFooter(
-              tools: message.tools,
-              sources: message.sources,
+          ),
+          const SizedBox(height: 10),
+          MarkdownBody(
+            data: message.text,
+            selectable: true,
+            styleSheet: MarkdownStyleSheet(
+              p: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LensColors.ink,
+                    fontSize: 14,
+                  ),
+              h2: Theme.of(context).textTheme.titleLarge,
+              h3: Theme.of(context).textTheme.titleMedium,
+              listBullet: const TextStyle(color: LensColors.indigo),
+              tableBorder: TableBorder.all(color: LensColors.line),
+              tableCellsPadding: const EdgeInsets.all(8),
             ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: NotionExportAction(message: message),
+          ),
+          if (message.practiceSet != null) ...[
+            const SizedBox(height: 13),
+            PracticeLaunchCard(practiceSet: message.practiceSet!),
           ],
-        ),
+          const SizedBox(height: 14),
+          CapabilityFooter(
+            tools: message.tools,
+            sources: message.sources,
+          ),
+          const SizedBox(height: 2),
+          const Divider(height: 1, color: LensColors.line),
+        ],
       ),
     );
   }
@@ -437,31 +395,21 @@ class _ThinkingBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 18),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: LensColors.line),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            SizedBox(width: 10),
-            Text(
-              'Connecting the evidence...',
-              style: TextStyle(fontSize: 12, color: LensColors.muted),
-            ),
-          ],
-        ),
+    return const Padding(
+      padding: EdgeInsets.only(bottom: 22),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          SizedBox(width: 10),
+          Text(
+            'Working on your answer...',
+            style: TextStyle(fontSize: 12, color: LensColors.muted),
+          ),
+        ],
       ),
     );
   }
@@ -485,10 +433,10 @@ class _Composer extends StatelessWidget {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Container(
       padding: EdgeInsets.fromLTRB(
-        16,
-        10,
-        16,
-        MediaQuery.paddingOf(context).bottom + 10,
+        12,
+        8,
+        12,
+        MediaQuery.paddingOf(context).bottom + 8,
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
@@ -497,24 +445,29 @@ class _Composer extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          PopupMenuButton<String>(
-            tooltip: 'Quick prompts',
-            enabled: !isSending,
-            icon: const Icon(Icons.bolt_rounded),
-            onSelected: (value) {
-              controller.text = value;
-              onSend();
-            },
-            itemBuilder: (context) => quickPrompts
-                .map(
-                  (prompt) => PopupMenuItem(
-                    value: prompt,
-                    child: Text(prompt),
-                  ),
-                )
-                .toList(),
+          SizedBox(
+            width: 42,
+            height: 42,
+            child: PopupMenuButton<String>(
+              tooltip: 'Quick prompts',
+              enabled: !isSending,
+              padding: EdgeInsets.zero,
+              icon: const Icon(Icons.add_rounded),
+              onSelected: (value) {
+                controller.text = value;
+                onSend();
+              },
+              itemBuilder: (context) => quickPrompts
+                  .map(
+                    (prompt) => PopupMenuItem(
+                      value: prompt,
+                      child: Text(prompt),
+                    ),
+                  )
+                  .toList(),
+            ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: 6),
           Expanded(
             child: TextField(
               controller: controller,
@@ -522,32 +475,60 @@ class _Composer extends StatelessWidget {
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
-                hintText: 'Ask about learning, evidence, or your next move...',
+                isDense: true,
+                hintText: 'Ask CareerLoop...',
+                hintStyle: const TextStyle(
+                  color: LensColors.muted,
+                  fontSize: 14,
+                ),
+                fillColor: LensColors.canvas,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 13,
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: LensColors.line),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: LensColors.line),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide:
+                      const BorderSide(color: LensColors.indigo, width: 1.4),
                 ),
                 suffixIcon: keyboardVisible
                     ? IconButton(
                         tooltip: 'Hide keyboard',
+                        visualDensity: VisualDensity.compact,
                         onPressed: () =>
                             FocusManager.instance.primaryFocus?.unfocus(),
-                        icon: const Icon(Icons.keyboard_hide_rounded),
+                        icon: const Icon(
+                          Icons.keyboard_hide_rounded,
+                          size: 19,
+                        ),
                       )
                     : null,
+                suffixIconConstraints:
+                    const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
               onSubmitted: (_) => onSend(),
               onTapOutside: (_) =>
                   FocusManager.instance.primaryFocus?.unfocus(),
             ),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: 7),
           IconButton.filled(
+            tooltip: 'Send',
             onPressed: isSending ? null : onSend,
             style: IconButton.styleFrom(
-              minimumSize: const Size(50, 50),
+              minimumSize: const Size(42, 42),
+              maximumSize: const Size(42, 42),
+              padding: EdgeInsets.zero,
             ),
-            icon: const Icon(Icons.arrow_upward_rounded),
+            icon: const Icon(Icons.arrow_upward_rounded, size: 20),
           ),
         ],
       ),

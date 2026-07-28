@@ -27,26 +27,23 @@ class _TranscriptScreenState extends State<TranscriptScreen> {
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
     final transcript = academic.transcript;
-    return SafeArea(
-      bottom: false,
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Academic record'),
+        leading: IconButton(
+          tooltip: 'Back to profile',
+          onPressed: () =>
+              context.canPop() ? context.pop() : context.go('/profile'),
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+      ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton.filledTonal(
-              tooltip: 'Back to profile',
-              onPressed: () =>
-                  context.canPop() ? context.pop() : context.go('/profile'),
-              icon: const Icon(Icons.arrow_back_rounded),
-            ),
-          ),
-          const SizedBox(height: 18),
-          const PageHeading(
-            eyebrow: 'Verified academic profile',
-            title: 'Academic Record',
-            subtitle:
-                'The evidence layer behind academic insights, skill signals, and future applications.',
+          Text(
+            'Choose a year to review the transcript CareerLoop uses for '
+            'academic and career guidance.',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 18),
           _TranscriptYearPicker(academic: academic),
@@ -205,53 +202,37 @@ class _GpaHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(23),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [LensColors.indigo, LensColors.violet],
-        ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: LensColors.indigo.withValues(alpha: .25),
-            blurRadius: 34,
-            offset: const Offset(0, 17),
-          ),
-        ],
-      ),
+    return LensCard(
+      padding: const EdgeInsets.all(20),
       child: Row(
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'CUMULATIVE GPA',
+                const Text(
+                  'Cumulative GPA',
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: .62),
+                    color: LensColors.muted,
                     fontWeight: FontWeight.w700,
-                    letterSpacing: 1.2,
-                    fontSize: 10,
+                    fontSize: 12,
                   ),
                 ),
                 const SizedBox(height: 7),
                 Text(
                   transcript.cumulativeGpaWithGrade,
                   style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 34,
+                    color: LensColors.ink,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 32,
                     letterSpacing: -1,
                   ),
                 ),
                 const SizedBox(height: 7),
                 Text(
                   '${transcript.courses.length} courses in ${transcript.year}',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: .7),
+                  style: const TextStyle(
+                    color: LensColors.muted,
                     fontSize: 12,
                   ),
                 ),
@@ -262,12 +243,14 @@ class _GpaHero extends StatelessWidget {
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .13),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: .15)),
+              color: LensColors.indigo.withValues(alpha: .08),
+              borderRadius: BorderRadius.circular(18),
             ),
-            child:
-                const Icon(Icons.school_rounded, color: Colors.white, size: 32),
+            child: const Icon(
+              Icons.school_rounded,
+              color: LensColors.indigo,
+              size: 30,
+            ),
           ),
         ],
       ),

@@ -31,9 +31,7 @@ class PracticeLaunchCard extends StatelessWidget {
                 width: 39,
                 height: 39,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [LensColors.indigo, LensColors.violet],
-                  ),
+                  color: LensColors.indigo,
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: const Icon(
@@ -59,7 +57,7 @@ class PracticeLaunchCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         color: LensColors.muted,
-                        fontSize: 10.5,
+                        fontSize: 11,
                       ),
                     ),
                   ],

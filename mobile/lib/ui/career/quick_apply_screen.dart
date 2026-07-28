@@ -142,15 +142,16 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            const PageHeading(
-              eyebrow: 'Human-approved action',
-              title: 'Turn a post into an application',
-              subtitle:
-                  'CareerLoop reads the opportunity, drafts the email, and pauses for your approval before Gmail sends anything.',
+            Text(
+              'Apply from a LinkedIn post',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 20),
-            const _Pipeline(),
-            const SizedBox(height: 20),
+            const SizedBox(height: 6),
+            const Text(
+              'Paste the opportunity, review the email and documents, then approve the Gmail send.',
+              style: TextStyle(color: LensColors.muted, height: 1.45),
+            ),
+            const SizedBox(height: 16),
             _ReadinessCard(
               gmailConnected: repository.gmailConnected,
               gmailAvailable: repository.gmailAvailable,
@@ -200,52 +201,6 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
   }
 }
 
-class _Pipeline extends StatelessWidget {
-  const _Pipeline();
-
-  @override
-  Widget build(BuildContext context) {
-    const steps = [
-      (Icons.work_outline_rounded, 'Post'),
-      (Icons.auto_awesome_rounded, 'Draft'),
-      (Icons.fact_check_outlined, 'Review'),
-      (SimpleIcons.gmail, 'Send'),
-    ];
-    return LensCard(
-      color: LensColors.ink,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 17),
-      child: Row(
-        children: [
-          for (var index = 0; index < steps.length; index++) ...[
-            Expanded(
-              child: Column(
-                children: [
-                  Icon(steps[index].$1, color: LensColors.aqua, size: 19),
-                  const SizedBox(height: 7),
-                  Text(
-                    steps[index].$2,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            if (index < steps.length - 1)
-              Icon(
-                Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: .25),
-                size: 17,
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 class _ReadinessCard extends StatelessWidget {
   final bool gmailConnected;
   final bool gmailAvailable;
@@ -273,15 +228,8 @@ class _ReadinessCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'SEND READINESS',
-            style: TextStyle(
-              color: LensColors.indigo,
-              fontSize: 10,
-              letterSpacing: 1.1,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
+          Text('Ready to send?',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 13),
           _SourceRow(
             icon: SimpleIcons.gmail,
@@ -321,7 +269,7 @@ class _ReadinessCard extends StatelessWidget {
                     child: Text(
                       'OAuth testing: this Gmail address must be added under '
                       'Google Auth Platform → Audience → Test users.',
-                      style: TextStyle(fontSize: 9.5, height: 1.35),
+                      style: TextStyle(fontSize: 11, height: 1.35),
                     ),
                   ),
                 ],
@@ -415,7 +363,7 @@ class _SourceRow extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: LensColors.muted,
-                  fontSize: 10.5,
+                  fontSize: 11,
                 ),
               ),
             ],
@@ -508,7 +456,7 @@ class _PostIntake extends StatelessWidget {
             'LinkedIn often restricts post content. CareerLoop first checks public preview metadata and asks for pasted text only when needed.',
             style: TextStyle(
               color: LensColors.muted,
-              fontSize: 10.5,
+              fontSize: 11,
               height: 1.4,
             ),
           ),
@@ -568,30 +516,36 @@ class _ApplicationReview extends StatelessWidget {
     return Column(
       children: [
         LensCard(
-          color: LensColors.ink,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const GradientPill(
-                label: 'AI proposal · awaiting approval',
-                icon: Icons.pause_circle_outline_rounded,
-                dark: true,
+              const Row(
+                children: [
+                  Icon(
+                    Icons.pause_circle_outline_rounded,
+                    color: LensColors.indigo,
+                    size: 19,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Draft ready for review',
+                    style: TextStyle(
+                      color: LensColors.indigo,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 14),
               Text(
                 draft.role,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  height: 1.1,
-                  fontWeight: FontWeight.w900,
-                ),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               if (draft.company?.isNotEmpty ?? false) ...[
                 const SizedBox(height: 5),
                 Text(
                   draft.company!,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(color: LensColors.muted),
                 ),
               ],
               const SizedBox(height: 16),
@@ -726,32 +680,25 @@ class _QuickApplyDocumentStudio extends StatelessWidget {
     final resume = repository.documentFor(job, 'resume');
     final coverLetter = repository.documentFor(job, 'cover_letter');
     return LensCard(
-      color: const Color(0xFF162045),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const GradientPill(
-            label: 'Application documents',
-            icon: Icons.auto_awesome_rounded,
-            dark: true,
+          const Row(
+            children: [
+              Icon(Icons.description_outlined, color: LensColors.indigo),
+              SizedBox(width: 9),
+              Text(
+                'Application documents',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
           const Text(
-            'Tailor before you send',
+            'Generate or open the tailored files that will be attached after approval.',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 5),
-          Text(
-            'Generate from your verified profile, then refine each PDF with '
-            'the floating Document Copilot. The latest versions are attached '
-            'when you approve the email.',
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: .68),
-              fontSize: 10.5,
+              color: LensColors.muted,
+              fontSize: 12,
               height: 1.4,
             ),
           ),
@@ -790,8 +737,8 @@ class _QuickApplyDocumentStudio extends StatelessWidget {
             Text(
               repository.error!,
               style: const TextStyle(
-                color: Color(0xFFFFC8CD),
-                fontSize: 10.5,
+                color: LensColors.rose,
+                fontSize: 11,
                 height: 1.35,
               ),
             ),
@@ -863,7 +810,7 @@ class _QuickApplyDocumentAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white.withValues(alpha: .08),
+      color: LensColors.canvas,
       borderRadius: BorderRadius.circular(17),
       child: InkWell(
         onTap: loading ? null : onTap,
@@ -878,7 +825,7 @@ class _QuickApplyDocumentAction extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: ready
                       ? LensColors.aqua.withValues(alpha: .14)
-                      : Colors.white.withValues(alpha: .08),
+                      : LensColors.indigo.withValues(alpha: .08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: loading
@@ -891,7 +838,7 @@ class _QuickApplyDocumentAction extends StatelessWidget {
                       )
                     : Icon(
                         ready ? Icons.verified_rounded : icon,
-                        color: ready ? LensColors.aqua : Colors.white,
+                        color: ready ? LensColors.aqua : LensColors.indigo,
                         size: 20,
                       ),
               ),
@@ -903,16 +850,16 @@ class _QuickApplyDocumentAction extends StatelessWidget {
                     Text(
                       title,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: LensColors.ink,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       loading ? 'Generating and compiling PDF…' : subtitle,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: .58),
-                        fontSize: 10,
+                      style: const TextStyle(
+                        color: LensColors.muted,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -920,7 +867,7 @@ class _QuickApplyDocumentAction extends StatelessWidget {
               ),
               Icon(
                 ready ? Icons.open_in_new_rounded : Icons.add_rounded,
-                color: LensColors.aqua,
+                color: LensColors.indigo,
                 size: 19,
               ),
             ],
@@ -952,8 +899,8 @@ class _EnvelopeLine extends StatelessWidget {
           child: Text(
             label,
             style: const TextStyle(
-              color: LensColors.aqua,
-              fontSize: 9,
+              color: LensColors.muted,
+              fontSize: 11,
               letterSpacing: .8,
               fontWeight: FontWeight.w900,
             ),
@@ -963,14 +910,14 @@ class _EnvelopeLine extends StatelessWidget {
           child: Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: LensColors.ink,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
         ),
         if (locked)
-          const Icon(Icons.lock_rounded, color: Colors.white38, size: 14),
+          const Icon(Icons.lock_rounded, color: LensColors.muted, size: 14),
       ],
     );
   }
@@ -1036,7 +983,7 @@ class _SentReceipt extends StatelessWidget {
                   'Gmail message ${result.messageId}',
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],
@@ -1090,7 +1037,7 @@ class _Notice extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(fontSize: 10.5, height: 1.4),
+              style: const TextStyle(fontSize: 11, height: 1.4),
             ),
           ),
         ],

@@ -26,7 +26,7 @@ class _ResumeProfileScreenState extends State<ResumeProfileScreen> {
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        title: const Text('Resume evidence'),
+        title: const Text('Resume'),
       ),
       body: SafeArea(
         top: false,
@@ -67,43 +67,36 @@ class _ResumeImport extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 36),
       children: [
-        Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [LensColors.ink, Color(0xFF283A72)],
-            ),
-            borderRadius: BorderRadius.circular(30),
-          ),
+        LensCard(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const GradientPill(
-                label: 'Private evidence connector',
-                icon: Icons.description_outlined,
-                dark: true,
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: LensColors.indigo,
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               const Text(
-                'Let your resume join\nthe evidence loop.',
+                'Import your resume',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 27,
-                  height: 1.08,
-                  fontWeight: FontWeight.w900,
+                  color: LensColors.ink,
+                  fontSize: 23,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                'CareerLoop extracts the claims already present in your PDF '
-                'and makes them available beside your transcript, LinkedIn, '
-                'and GitHub evidence.',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .68),
-                  height: 1.5,
-                ),
+              const SizedBox(height: 8),
+              const Text(
+                'CareerLoop reads the information in your PDF and makes it available for job matching and tailored documents.',
+                style: TextStyle(color: LensColors.muted, height: 1.5),
               ),
             ],
           ),
@@ -125,12 +118,12 @@ class _ResumeImport extends StatelessWidget {
               ),
               const _ImportCapability(
                 icon: Icons.work_history_outlined,
-                title: 'Career evidence',
+                title: 'Experience and skills',
                 text: 'Summary, experience, skills, and certifications.',
               ),
               const _ImportCapability(
                 icon: Icons.hub_outlined,
-                title: 'Unified profile context',
+                title: 'Profile context',
                 text:
                     'Paired with academic, LinkedIn, and GitHub sources during relevant agent tasks.',
               ),
@@ -200,12 +193,8 @@ class _ExtractedProfile extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 38),
       children: [
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: LensColors.ink,
-            borderRadius: BorderRadius.circular(28),
-          ),
+        LensCard(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -215,12 +204,12 @@ class _ExtractedProfile extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: LensColors.aqua.withValues(alpha: .14),
+                      color: LensColors.indigo.withValues(alpha: .09),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: const Icon(
                       Icons.description_rounded,
-                      color: LensColors.aqua,
+                      color: LensColors.indigo,
                     ),
                   ),
                   const SizedBox(width: 13),
@@ -229,19 +218,18 @@ class _ExtractedProfile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'RESUME EVIDENCE',
+                          'Resume imported',
                           style: TextStyle(
-                            color: LensColors.aqua,
-                            fontSize: 9,
-                            letterSpacing: 1,
-                            fontWeight: FontWeight.w900,
+                            color: LensColors.indigo,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         SizedBox(height: 3),
                         Text(
-                          'Extracted · agent ready',
+                          'Available to CareerLoop',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: LensColors.muted,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -258,7 +246,7 @@ class _ExtractedProfile extends StatelessWidget {
               Text(
                 profile.name ?? 'Current resume',
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: LensColors.ink,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                 ),
@@ -268,7 +256,7 @@ class _ExtractedProfile extends StatelessWidget {
                 Text(
                   profile.headline!,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: .66),
+                    color: LensColors.muted,
                     height: 1.35,
                   ),
                 ),
@@ -456,7 +444,7 @@ class _EvidenceCoverage extends StatelessWidget {
                       item.$1,
                       style: const TextStyle(
                         color: LensColors.muted,
-                        fontSize: 9,
+                        fontSize: 11,
                       ),
                     ),
                   ],
@@ -674,20 +662,24 @@ class _DarkFact extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 220),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(999),
+        color: LensColors.canvas,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: LensColors.line),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white54, size: 13),
+          Icon(icon, color: LensColors.muted, size: 13),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white70, fontSize: 9.5),
+              style: const TextStyle(
+                color: LensColors.muted,
+                fontSize: 11,
+              ),
             ),
           ),
         ],

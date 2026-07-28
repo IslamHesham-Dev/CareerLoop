@@ -43,12 +43,10 @@ class _CareerDocumentViewerScreenState
 
   @override
   Widget build(BuildContext context) {
-    final label =
-        _document.kind == 'resume' ? 'Resume Studio' : 'Cover Letter Studio';
+    final label = _document.kind == 'resume' ? 'Resume' : 'Cover letter';
     return Scaffold(
-      backgroundColor: const Color(0xFFEEF0F7),
+      backgroundColor: LensColors.canvas,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         titleSpacing: 4,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,12 +56,12 @@ class _CareerDocumentViewerScreenState
               style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
             ),
             Text(
-              '${widget.args.job.company} · version ${_document.version}',
+              '${widget.args.job.company} · Version ${_document.version}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: LensColors.muted,
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -111,7 +109,7 @@ class _CareerDocumentViewerScreenState
           autoSpacing: true,
           pageFling: true,
           fitPolicy: FitPolicy.WIDTH,
-          backgroundColor: const Color(0xFFEEF0F7),
+          backgroundColor: LensColors.canvas,
         ),
       ),
     );

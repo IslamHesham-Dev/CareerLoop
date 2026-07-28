@@ -49,7 +49,7 @@ class _NotionExportActionState extends State<NotionExportAction> {
             ),
       label: Text(
         'Export to Notion',
-        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.w700),
+        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -249,7 +249,7 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
-                    fontSize: 10.5,
+                    fontSize: 11,
                   ),
                 ),
               ],

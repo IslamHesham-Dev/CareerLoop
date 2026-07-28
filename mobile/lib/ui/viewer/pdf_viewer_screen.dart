@@ -28,7 +28,10 @@ class PdfViewerScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFEEF0F7),
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 64,
         titleSpacing: 4,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,8 +41,8 @@ class PdfViewerScreen extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
             ),
             Text(
@@ -48,7 +51,7 @@ class PdfViewerScreen extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 color: LensColors.muted,
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),

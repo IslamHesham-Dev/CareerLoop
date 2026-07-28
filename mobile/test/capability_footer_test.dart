@@ -23,7 +23,11 @@ void main() {
       ),
     );
 
-    expect(find.text('USED IN THIS ANSWER'), findsOneWidget);
+    expect(find.text('Sources & tools (2)'), findsOneWidget);
+
+    await tester.tap(find.text('Sources & tools (2)'));
+    await tester.pumpAndSettle();
+
     expect(find.text('Connector · GUC Transcript'), findsOneWidget);
     expect(find.text('Tool · Degree History'), findsOneWidget);
   });
@@ -41,6 +45,11 @@ void main() {
         ),
       ),
     );
+
+    expect(find.text('Sources & tools (1)'), findsOneWidget);
+
+    await tester.tap(find.text('Sources & tools (1)'));
+    await tester.pumpAndSettle();
 
     expect(find.text('Skill · CareerLoop reasoning'), findsOneWidget);
   });

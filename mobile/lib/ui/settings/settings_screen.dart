@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
@@ -35,155 +34,119 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final auth = context.watch<AuthRepository>();
     final university = auth.session?.universityLabel ?? 'University';
     return Scaffold(
-      body: AuroraBackground(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 40),
-            children: [
-              Row(
+      appBar: AppBar(title: const Text('Settings')),
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
+          children: [
+            Text('Academic', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 10),
+            LensCard(
+              child: Column(
                 children: [
-                  IconButton.filledTonal(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(Icons.arrow_back_rounded),
+                  _SettingRow(
+                    icon: Icons.school_rounded,
+                    title: 'Academic context year',
+                    value: academic.context?.transcriptYear ??
+                        auth.session?.advisoryYear ??
+                        '2024-2025',
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'Settings',
-                    style: Theme.of(context).textTheme.titleLarge,
+                  const Divider(height: 25),
+                  _SettingRow(
+                    icon: Icons.visibility_outlined,
+                    title: 'Connected academic sources',
+                    value: '$university Portal + $university CMS',
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-              const PageHeading(
-                eyebrow: 'Identity & data controls',
-                title: 'Private by design.',
-                subtitle:
-                    'Manage the evidence sources, context, and private session behind your CareerLoop profile.',
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Integrations',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            const NotionConnectionCard(),
+            const SizedBox(height: 24),
+            Text(
+              'Data and privacy',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 10),
+            LensCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cached data reduces repeated requests to the $university portal.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Your university password is never sent to the AI. '
+                    'Only a short-lived session token is stored securely '
+                    'on this device.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await academic.clearPortalCache();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Portal cache cleared.'),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.cleaning_services_outlined),
+                    label: const Text('Clear portal cache'),
+                  ),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    onPressed: () => context.read<AdvisorRepository>().reset(),
+                    icon: const Icon(Icons.forum_outlined),
+                    label: const Text('Reset Copilot conversation'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              LensCard(
-                child: Column(
-                  children: [
-                    _SettingRow(
-                      icon: Icons.school_rounded,
-                      title: 'Academic context year',
-                      value: academic.context?.transcriptYear ??
-                          auth.session?.advisoryYear ??
-                          '2024-2025',
-                    ),
-                    const Divider(height: 25),
-                    _SettingRow(
-                      icon: Icons.visibility_outlined,
-                      title: 'Connected academic sources',
-                      value: '$university Portal + $university CMS',
-                    ),
-                  ],
-                ),
+            ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: LensColors.rose,
               ),
-              const SizedBox(height: 18),
-              const NotionConnectionCard(),
-              const SizedBox(height: 18),
-              LensCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Data controls',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Cached data reduces repeated requests to the $university portal.',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    OutlinedButton.icon(
-                      onPressed: () async {
-                        await academic.clearPortalCache();
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Portal cache cleared.'),
-                            ),
-                          );
-                        }
-                      },
-                      icon: const Icon(Icons.cleaning_services_outlined),
-                      label: const Text('Clear portal cache'),
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: () =>
-                          context.read<AdvisorRepository>().reset(),
-                      icon: const Icon(Icons.forum_outlined),
-                      label: const Text('Reset Copilot conversation'),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              LensCard(
-                color: LensColors.ink,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.shield_outlined, color: LensColors.aqua),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Your $university password is never sent to the AI.',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'The app stores only a short-lived CareerLoop session token in secure device storage.',
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: .62),
-                        height: 1.45,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: LensColors.rose,
-                ),
-                onPressed: auth.isBusy
-                    ? null
-                    : () async {
-                        final advisor = context.read<AdvisorRepository>();
-                        final cms = context.read<CmsRepository>();
-                        final notion = context.read<NotionRepository>();
-                        final career = context.read<CareerProfileRepository>();
-                        final github = context.read<GithubProfileRepository>();
-                        final resume = context.read<CurrentCvRepository>();
-                        final documents =
-                            context.read<CareerDocumentRepository>();
-                        final tone = context.read<ToneProfileRepository>();
-                        final emails = context.read<EmailRepository>();
-                        await advisor.reset();
-                        academic.clearLocal();
-                        cms.clearLocal();
-                        notion.clearLocal();
-                        career.markSessionChanged();
-                        github.markSessionChanged();
-                        resume.markSessionChanged();
-                        tone.markSessionChanged();
-                        emails.reset();
-                        documents.clear();
-                        await auth.logout();
-                      },
-                icon: const Icon(Icons.logout_rounded),
-                label: const Text('Sign out and close portal session'),
-              ),
-            ],
-          ),
+              onPressed: auth.isBusy
+                  ? null
+                  : () async {
+                      final advisor = context.read<AdvisorRepository>();
+                      final cms = context.read<CmsRepository>();
+                      final notion = context.read<NotionRepository>();
+                      final career = context.read<CareerProfileRepository>();
+                      final github = context.read<GithubProfileRepository>();
+                      final resume = context.read<CurrentCvRepository>();
+                      final documents =
+                          context.read<CareerDocumentRepository>();
+                      final tone = context.read<ToneProfileRepository>();
+                      final emails = context.read<EmailRepository>();
+                      await advisor.reset();
+                      academic.clearLocal();
+                      cms.clearLocal();
+                      notion.clearLocal();
+                      career.markSessionChanged();
+                      github.markSessionChanged();
+                      resume.markSessionChanged();
+                      tone.markSessionChanged();
+                      emails.reset();
+                      documents.clear();
+                      await auth.logout();
+                    },
+              icon: const Icon(Icons.logout_rounded),
+              label: const Text('Sign out and close portal session'),
+            ),
+          ],
         ),
       ),
     );

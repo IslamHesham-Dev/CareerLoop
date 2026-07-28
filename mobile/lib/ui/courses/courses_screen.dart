@@ -99,31 +99,48 @@ class _CoursesScreenState extends State<CoursesScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
           children: [
-            PageHeading(
-              eyebrow: cmsConnected
-                  ? 'ACADEMIC GROWTH · LIVE CMS'
-                  : 'ACADEMIC GROWTH',
-              title: 'Learning Space',
-              subtitle: cmsConnected
-                  ? 'Course evidence, official materials, recordings, and AI '
-                      'practice in one workspace.'
-                  : 'Your academic record and local practice remain useful '
-                      'even when CMS access has ended.',
-              trailing: IconButton.filledTonal(
-                tooltip: 'Ask CareerLoop AI',
-                onPressed: () => context.go('/advisor'),
-                icon: const Icon(Icons.auto_awesome_rounded),
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Learn',
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        academic.context?.currentSeason ??
+                            'Courses and study materials',
+                        style: const TextStyle(color: LensColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Saved quizzes',
+                  onPressed: () => context.push('/practice'),
+                  icon: const Icon(Icons.quiz_outlined),
+                ),
+                IconButton.filledTonal(
+                  tooltip: 'Ask CareerLoop',
+                  onPressed: () => context.go('/advisor'),
+                  icon: const Icon(Icons.auto_awesome_rounded),
+                ),
+              ],
             ),
-            const SizedBox(height: 18),
-            if (cmsConnected)
+            if (!cmsConnected) ...[
+              const SizedBox(height: 18),
+              CmsAccessNotice(message: session?.cmsMessage),
+            ] else ...[
+              const SizedBox(height: 14),
               _CmsStatus(
                 courseCount: cms.courses.length,
                 loading: cms.loadingCourses,
                 university: university,
-              )
-            else
-              CmsAccessNotice(message: session?.cmsMessage),
+              ),
+            ],
             const SizedBox(height: 18),
             TextField(
               controller: _search,
@@ -145,7 +162,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             ),
             const SizedBox(height: 26),
             _SectionHeading(
-              title: 'Learning context',
+              title: 'Semester courses',
               detail: academic.context?.currentSeason ?? 'Portal',
             ),
             const SizedBox(height: 11),
@@ -187,7 +204,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             if (cmsConnected) ...[
               const SizedBox(height: 28),
               _SectionHeading(
-                title: 'Course library',
+                title: 'Course materials',
                 detail: cms.courses.isEmpty
                     ? cms.season
                     : '${cms.courses.length} · ${cms.season ?? ''}',
@@ -245,8 +262,8 @@ class _CmsStatus extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .88),
-        borderRadius: BorderRadius.circular(18),
+        color: LensColors.card,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: LensColors.line),
       ),
       child: Row(
@@ -269,9 +286,7 @@ class _CmsStatus extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              loading
-                  ? 'Syncing verified learning evidence'
-                  : 'Official $university CMS learning evidence connected',
+              loading ? 'Syncing $university CMS' : '$university CMS connected',
               style: const TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 12,
@@ -343,7 +358,7 @@ class _CmsCourseCard extends StatelessWidget {
               maxLines: 2,
               style: const TextStyle(
                 color: LensColors.indigo,
-                fontSize: 10,
+                fontSize: 11,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -432,7 +447,7 @@ class _VideoBadge extends StatelessWidget {
             '$count videos',
             style: const TextStyle(
               color: LensColors.violet,
-              fontSize: 9.5,
+              fontSize: 11,
               fontWeight: FontWeight.w800,
             ),
           ),

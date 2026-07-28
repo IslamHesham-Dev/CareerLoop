@@ -44,7 +44,7 @@ class _ToneScreenState extends State<ToneScreen> {
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        title: const Text('Add your tone'),
+        title: const Text('Writing voice'),
       ),
       body: SafeArea(
         top: false,
@@ -208,32 +208,36 @@ class _QuestionPage extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 18),
       children: [
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [LensColors.ink, Color(0xFF3B2A63)],
-            ),
-            borderRadius: BorderRadius.circular(28),
-          ),
+        LensCard(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GradientPill(
-                label: '$step of 0$total · your own words',
-                icon: Icons.record_voice_over_outlined,
-                dark: true,
+              Row(
+                children: [
+                  const Icon(
+                    Icons.record_voice_over_outlined,
+                    color: LensColors.indigo,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '$step of 0$total',
+                    style: const TextStyle(
+                      color: LensColors.indigo,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Text(
                 question,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: LensColors.ink,
                   fontSize: 20,
                   height: 1.3,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -253,13 +257,13 @@ class _QuestionPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
-            color: LensColors.violet.withValues(alpha: .08),
+            color: LensColors.indigo.withValues(alpha: .06),
             borderRadius: BorderRadius.circular(18),
           ),
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.auto_awesome_outlined, color: LensColors.violet),
+              Icon(Icons.info_outline_rounded, color: LensColors.indigo),
               SizedBox(width: 11),
               Expanded(
                 child: Text(
@@ -320,7 +324,7 @@ class _ToneFooter extends StatelessWidget {
                 height: 7,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
-                  color: index == page ? LensColors.violet : LensColors.line,
+                  color: index == page ? LensColors.indigo : LensColors.line,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -339,7 +343,7 @@ class _ToneFooter extends StatelessWidget {
               Expanded(
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    backgroundColor: LensColors.violet,
+                    backgroundColor: LensColors.indigo,
                   ),
                   onPressed: saving ? null : onNext,
                   icon: saving
@@ -385,12 +389,8 @@ class _ToneSummary extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 14, 20, 38),
       children: [
-        Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(
-            color: LensColors.ink,
-            borderRadius: BorderRadius.circular(28),
-          ),
+        LensCard(
+          padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -400,12 +400,12 @@ class _ToneSummary extends StatelessWidget {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: LensColors.violet.withValues(alpha: .18),
+                      color: LensColors.indigo.withValues(alpha: .09),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: const Icon(
                       Icons.record_voice_over_rounded,
-                      color: LensColors.violet,
+                      color: LensColors.indigo,
                     ),
                   ),
                   const SizedBox(width: 13),
@@ -414,26 +414,25 @@ class _ToneSummary extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'TONE CAPTURED',
+                          'Writing voice saved',
                           style: TextStyle(
-                            color: LensColors.violet,
-                            fontSize: 9,
-                            letterSpacing: 1,
-                            fontWeight: FontWeight.w900,
+                            color: LensColors.indigo,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         SizedBox(height: 3),
                         Text(
-                          'Agent ready',
+                          'Applied to new drafts',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: LensColors.muted,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.verified_rounded, color: LensColors.violet),
+                  const Icon(Icons.verified_rounded, color: LensColors.aqua),
                 ],
               ),
               const SizedBox(height: 18),
@@ -441,7 +440,7 @@ class _ToneSummary extends StatelessWidget {
                 '${entries.length} writing sample${entries.length == 1 ? '' : 's'} '
                 'saved in your own words.',
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: .72),
+                  color: LensColors.muted,
                   height: 1.4,
                 ),
               ),
@@ -450,11 +449,11 @@ class _ToneSummary extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         LensCard(
-          color: LensColors.violet.withValues(alpha: .08),
+          color: LensColors.indigo.withValues(alpha: .06),
           child: const Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.hub_outlined, color: LensColors.violet),
+              Icon(Icons.hub_outlined, color: LensColors.indigo),
               SizedBox(width: 12),
               Expanded(
                 child: Column(

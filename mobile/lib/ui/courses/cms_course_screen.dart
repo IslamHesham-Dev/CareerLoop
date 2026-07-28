@@ -79,255 +79,247 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
         hasVideos ? _section : _CourseContentSection.materials;
 
     return Scaffold(
-      body: AuroraBackground(
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: () => cms.loadCourseContent(
-              widget.course.id,
-              force: true,
-            ),
-            child: CustomScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              slivers: [
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(18, 10, 18, 4),
-                  sliver: SliverToBoxAdapter(
-                    child: Row(
-                      children: [
-                        IconButton.filledTonal(
-                          onPressed: () => context.pop(),
-                          icon: const Icon(Icons.arrow_back_rounded),
-                        ),
-                        const Spacer(),
-                        GradientPill(
-                          label: 'Live $university CMS',
-                          icon: Icons.lock_outline_rounded,
-                        ),
-                        const SizedBox(width: 8),
-                        FilledButton.icon(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: LensColors.ink,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () => _openCourseAssist(
-                            course,
-                            resources,
-                          ),
-                          icon: const Icon(
-                            Icons.auto_awesome_rounded,
-                            size: 17,
-                          ),
-                          label: const Text('Study Assist'),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
-                  sliver: SliverToBoxAdapter(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          course.code,
-                          style: const TextStyle(
-                            color: LensColors.indigo,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.3,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          course.title,
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        if (content != null) ...[
-                          const SizedBox(height: 18),
-                          _CourseSummary(
-                            resources: resources.length,
-                            videos: content.availableVideos.length,
-                          ),
-                          if (hasVideos) ...[
-                            const SizedBox(height: 14),
-                            _CourseContentTabs(
-                              selected: activeSection,
-                              materials: resources.length,
-                              videos: allVideos.length,
-                              onSelected: (section) => setState(
-                                () => _section = section,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                if (loading && content == null)
-                  const SliverPadding(
-                    padding: EdgeInsets.symmetric(horizontal: 22),
-                    sliver: SliverToBoxAdapter(
-                      child: LensCard(
-                        child: LensLoading(
-                          label: 'Organizing CMS course materials...',
-                        ),
-                      ),
-                    ),
-                  )
-                else if (cms.error != null && content == null)
-                  SliverPadding(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
-                    sliver: SliverToBoxAdapter(
-                      child: LensError(
-                        message: cms.error!,
-                        onRetry: () => cms.loadCourseContent(
-                          widget.course.id,
-                          force: true,
-                        ),
-                      ),
-                    ),
-                  )
-                else if (activeSection == _CourseContentSection.materials) ...[
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
-                    sliver: SliverToBoxAdapter(
-                      child: _SectionTitle(
-                        title: 'CMS resources',
-                        detail: '${resources.length} files · newest first',
-                      ),
-                    ),
-                  ),
-                  if (resources.isEmpty)
-                    const SliverPadding(
-                      padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
-                      sliver: SliverToBoxAdapter(
-                        child: LensCard(
-                          child: Text(
-                            'No downloadable resources are currently shown for this course.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    )
-                  else ...[
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
-                      sliver: SliverToBoxAdapter(
-                        child: _WeekNavigator(
-                          labels: grouped.keys.toList(),
-                          selected: selectedWeek,
-                          onSelected: (label) => setState(
-                            () => _resourceWeek = label,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 102),
-                      sliver: SliverList.list(
-                        children: visibleGroups
-                            .map(
-                              (entry) => _WeekGroup(
-                                label: entry.key,
-                                resources: entry.value,
-                                downloading: _downloading,
-                                onOpen: _openResource,
-                                onAskAi: (resource) =>
-                                    _askResourceAi(course, resource),
-                                onAssistWeek: () => _assistWeek(
-                                  course,
-                                  entry.key,
-                                  entry.value,
-                                ),
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ),
-                  ],
-                ] else ...[
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
-                    sliver: SliverToBoxAdapter(
-                      child: TextField(
-                        controller: _videoSearch,
-                        textInputAction: TextInputAction.search,
-                        onChanged: (_) => setState(() {}),
-                        onSubmitted: (_) =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        decoration: InputDecoration(
-                          hintText: 'Search recordings',
-                          prefixIcon: const Icon(Icons.search_rounded),
-                          suffixIcon: videoNeedle.isEmpty
-                              ? null
-                              : IconButton(
-                                  tooltip: 'Clear video search',
-                                  onPressed: () {
-                                    _videoSearch.clear();
-                                    setState(() {});
-                                  },
-                                  icon: const Icon(Icons.close_rounded),
-                                ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (videoFilters.length > 1)
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
-                      sliver: SliverToBoxAdapter(
-                        child: SizedBox(
-                          height: 38,
-                          child: ListView.separated(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: videoFilters.length,
-                            separatorBuilder: (_, __) =>
-                                const SizedBox(width: 8),
-                            itemBuilder: (context, index) {
-                              final filter = videoFilters[index];
-                              return ChoiceChip(
-                                selected: _videoFilter == filter,
-                                onSelected: (_) => setState(
-                                  () => _videoFilter = filter,
-                                ),
-                                label: Text(_label(filter)),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (videos.isEmpty)
-                    const SliverPadding(
-                      padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
-                      sliver: SliverToBoxAdapter(
-                        child: LensCard(
-                          child: Text(
-                            'No recording matches these filters.',
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    )
-                  else
-                    SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(22, 0, 22, 120),
-                      sliver: SliverList.separated(
-                        itemCount: videos.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemBuilder: (context, index) => _VideoCard(
-                          video: videos[index],
-                          onOpen: () => _openVideo(videos[index]),
-                          onAskAi: () => _askVideoAi(course, videos[index]),
-                        ),
-                      ),
-                    ),
-                ],
-              ],
-            ),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          course.code,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Study assist',
+            onPressed: () => _openCourseAssist(course, resources),
+            icon: const Icon(Icons.auto_awesome_outlined),
           ),
+          const SizedBox(width: 4),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () => cms.loadCourseContent(
+          widget.course.id,
+          force: true,
+        ),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.lock_outline_rounded,
+                          size: 15,
+                          color: LensColors.muted,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            '$university CMS · ${course.season}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      course.title,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                height: 1.2,
+                                fontWeight: FontWeight.w800,
+                              ),
+                    ),
+                    if (content != null) ...[
+                      const SizedBox(height: 18),
+                      _CourseSummary(
+                        resources: resources.length,
+                        videos: content.availableVideos.length,
+                      ),
+                      if (hasVideos) ...[
+                        const SizedBox(height: 14),
+                        _CourseContentTabs(
+                          selected: activeSection,
+                          materials: resources.length,
+                          videos: allVideos.length,
+                          onSelected: (section) => setState(
+                            () => _section = section,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            if (loading && content == null)
+              const SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 22),
+                sliver: SliverToBoxAdapter(
+                  child: LensCard(
+                    child: LensLoading(
+                      label: 'Organizing CMS course materials...',
+                    ),
+                  ),
+                ),
+              )
+            else if (cms.error != null && content == null)
+              SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 22),
+                sliver: SliverToBoxAdapter(
+                  child: LensError(
+                    message: cms.error!,
+                    onRetry: () => cms.loadCourseContent(
+                      widget.course.id,
+                      force: true,
+                    ),
+                  ),
+                ),
+              )
+            else if (activeSection == _CourseContentSection.materials) ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
+                sliver: SliverToBoxAdapter(
+                  child: _SectionTitle(
+                    title: 'CMS resources',
+                    detail: '${resources.length} files · newest first',
+                  ),
+                ),
+              ),
+              if (resources.isEmpty)
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
+                  sliver: SliverToBoxAdapter(
+                    child: LensCard(
+                      child: Text(
+                        'No downloadable resources are currently shown for this course.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                )
+              else ...[
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 16),
+                  sliver: SliverToBoxAdapter(
+                    child: _WeekNavigator(
+                      labels: grouped.keys.toList(),
+                      selected: selectedWeek,
+                      onSelected: (label) => setState(
+                        () => _resourceWeek = label,
+                      ),
+                    ),
+                  ),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 102),
+                  sliver: SliverList.list(
+                    children: visibleGroups
+                        .map(
+                          (entry) => _WeekGroup(
+                            label: entry.key,
+                            resources: entry.value,
+                            downloading: _downloading,
+                            onOpen: _openResource,
+                            onAskAi: (resource) =>
+                                _askResourceAi(course, resource),
+                            onAssistWeek: () => _assistWeek(
+                              course,
+                              entry.key,
+                              entry.value,
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
+              ],
+            ] else ...[
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
+                sliver: SliverToBoxAdapter(
+                  child: TextField(
+                    controller: _videoSearch,
+                    textInputAction: TextInputAction.search,
+                    onChanged: (_) => setState(() {}),
+                    onSubmitted: (_) =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    decoration: InputDecoration(
+                      hintText: 'Search recordings',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      suffixIcon: videoNeedle.isEmpty
+                          ? null
+                          : IconButton(
+                              tooltip: 'Clear video search',
+                              onPressed: () {
+                                _videoSearch.clear();
+                                setState(() {});
+                              },
+                              icon: const Icon(Icons.close_rounded),
+                            ),
+                    ),
+                  ),
+                ),
+              ),
+              if (videoFilters.length > 1)
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 14),
+                  sliver: SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 38,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: videoFilters.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (context, index) {
+                          final filter = videoFilters[index];
+                          return ChoiceChip(
+                            selected: _videoFilter == filter,
+                            onSelected: (_) => setState(
+                              () => _videoFilter = filter,
+                            ),
+                            label: Text(_label(filter)),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              if (videos.isEmpty)
+                const SliverPadding(
+                  padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
+                  sliver: SliverToBoxAdapter(
+                    child: LensCard(
+                      child: Text(
+                        'No recording matches these filters.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 120),
+                  sliver: SliverList.separated(
+                    itemCount: videos.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemBuilder: (context, index) => _VideoCard(
+                      video: videos[index],
+                      onOpen: () => _openVideo(videos[index]),
+                      onAskAi: () => _askVideoAi(course, videos[index]),
+                    ),
+                  ),
+                ),
+            ],
+          ],
         ),
       ),
     );
@@ -478,14 +470,12 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                         width: 46,
                         height: 46,
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [LensColors.indigo, LensColors.violet],
-                          ),
-                          borderRadius: BorderRadius.circular(15),
+                          color: LensColors.indigo.withValues(alpha: .10),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: const Icon(
                           Icons.school_outlined,
-                          color: Colors.white,
+                          color: LensColors.indigo,
                         ),
                       ),
                       const SizedBox(width: 13),
@@ -561,7 +551,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                   ),
                   const Text(
                     'CareerLoop will read these PDFs securely before answering.',
-                    style: TextStyle(color: LensColors.muted, fontSize: 10.5),
+                    style: TextStyle(color: LensColors.muted, fontSize: 11),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -811,10 +801,11 @@ class _CourseSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: LensColors.ink,
-        borderRadius: BorderRadius.circular(22),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: LensColors.line),
       ),
       child: Row(
         children: [
@@ -827,14 +818,14 @@ class _CourseSummary extends StatelessWidget {
           ),
           Container(
             width: 1,
-            height: 38,
-            color: Colors.white.withValues(alpha: .13),
+            height: 36,
+            color: LensColors.line,
           ),
           Expanded(
             child: _SummaryMetric(
               icon: Icons.play_circle_outline_rounded,
               value: '$videos',
-              label: videos == 0 ? 'No video archive' : 'Extra videos',
+              label: videos == 0 ? 'No videos' : 'Videos',
             ),
           ),
         ],
@@ -861,8 +852,8 @@ class _CourseContentTabs extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .82),
-        borderRadius: BorderRadius.circular(18),
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: LensColors.line),
       ),
       child: Row(
@@ -883,7 +874,6 @@ class _CourseContentTabs extends StatelessWidget {
               label: 'Videos',
               count: videos,
               selected: selected == _CourseContentSection.videos,
-              accent: LensColors.violet,
               onTap: () => onSelected(_CourseContentSection.videos),
             ),
           ),
@@ -898,7 +888,6 @@ class _CourseContentTab extends StatelessWidget {
   final String label;
   final int count;
   final bool selected;
-  final Color accent;
   final VoidCallback onTap;
 
   const _CourseContentTab({
@@ -907,25 +896,25 @@ class _CourseContentTab extends StatelessWidget {
     required this.count,
     required this.selected,
     required this.onTap,
-    this.accent = LensColors.indigo,
   });
 
   @override
   Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
     return Semantics(
       button: true,
       selected: selected,
       label: '$label, $count items',
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(10),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 180),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
             color:
-                selected ? accent.withValues(alpha: .11) : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
+                selected ? accent.withValues(alpha: .10) : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -959,7 +948,7 @@ class _CourseContentTab extends StatelessWidget {
                   '$count',
                   style: TextStyle(
                     color: selected ? accent : LensColors.muted,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -988,25 +977,28 @@ class _SummaryMetric extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: LensColors.aqua, size: 22),
+        Icon(
+          icon,
+          color: Theme.of(context).colorScheme.primary,
+          size: 21,
+        ),
         const SizedBox(width: 9),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               value,
-              style: const TextStyle(
-                color: Colors.white,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 17,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
               ),
             ),
             Text(
               label,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: .58),
-                fontSize: 9.5,
-              ),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: 11,
+                  ),
             ),
           ],
         ),
@@ -1121,18 +1113,15 @@ class _WeekGroup extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 3, bottom: 9),
+            padding: const EdgeInsets.only(left: 2, bottom: 8),
             child: Row(
               children: [
                 Expanded(
                   child: Text(
-                    label.toUpperCase(),
-                    style: const TextStyle(
-                      color: LensColors.muted,
-                      fontSize: 10,
-                      letterSpacing: 1.1,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
                   ),
                 ),
                 if (resources.any(
@@ -1226,7 +1215,7 @@ class _ResourceCard extends StatelessWidget {
                   style: Theme.of(context)
                       .textTheme
                       .bodyMedium
-                      ?.copyWith(fontSize: 10),
+                      ?.copyWith(fontSize: 11),
                 ),
               ],
             ),
@@ -1318,7 +1307,7 @@ class _VideoCard extends StatelessWidget {
                         style: Theme.of(context)
                             .textTheme
                             .bodyMedium
-                            ?.copyWith(fontSize: 10),
+                            ?.copyWith(fontSize: 11),
                       ),
                     ),
                     const SizedBox(width: 7),
@@ -1353,7 +1342,7 @@ class _VideoCard extends StatelessWidget {
                               color: transcriptReady
                                   ? LensColors.aqua
                                   : LensColors.muted,
-                              fontSize: 9,
+                              fontSize: 11,
                               fontWeight: FontWeight.w800,
                             ),
                           ),

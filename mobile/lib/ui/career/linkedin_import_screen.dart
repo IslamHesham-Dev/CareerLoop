@@ -162,20 +162,19 @@ class _GuidePage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'LINKEDIN PDF IMPORT',
+                    'Import from LinkedIn',
                     style: TextStyle(
                       color: _linkedInBlue,
-                      fontSize: 9,
-                      letterSpacing: 1,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
                   SizedBox(height: 2),
                   Text(
-                    'Professional evidence connector',
+                    'Three quick steps',
                     style: TextStyle(
                       color: LensColors.muted,
-                      fontSize: 10.5,
+                      fontSize: 12,
                     ),
                   ),
                 ],
@@ -367,12 +366,11 @@ class _ConnectedProfile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'PROFESSIONAL PROFILE CONNECTED',
+                      'LinkedIn profile connected',
                       style: TextStyle(
                         color: Colors.white70,
-                        fontSize: 8.5,
-                        letterSpacing: .8,
-                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 5),
@@ -392,7 +390,7 @@ class _ConnectedProfile extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           color: Colors.white70,
-                          fontSize: 10.5,
+                          fontSize: 11,
                         ),
                       ),
                     ] else ...[
@@ -401,7 +399,7 @@ class _ConnectedProfile extends StatelessWidget {
                         '${profile.pageCount}-page LinkedIn PDF',
                         style: const TextStyle(
                           color: Colors.white70,
-                          fontSize: 10.5,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -482,7 +480,7 @@ class _ConnectedProfile extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: LensColors.muted,
-            fontSize: 10.5,
+            fontSize: 11,
             height: 1.4,
           ),
         ),

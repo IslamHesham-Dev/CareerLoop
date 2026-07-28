@@ -151,20 +151,23 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
     final cv = context.watch<CurrentCvRepository>();
     final tone = context.watch<ToneProfileRepository>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Email Studio')),
+      appBar: AppBar(title: const Text('Write email')),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            const PageHeading(
-              eyebrow: 'Human-approved communication',
-              title: 'Draft with context.\nSend with control.',
-              subtitle:
-                  'Create academic or career emails from verified evidence and your writing voice. Nothing is sent before you review it.',
+            Text(
+              'Draft a contextual email',
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 6),
+            const Text(
+              'CareerLoop prepares the message. You review it before Gmail sends anything.',
+              style: TextStyle(color: LensColors.muted, height: 1.45),
+            ),
+            const SizedBox(height: 16),
             _EmailReadiness(
               gmail: gmail,
               cv: cv,
@@ -231,7 +234,6 @@ class _EmailReadiness extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return LensCard(
-      color: LensColors.ink,
       child: Column(
         children: [
           _ReadyRow(
@@ -244,7 +246,7 @@ class _EmailReadiness extends StatelessWidget {
             action: onConnect,
             actionLabel: gmail.gmailConnected ? 'Change' : 'Connect',
           ),
-          const Divider(color: Colors.white12, height: 23),
+          const Divider(height: 23),
           _ReadyRow(
             icon: Icons.graphic_eq_rounded,
             title: tone.configured
@@ -253,7 +255,7 @@ class _EmailReadiness extends StatelessWidget {
             detail: 'Applied while drafting',
             ready: tone.configured,
           ),
-          const Divider(color: Colors.white12, height: 23),
+          const Divider(height: 23),
           _ReadyRow(
             icon: Icons.description_outlined,
             title: cv.hasCv ? cv.currentCv!.fileName : 'No resume selected',
@@ -287,7 +289,7 @@ class _ReadyRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: LensColors.aqua, size: 20),
+        Icon(icon, color: LensColors.indigo, size: 20),
         const SizedBox(width: 11),
         Expanded(
           child: Column(
@@ -298,15 +300,15 @@ class _ReadyRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
+                  color: LensColors.ink,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               Text(
                 detail,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: .55),
-                  fontSize: 10,
+                style: const TextStyle(
+                  color: LensColors.muted,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -322,7 +324,7 @@ class _ReadyRow extends StatelessWidget {
             ready
                 ? Icons.check_circle_rounded
                 : Icons.remove_circle_outline_rounded,
-            color: ready ? LensColors.aqua : Colors.white38,
+            color: ready ? LensColors.aqua : LensColors.muted,
             size: 18,
           ),
       ],
@@ -388,12 +390,11 @@ class _EmailIntake extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const Text(
-            'COMMON PURPOSES',
+            'Common purposes',
             style: TextStyle(
-              color: LensColors.indigo,
-              fontSize: 9,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1,
+              color: LensColors.muted,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
             ),
           ),
           const SizedBox(height: 9),
@@ -495,9 +496,23 @@ class _EmailReview extends StatelessWidget {
         children: [
           Row(
             children: [
-              const GradientPill(
-                label: 'Draft · awaiting approval',
-                icon: Icons.pause_circle_outline_rounded,
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.pause_circle_outline_rounded,
+                    color: LensColors.indigo,
+                    size: 18,
+                  ),
+                  SizedBox(width: 7),
+                  Text(
+                    'Draft ready for review',
+                    style: TextStyle(
+                      color: LensColors.indigo,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
               const Spacer(),
               TextButton(
