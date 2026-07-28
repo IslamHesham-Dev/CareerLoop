@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import io
+import threading
 import time
 from email import policy
 from email.parser import BytesParser
@@ -14,6 +15,8 @@ from fastapi import HTTPException, UploadFile
 from app.api.routes import emails
 from app.config import Settings
 from app.gmail import GmailClient
+from app.schemas.emails import EmailDraftRequest
+from email_generator.models import EmailDraftContent
 
 
 def test_gmail_send_builds_plain_text_message_with_no_attachment(
@@ -163,3 +166,64 @@ def test_send_career_email_requires_gmail_connected() -> None:
             )
         )
     assert excinfo.value.status_code == 409
+
+
+def test_preview_email_uses_transcript_and_writing_voice(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_generate(**kwargs):
+        captured.update(kwargs)
+        return EmailDraftContent(
+            subject="Office-hours appointment request",
+            body=(
+                "Dear Professor,\n\nCould we arrange a short appointment "
+                "about my graduation plan?\n\nBest regards,\nAda"
+            ),
+        )
+
+    monkeypatch.setattr(emails, "generate_email_content", fake_generate)
+    student = SimpleNamespace(
+        academic=SimpleNamespace(
+            current_season="Spring 2026",
+            full_transcript=lambda: {
+                "loaded_years": ["2022-2023", "2023-2024"],
+                "cumulative_gpa": "1.4",
+                "courses": [
+                    {
+                        "academic_year": "2023-2024",
+                        "course": "Algorithms",
+                        "grade": "A",
+                        "hours": "5",
+                    }
+                ],
+            },
+        ),
+        cms=SimpleNamespace(connected=False),
+        resume_profile=None,
+        linkedin_profile=None,
+        github_profile=None,
+        tone_profile={"Sample": "I prefer short and direct emails."},
+        pending_email_drafts={},
+        last_email_draft_id=None,
+        chat_lock=threading.RLock(),
+    )
+
+    response = asyncio.run(
+        emails.preview_career_email(
+            payload=EmailDraftRequest(
+                recipient_email="prof@giu-uni.de",
+                sender_name="Ada Lovelace",
+                purpose="Request an appointment about my graduation plan",
+            ),
+            student=student,
+            settings=Settings(ANTHROPIC_API_KEY="test-key"),
+        )
+    )
+
+    assert response.tone_applied is True
+    assert "academic_transcript" in response.sources_used
+    assert captured["candidate_name"] == "Ada Lovelace"
+    assert "writing samples" in str(captured["tone_reference"])
+    assert response.id in student.pending_email_drafts

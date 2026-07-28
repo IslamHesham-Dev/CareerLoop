@@ -84,7 +84,6 @@ class CurrentCvRepository extends ChangeNotifier {
     }
   }
 
-  @visibleForTesting
   Future<bool> importFile(
     String filePath, {
     required String fileName,

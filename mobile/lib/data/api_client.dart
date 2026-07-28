@@ -93,6 +93,35 @@ class ApiClient {
     return _decode(response);
   }
 
+  Future<List<String>> getList(
+    String path, {
+    bool authenticated = true,
+  }) async {
+    final response = await _client
+        .get(
+          _uri(path),
+          headers: _headers(authenticated: authenticated),
+        )
+        .timeout(const Duration(minutes: 3));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      var message = 'The request could not be completed.';
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded['detail'] is String) {
+          message = decoded['detail'] as String;
+        }
+      } catch (_) {
+        // Keep the safe fallback for non-JSON upstream responses.
+      }
+      throw ApiException(message, statusCode: response.statusCode);
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! List) {
+      throw const ApiException('The server returned an unexpected response.');
+    }
+    return decoded.map((item) => '$item').toList();
+  }
+
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,

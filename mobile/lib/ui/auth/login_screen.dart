@@ -5,6 +5,7 @@ import '../../data/repositories.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
+import '../../data/tone_profile_repository.dart';
 import '../core/lens_components.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -64,7 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
       context.read<CareerProfileRepository>().markSessionChanged();
       context.read<GithubProfileRepository>().markSessionChanged();
       context.read<CurrentCvRepository>().markSessionChanged();
+      context.read<ToneProfileRepository>().markSessionChanged();
       context.read<AcademicRepository>().loadDashboard();
+      context.read<ToneProfileRepository>().ensureSynced();
     }
   }
 
@@ -132,8 +135,8 @@ class _LoginScreenState extends State<LoginScreen> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 24),
                     child: ConstrainedBox(
                       constraints:
                           BoxConstraints(minHeight: constraints.maxHeight - 48),
@@ -192,7 +195,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: _step == 0
                                       ? KeyedSubtree(
                                           key: const ValueKey('step-one'),
-                                          child: _buildStepOne(auth, university),
+                                          child:
+                                              _buildStepOne(auth, university),
                                         )
                                       : KeyedSubtree(
                                           key: const ValueKey('step-two'),
@@ -308,7 +312,8 @@ class _LoginScreenState extends State<LoginScreen> {
               showSelectedIcon: false,
               onSelectionChanged: auth.isBusy
                   ? null
-                  : (selection) => setState(() => _institution = selection.first),
+                  : (selection) =>
+                      setState(() => _institution = selection.first),
             ),
             const SizedBox(height: 18),
             TextFormField(
@@ -395,7 +400,8 @@ class _LoginScreenState extends State<LoginScreen> {
             decoration: _fieldDecoration(
               label: 'Enrollment year',
               icon: Icons.school_outlined,
-              helperText: 'Loads four academic transcript years from this date.',
+              helperText:
+                  'Loads four academic transcript years from this date.',
             ),
             items: [
               for (var year = DateTime.now().year; year >= 2000; year--)

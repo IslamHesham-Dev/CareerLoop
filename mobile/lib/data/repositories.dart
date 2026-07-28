@@ -7,6 +7,7 @@ import 'github_profile_repository.dart';
 import 'models.dart';
 import 'practice_repository.dart';
 import 'session_storage.dart';
+import 'tone_profile_repository.dart';
 
 class AuthRepository extends ChangeNotifier {
   final ApiClient api;
@@ -98,6 +99,8 @@ class AcademicRepository extends ChangeNotifier {
   String? selectedTranscriptYear;
   List<CourseSummary> courses = const [];
   Transcript? transcript;
+  TranscriptWindow? fullTranscript;
+  String? fullTranscriptError;
   final Map<String, CourseGrades> grades = {};
   bool loadingDashboard = false;
   bool loadingTranscript = false;
@@ -114,11 +117,13 @@ class AcademicRepository extends ChangeNotifier {
         seasons.isNotEmpty &&
         transcriptYears.isNotEmpty &&
         courses.isNotEmpty &&
-        transcript != null) {
+        transcript != null &&
+        fullTranscript != null) {
       return;
     }
     loadingDashboard = true;
     error = null;
+    fullTranscriptError = null;
     notifyListeners();
     try {
       context = AdvisoryContext.fromJson(
@@ -150,6 +155,16 @@ class AcademicRepository extends ChangeNotifier {
           query: {'year': selectedTranscriptYear},
         ),
       );
+      try {
+        fullTranscript = TranscriptWindow.fromJson(
+          await api.get('/v1/academic/transcript-window'),
+        );
+      } on ApiException catch (exception) {
+        fullTranscriptError = exception.message;
+      } catch (_) {
+        fullTranscriptError =
+            'The complete enrollment transcript could not be loaded.';
+      }
     } on ApiException catch (exception) {
       error = exception.message;
     } catch (_) {
@@ -278,6 +293,8 @@ class AcademicRepository extends ChangeNotifier {
     selectedTranscriptYear = null;
     courses = const [];
     transcript = null;
+    fullTranscript = null;
+    fullTranscriptError = null;
     grades.clear();
     notifyListeners();
   }
@@ -289,6 +306,8 @@ class AcademicRepository extends ChangeNotifier {
     selectedTranscriptYear = null;
     courses = const [];
     transcript = null;
+    fullTranscript = null;
+    fullTranscriptError = null;
     grades.clear();
     error = null;
     notifyListeners();
@@ -415,6 +434,7 @@ class AdvisorRepository extends ChangeNotifier {
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
   final CurrentCvRepository currentCvRepository;
+  final ToneProfileRepository toneProfileRepository;
 
   final List<ChatMessage> messages = [];
   bool isSending = false;
@@ -426,6 +446,7 @@ class AdvisorRepository extends ChangeNotifier {
     required this.careerProfileRepository,
     required this.githubProfileRepository,
     required this.currentCvRepository,
+    required this.toneProfileRepository,
   });
 
   Future<ChatMessage?> send(String text) {
@@ -452,6 +473,7 @@ class AdvisorRepository extends ChangeNotifier {
     try {
       await careerProfileRepository.ensureSynced();
       await githubProfileRepository.ensureSynced();
+      await toneProfileRepository.ensureSynced();
       final resumeReady = await currentCvRepository.ensureSynced();
       if (currentCvRepository.hasProfile && !resumeReady) {
         throw const ApiException(

@@ -5,12 +5,14 @@ import 'career_profile_repository.dart';
 import 'current_cv_repository.dart';
 import 'github_profile_repository.dart';
 import 'models.dart';
+import 'tone_profile_repository.dart';
 
 class CareerDocumentRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
   final CurrentCvRepository currentCvRepository;
+  final ToneProfileRepository toneProfileRepository;
 
   final Map<String, CareerDocument> _documents = {};
   final Set<String> _busy = {};
@@ -21,6 +23,7 @@ class CareerDocumentRepository extends ChangeNotifier {
     required this.careerProfileRepository,
     required this.githubProfileRepository,
     required this.currentCvRepository,
+    required this.toneProfileRepository,
   });
 
   CareerDocument? documentFor(JobOpportunity job, String kind) =>
@@ -106,6 +109,7 @@ class CareerDocumentRepository extends ChangeNotifier {
   Future<void> _syncEvidence() async {
     await careerProfileRepository.ensureSynced();
     await githubProfileRepository.ensureSynced();
+    await toneProfileRepository.ensureSynced();
     final resumeReady = await currentCvRepository.ensureSynced();
     if (currentCvRepository.hasProfile && !resumeReady) {
       throw const ApiException(

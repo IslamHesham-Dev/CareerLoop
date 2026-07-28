@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import time
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import (
@@ -25,14 +26,110 @@ from fastapi import (
 from fastapi.concurrency import run_in_threadpool
 
 from app.config import Settings, get_settings
+from app.career_context import build_career_context
 from app.dependencies import get_student_session
 from app.gmail import GmailClient, GmailIntegrationError
-from app.schemas.emails import EmailSendResponse
+from app.schemas.emails import (
+    EmailDraftRequest,
+    EmailDraftResponse,
+    EmailSendResponse,
+)
 from app.sessions.models import StudentSession
+from app.tone import ToneProfile, build_tone_reference
+from email_generator import generate_email_content
 
 router = APIRouter(prefix="/career/emails", tags=["career emails"])
 
 MAX_CV_BYTES = 10 * 1024 * 1024
+MAX_PENDING_EMAIL_DRAFTS = 5
+_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+@router.post("/preview", response_model=EmailDraftResponse)
+async def preview_career_email(
+    payload: EmailDraftRequest,
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> EmailDraftResponse:
+    recipient = payload.recipient_email.strip().casefold()
+    if not _EMAIL_RE.fullmatch(recipient):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Enter a valid recipient email address.",
+        )
+    api_key = settings.anthropic_api_key.get_secret_value().strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ANTHROPIC_API_KEY is not configured on the backend.",
+        )
+
+    def generate() -> EmailDraftResponse:
+        transcript = student.academic.full_transcript()
+        cms_course_titles: list[str] | None = None
+        if student.cms.connected:
+            try:
+                cms_payload = student.cms.list_courses(
+                    season=student.academic.current_season
+                )
+                cms_course_titles = [
+                    course.get("title") or course.get("code") or ""
+                    for course in cms_payload.get("courses", [])
+                ]
+                cms_course_titles = [
+                    title for title in cms_course_titles if title
+                ]
+            except Exception:
+                cms_course_titles = None
+        career_context = build_career_context(
+            resume_profile=student.resume_profile,
+            linkedin_profile=student.linkedin_profile,
+            github_profile=student.github_profile,
+            transcript=transcript,
+            cms_course_titles=cms_course_titles,
+        )
+        tone_reference = (
+            build_tone_reference(ToneProfile(answers=student.tone_profile))
+            if student.tone_profile
+            else ""
+        )
+        content = generate_email_content(
+            purpose=payload.purpose.strip(),
+            recipient_email=recipient,
+            candidate_name=payload.sender_name.strip(),
+            career_context=career_context,
+            api_key=api_key,
+            model=settings.anthropic_model,
+            custom_input=payload.custom_input.strip(),
+            tone_reference=tone_reference,
+        )
+        draft_id = uuid.uuid4().hex
+        created_at = datetime.now(timezone.utc).isoformat()
+        stored = {
+            "id": draft_id,
+            "recipient_email": recipient,
+            "purpose": payload.purpose.strip(),
+            "subject": content.subject,
+            "body": content.body,
+            "sources_used": career_context.get("sources_used", []),
+            "created_at": created_at,
+        }
+        with student.chat_lock:
+            student.pending_email_drafts[draft_id] = stored
+            student.last_email_draft_id = draft_id
+            _trim_pending_email_drafts(student)
+        return EmailDraftResponse(
+            **stored,
+            tone_applied=bool(tone_reference),
+        )
+
+    try:
+        return await run_in_threadpool(generate)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"The email draft could not be generated: {exc}",
+        ) from None
 
 
 @router.post("/{draft_id}/send", response_model=EmailSendResponse)
@@ -194,3 +291,14 @@ def _safe_pdf_name(value: str) -> str:
     if not stem.casefold().endswith(".pdf"):
         stem = f"{stem}.pdf"
     return stem[:120] or "Current_CV.pdf"
+
+
+def _trim_pending_email_drafts(student: StudentSession) -> None:
+    if len(student.pending_email_drafts) <= MAX_PENDING_EMAIL_DRAFTS:
+        return
+    ordered = sorted(
+        student.pending_email_drafts.items(),
+        key=lambda item: str(item[1].get("created_at", "")),
+    )
+    for draft_id, _ in ordered[:-MAX_PENDING_EMAIL_DRAFTS]:
+        student.pending_email_drafts.pop(draft_id, None)

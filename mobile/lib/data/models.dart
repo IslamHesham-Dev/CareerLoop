@@ -377,6 +377,64 @@ class Transcript {
   }
 }
 
+class TranscriptWindowCourse extends TranscriptCourse {
+  final String academicYear;
+
+  const TranscriptWindowCourse({
+    required this.academicYear,
+    required super.semester,
+    required super.course,
+    required super.grade,
+    required super.numeric,
+    required super.hours,
+    required super.group,
+  });
+
+  factory TranscriptWindowCourse.fromJson(Map<String, dynamic> json) =>
+      TranscriptWindowCourse(
+        academicYear: json['academic_year'] as String? ?? '',
+        semester: json['semester'] as String? ?? '',
+        course: json['course'] as String? ?? '',
+        grade: json['grade'] as String? ?? '',
+        numeric: json['numeric'] as String? ?? '',
+        hours: json['hours'] as String? ?? '',
+        group: json['group'] as String? ?? '',
+      );
+}
+
+class TranscriptWindow {
+  final int enrollmentYear;
+  final List<String> requestedYears;
+  final List<String> loadedYears;
+  final String? cumulativeGpa;
+  final List<TranscriptWindowCourse> courses;
+
+  const TranscriptWindow({
+    required this.enrollmentYear,
+    required this.requestedYears,
+    required this.loadedYears,
+    required this.cumulativeGpa,
+    required this.courses,
+  });
+
+  factory TranscriptWindow.fromJson(Map<String, dynamic> json) =>
+      TranscriptWindow(
+        enrollmentYear: json['enrollment_year'] as int? ?? 0,
+        requestedYears:
+            List<String>.from(json['requested_years'] as List? ?? const []),
+        loadedYears:
+            List<String>.from(json['loaded_years'] as List? ?? const []),
+        cumulativeGpa: json['cumulative_gpa'] as String?,
+        courses: (json['courses'] as List? ?? const [])
+            .map(
+              (item) => TranscriptWindowCourse.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
+      );
+}
+
 class CmsCourse {
   final String id;
   final String code;

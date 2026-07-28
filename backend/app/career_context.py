@@ -147,7 +147,7 @@ def build_career_context(
                     "academic_year": row.get("academic_year"),
                     "course": row.get("course"),
                     "grade": row.get("grade"),
-                    "credits": row.get("credits"),
+                    "credits": row.get("credits") or row.get("hours"),
                 }
                 for row in (transcript.get("courses") or [])[:80]
             ],

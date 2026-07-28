@@ -38,17 +38,12 @@ def generate_document(
         raise CareerDocumentError(
             "ANTHROPIC_API_KEY is not configured on the backend."
         )
-    if not (
-        student.resume_profile
-        or student.linkedin_profile
-        or student.github_profile
-    ):
+    context = _career_context(student)
+    if not context.get("sources_used"):
         raise CareerDocumentError(
-            "Import a resume, LinkedIn PDF, or GitHub profile before "
-            "building tailored application documents."
+            "No profile or academic evidence is available for this document."
         )
 
-    context = _career_context(student)
     tone_reference = (
         build_tone_reference(ToneProfile(answers=student.tone_profile))
         if student.tone_profile

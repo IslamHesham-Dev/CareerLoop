@@ -7,7 +7,9 @@ import '../../data/career_profile_repository.dart';
 import '../../data/career_document_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
+import '../../data/email_repository.dart';
 import '../../data/repositories.dart';
+import '../../data/tone_profile_repository.dart';
 import '../core/lens_components.dart';
 import '../core/notion_export_action.dart';
 
@@ -163,6 +165,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final resume = context.read<CurrentCvRepository>();
                         final documents =
                             context.read<CareerDocumentRepository>();
+                        final tone = context.read<ToneProfileRepository>();
+                        final emails = context.read<EmailRepository>();
                         await advisor.reset();
                         academic.clearLocal();
                         cms.clearLocal();
@@ -170,6 +174,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         career.markSessionChanged();
                         github.markSessionChanged();
                         resume.markSessionChanged();
+                        tone.markSessionChanged();
+                        emails.reset();
                         documents.clear();
                         await auth.logout();
                       },

@@ -9,6 +9,7 @@ import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/practice_repository.dart';
 import '../../data/repositories.dart';
+import '../../data/tone_profile_repository.dart';
 import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
 
@@ -38,6 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final githubReady = github.hasProfile;
     final resume = context.watch<CurrentCvRepository>();
     final resumeReady = resume.hasProfile;
+    final tone = context.watch<ToneProfileRepository>();
     final liveSignals = (academicReady ? 1 : 0) +
         (linkedInReady ? 1 : 0) +
         (githubReady ? 1 : 0) +
@@ -123,13 +125,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 9),
           _EvidenceSource(
             icon: Icons.description_outlined,
-            title: 'Career documents',
+            title: 'Resume evidence',
             subtitle: resumeReady
                 ? '${resume.currentCv?.fileName ?? 'Resume'} · extracted career evidence'
                 : 'Import your resume for CV claims and role matching',
             status: resumeReady ? 'LIVE' : 'CONNECT',
             color: resumeReady ? LensColors.indigo : LensColors.muted,
             onTap: () => context.push('/resume-profile'),
+          ),
+          const SizedBox(height: 26),
+          const _Header(
+            title: 'Create & communicate',
+            detail: 'AI + human approval',
+          ),
+          const SizedBox(height: 12),
+          _EvidenceSource(
+            icon: Icons.auto_awesome_rounded,
+            title: 'Resume Studio',
+            subtitle: resumeReady
+                ? 'Build or refine from your complete evidence profile'
+                : 'Generate a resume directly from your academic record',
+            status: resumeReady ? 'READY' : 'BUILD',
+            color: LensColors.indigo,
+            onTap: () => context.push('/master-resume'),
+          ),
+          const SizedBox(height: 9),
+          _EvidenceSource(
+            icon: Icons.graphic_eq_rounded,
+            title: 'Writing Voice',
+            subtitle: tone.configured
+                ? '${tone.answers.length} samples personalize generated writing'
+                : 'Teach resumes, letters, and emails how you communicate',
+            status: tone.configured ? 'ACTIVE' : 'SET UP',
+            color: tone.configured ? LensColors.aqua : LensColors.violet,
+            onTap: () => context.push('/writing-voice'),
+          ),
+          const SizedBox(height: 9),
+          _EvidenceSource(
+            icon: Icons.forward_to_inbox_rounded,
+            title: 'Email Studio',
+            subtitle:
+                'Draft academic or career emails, review, then send with Gmail',
+            status: 'OPEN',
+            color: LensColors.rose,
+            onTap: () => context.push('/email-studio'),
           ),
           const SizedBox(height: 26),
           const _Header(
