@@ -93,6 +93,20 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
             padding: const EdgeInsets.fromLTRB(22, 20, 22, 12),
             child: Row(
               children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: LensColors.indigo.withValues(alpha: .1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: LensColors.indigo,
+                    size: 21,
+                  ),
+                ),
+                const SizedBox(width: 13),
                 Expanded(
                   child: Text(
                     'Ask CareerLoop',

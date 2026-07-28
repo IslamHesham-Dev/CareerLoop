@@ -232,7 +232,7 @@ class _ReadinessCard extends StatelessWidget {
                 child: Text('Ready to send?',
                     style: Theme.of(context).textTheme.titleMedium),
               ),
-              ReadinessPill(ready: ready),
+              if (ready) const ReadinessPill(ready: true),
             ],
           ),
           const SizedBox(height: 13),
