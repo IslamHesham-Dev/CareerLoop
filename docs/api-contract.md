@@ -94,6 +94,29 @@ certification evidence. Flutter keeps the original PDF and extracted snapshot
 in private app storage, then syncs the snapshot into each short-lived backend
 session before relevant agent and opportunity tasks.
 
+## Tone of voice
+
+- `GET /v1/career/tone/questions` - returns the fixed list of onboarding
+  prompts (`app.tone.ONBOARDING_QUESTIONS`) as a bare JSON array of strings,
+  not an object.
+- `GET /v1/career/tone` - `ToneStatus{connected, answers}`
+- `POST /v1/career/tone/sync` with `{"answers": {"<question>": "<answer>"}}`
+  - a partial set of answers is accepted and still improves generation
+- `POST /v1/career/tone/remove`
+
+The four onboarding questions elicit short, real writing samples (a
+self-introduction, a project story, a reflection on a setback, an email
+sign-off) rather than a self-reported formality label - deliberately, since
+self-rated tone is unreliable and the raw samples are what the agent actually
+imitates. Answers live only in the short-lived `StudentSession` (there is no
+database in this project), so Flutter caches them on-device and re-syncs
+after each login, exactly like the LinkedIn/GitHub/resume connectors above.
+Saving a new tone profile clears the cached agent, career documents, and
+conversation for the session so the next chat call and the next CV, cover
+letter, or email all pick up the fresh reference. Once set, the tone
+reference shapes CV generation, cover letters, drafted emails, and - via the
+main agent's `ToneMiddleware` - the agent's own free-form chat replies.
+
 ## Reviewed Gmail applications
 
 - `GET /v1/integrations/gmail/status`
