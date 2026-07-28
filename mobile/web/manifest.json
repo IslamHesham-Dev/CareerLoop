@@ -3,9 +3,9 @@
     "short_name": "CareerLoop",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0E0F2B",
+    "theme_color": "#0E0F2B",
+    "description": "CareerLoop — academic insight, career momentum.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
