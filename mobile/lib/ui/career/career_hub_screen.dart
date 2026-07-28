@@ -501,7 +501,8 @@ class _ResumeConnectorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LensCard(
       onTap: onTap,
-      padding: const EdgeInsets.all(16),
+      color: connected ? LensColors.aqua.withValues(alpha: .065) : null,
+      padding: const EdgeInsets.all(17),
       child: Row(
         children: [
           Container(
@@ -509,12 +510,13 @@ class _ResumeConnectorCard extends StatelessWidget {
             height: 46,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: LensColors.indigo.withValues(alpha: .10),
+              color: (connected ? LensColors.aqua : LensColors.indigo)
+                  .withValues(alpha: .12),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.description_outlined,
-              color: LensColors.indigo,
+              color: connected ? LensColors.aqua : LensColors.indigo,
               size: 24,
             ),
           ),
@@ -523,29 +525,67 @@ class _ResumeConnectorCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Resume evidence',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Resume evidence',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    if (connected)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: LensColors.aqua.withValues(alpha: .14),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'AGENT READY',
+                          style: TextStyle(
+                            color: Color(0xFF168D80),
+                            fontSize: 7.5,
+                            letterSpacing: .6,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   connected
-                      ? '${fileName ?? 'Current resume'} · $skillCount skills extracted'
+                      ? fileName ?? 'Current resume'
                       : 'Upload a PDF for agent-ready career context',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: connected ? LensColors.ink : LensColors.muted,
                     fontSize: 10.5,
+                    fontWeight: connected ? FontWeight.w700 : FontWeight.w400,
                   ),
                 ),
+                if (connected) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    'PDF uploaded · $skillCount skills extracted',
+                    style: const TextStyle(
+                      color: LensColors.muted,
+                      fontSize: 9.5,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
           const SizedBox(width: 8),
-          if (connected)
-            const Icon(Icons.check_circle_rounded, color: LensColors.aqua)
-          else
+          if (!connected)
             const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -563,6 +603,11 @@ class _ResumeConnectorCard extends StatelessWidget {
                   size: 19,
                 ),
               ],
+            )
+          else
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: LensColors.aqua,
             ),
         ],
       ),

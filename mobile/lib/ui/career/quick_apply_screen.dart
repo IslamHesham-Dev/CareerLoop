@@ -105,13 +105,6 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Post to Application'),
-        actions: [
-          IconButton(
-            tooltip: 'Close keyboard',
-            onPressed: () => FocusManager.instance.primaryFocus?.unfocus(),
-            icon: const Icon(Icons.keyboard_hide_rounded),
-          ),
-        ],
       ),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -274,6 +267,37 @@ class _ReadinessCard extends StatelessWidget {
             onAction: onConnectGmail,
             enabled: gmailConnected || gmailAvailable,
           ),
+          if (!gmailConnected && gmailAvailable) ...[
+            const SizedBox(height: 9),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 11,
+                vertical: 9,
+              ),
+              decoration: BoxDecoration(
+                color: LensColors.amber.withValues(alpha: .09),
+                borderRadius: BorderRadius.circular(13),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.person_add_alt_1_rounded,
+                    color: LensColors.amber,
+                    size: 16,
+                  ),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'OAuth testing: this Gmail address must be added under '
+                      'Google Auth Platform → Audience → Test users.',
+                      style: TextStyle(fontSize: 9.5, height: 1.35),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const Divider(height: 24),
           _SourceRow(
             icon: Icons.picture_as_pdf_rounded,

@@ -307,24 +307,57 @@ class _ConnectionExperience extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 GestureDetector(
-                  onTap: () => Clipboard.setData(
-                    ClipboardData(text: authorization.userCode),
-                  ),
+                  onTap: () async {
+                    await Clipboard.setData(
+                      ClipboardData(text: authorization.userCode),
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('GitHub authorization code copied.'),
+                        ),
+                      );
+                    }
+                  },
                   child: Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    alignment: Alignment.center,
+                    padding: const EdgeInsets.fromLTRB(16, 6, 7, 6),
                     decoration: BoxDecoration(
                       color: LensColors.canvas,
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Text(
-                      authorization.userCode,
-                      style: const TextStyle(
-                        fontSize: 23,
-                        letterSpacing: 3,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            authorization.userCode,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 23,
+                              letterSpacing: 3,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        IconButton.filledTonal(
+                          tooltip: 'Copy GitHub code',
+                          onPressed: () async {
+                            await Clipboard.setData(
+                              ClipboardData(text: authorization.userCode),
+                            );
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'GitHub authorization code copied.',
+                                  ),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.copy_rounded, size: 18),
+                        ),
+                      ],
                     ),
                   ),
                 ),

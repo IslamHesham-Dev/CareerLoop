@@ -44,6 +44,35 @@ def test_extract_cv_profile_from_text_extracts_common_fields() -> None:
     assert profile.experience
 
 
+def test_extracts_every_experience_until_the_next_section() -> None:
+    text = """
+    Jane Doe
+    Software Engineer
+    jane@example.com
+    Professional Experience
+    Senior Engineer | Example One | 2024-Present
+    Led the backend platform migration.
+    Improved API reliability by 30 percent.
+    Engineer | Example Two | 2022-2024
+    Built customer-facing workflow services.
+    Introduced automated integration tests.
+    Junior Engineer | Example Three | 2020-2022
+    Delivered internal Python tooling.
+    Supported production incident reviews.
+    Education
+    BSc Computer Science
+    Skills
+    Python, FastAPI, Docker
+    """
+
+    profile = extract_cv_profile_from_text(text, file_name="full-history.pdf")
+
+    assert any("Example One" in value for value in profile.experience)
+    assert any("Example Two" in value for value in profile.experience)
+    assert any("Example Three" in value for value in profile.experience)
+    assert not any("BSc Computer Science" in value for value in profile.experience)
+
+
 def _profile() -> ResumeProfile:
     return ResumeProfile(
         file_name="Jane_Doe_CV.pdf",

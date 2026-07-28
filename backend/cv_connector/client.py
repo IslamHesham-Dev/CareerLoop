@@ -96,7 +96,17 @@ def extract_cv_profile_from_text(
     phone = _extract_phone(normalized)
     summary = _extract_section(normalized, ["summary", "profile", "about"])
     skills = _extract_skills(normalized)
-    experience = _extract_list_section(normalized, ["experience", "work experience", "professional experience"])
+    experience = _extract_list_section(
+        normalized,
+        [
+            "experience",
+            "work experience",
+            "professional experience",
+            "employment history",
+            "work history",
+            "career history",
+        ],
+    )
     education = _extract_list_section(normalized, ["education", "academic background"])
     certifications = _extract_list_section(normalized, ["certifications", "licenses and certifications"])
 
@@ -205,10 +215,10 @@ def _extract_list_section(text: str, labels: list[str]) -> list[str]:
                     if len(inline) == 2 and inline[1].strip()
                     else []
                 )
-                for follow in lines[index + 1 : index + 8]:
+                for follow in lines[index + 1 :]:
                     if _is_section_heading(follow):
                         break
-                    if follow.strip():
+                    if follow.strip() and len(values) < 200:
                         values.append(follow.strip())
                 return values
     return []
@@ -217,20 +227,34 @@ def _extract_list_section(text: str, labels: list[str]) -> list[str]:
 _SECTION_HEADINGS = {
     "about",
     "academic background",
+    "achievements",
+    "awards",
     "certifications",
     "education",
+    "employment history",
     "experience",
+    "career history",
+    "interests",
+    "languages",
+    "leadership",
+    "leadership experience",
     "licenses and certifications",
+    "publications",
     "profile",
     "professional experience",
     "projects",
+    "selected projects",
     "skills",
     "summary",
     "technical skills",
+    "volunteer experience",
+    "volunteering",
     "work experience",
+    "work history",
 }
 
 
 def _is_section_heading(value: str) -> bool:
-    normalized = value.strip().rstrip(":").casefold()
-    return normalized in _SECTION_HEADINGS
+    normalized = value.strip().casefold()
+    label = normalized.split(":", 1)[0].strip().rstrip(":")
+    return label in _SECTION_HEADINGS
