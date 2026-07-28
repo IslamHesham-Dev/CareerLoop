@@ -209,7 +209,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Your credentials are used only to start a short-lived, read-only portal session. CareerLoop does not store your password.',
+                                      'Your credentials are used only to start a short-lived, read-only portal session. Career Loop does not store your password.',
                                       style: TextStyle(
                                         color: _textMuted,
                                         fontSize: 12.5,
@@ -223,7 +223,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               const Divider(color: _cardBorder),
                               const SizedBox(height: 14),
                               Text(
-                                'Your first CareerLoop evidence source is the $university Student Portal.',
+                                'Your first Career Loop evidence source is the $university Student Portal.',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                     color: _textMuted, fontSize: 12),
@@ -646,7 +646,7 @@ class _LoginScreenState extends State<LoginScreen> {
 //                             SizedBox(width: 10),
 //                             Expanded(
 //                               child: Text(
-//                                 'Your credentials are used only to start a short-lived, read-only portal session. CareerLoop does not store your password.',
+//                                 'Your credentials are used only to start a short-lived, read-only portal session. Career Loop does not store your password.',
 //                                 style: TextStyle(
 //                                   color: LensColors.muted,
 //                                   fontSize: 12.5,
@@ -660,7 +660,7 @@ class _LoginScreenState extends State<LoginScreen> {
 //                         const Divider(color: LensColors.line),
 //                         const SizedBox(height: 14),
 //                         Text(
-//                           'Your first CareerLoop evidence source is the $university Student Portal.',
+//                           'Your first Career Loop evidence source is the $university Student Portal.',
 //                           textAlign: TextAlign.center,
 //                           style: TextStyle(
 //                             color: LensColors.muted,
