@@ -195,6 +195,7 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                         extra: OpportunityDetailArgs(
                           job: job,
                           evidence: result.evidence,
+                          courses: result.courses,
                           limitations: result.limitations,
                         ),
                       ),
@@ -238,12 +239,25 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                     child: Row(
                       children: [
                         const Expanded(
-                          child: Text(
-                            'Search filters',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w800,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Search filters',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Choose what matters for your next role.',
+                                style: TextStyle(
+                                  color: LensColors.muted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         IconButton(
@@ -523,7 +537,7 @@ class _SearchEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 7),
           const Text(
-            'Set your role, market, and work preferences. Career Loop will '
+            'Set your role, market, and work preferences. CareerLoop will '
             'rank openings against your connected profile.',
             textAlign: TextAlign.center,
             style: TextStyle(
@@ -581,6 +595,7 @@ class _SearchPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -635,11 +650,24 @@ class _SearchPanel extends StatelessWidget {
               )
               .toList(),
         ),
-        const SizedBox(height: 12),
-        _AddableChipField(
+        const SizedBox(height: 16),
+        TextField(
           controller: keywords,
-          hintText: 'Add LangGraph, fintech, iOS…',
-          icon: Icons.add_circle_outline_rounded,
+          textInputAction: TextInputAction.next,
+          decoration: InputDecoration(
+            labelText: 'Custom role or skill',
+            hintText: 'LangGraph, fintech, iOS',
+            prefixIcon: const Icon(Icons.add_circle_outline_rounded),
+            helperText: 'Optional · separate terms with commas.',
+            suffixIcon: keyboardVisible
+                ? IconButton(
+                    tooltip: 'Hide keyboard',
+                    onPressed: () =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    icon: const Icon(Icons.keyboard_hide_rounded),
+                  )
+                : null,
+          ),
         ),
         const SizedBox(height: 20),
         const _FieldLabel('Target market'),
@@ -679,11 +707,24 @@ class _SearchPanel extends StatelessWidget {
               )
               .toList(),
         ),
-        const SizedBox(height: 12),
-        _AddableChipField(
+        const SizedBox(height: 14),
+        TextField(
           controller: locations,
-          hintText: 'Add another city or country…',
-          icon: Icons.add_location_alt_outlined,
+          textInputAction: TextInputAction.done,
+          decoration: InputDecoration(
+            labelText: 'Another location',
+            hintText: 'Munich, Stockholm',
+            prefixIcon: const Icon(Icons.location_on_outlined),
+            helperText: 'Optional · separate places with commas.',
+            suffixIcon: keyboardVisible
+                ? IconButton(
+                    tooltip: 'Hide keyboard',
+                    onPressed: () =>
+                        FocusManager.instance.primaryFocus?.unfocus(),
+                    icon: const Icon(Icons.keyboard_hide_rounded),
+                  )
+                : null,
+          ),
         ),
         const SizedBox(height: 20),
         const _FieldLabel('Work mode'),
@@ -718,96 +759,6 @@ class _SearchPanel extends StatelessWidget {
         ),
       ],
     );
-  }
-}
-
-class _AddableChipField extends StatefulWidget {
-  final TextEditingController controller;
-  final String hintText;
-  final IconData icon;
-
-  const _AddableChipField({
-    required this.controller,
-    required this.hintText,
-    required this.icon,
-  });
-
-  @override
-  State<_AddableChipField> createState() => _AddableChipFieldState();
-}
-
-class _AddableChipFieldState extends State<_AddableChipField> {
-  final _entry = TextEditingController();
-
-  List<String> get _values => widget.controller.text
-      .split(',')
-      .map((value) => value.trim())
-      .where((value) => value.isNotEmpty)
-      .toList();
-
-  @override
-  void dispose() {
-    _entry.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final values = _values;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (values.isNotEmpty) ...[
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: values
-                .map(
-                  (value) => InputChip(
-                    label: Text(value),
-                    onDeleted: () => _remove(value),
-                    deleteIcon: const Icon(Icons.close_rounded, size: 16),
-                  ),
-                )
-                .toList(),
-          ),
-          const SizedBox(height: 9),
-        ],
-        TextField(
-          controller: _entry,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => _add(),
-          onTapOutside: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            prefixIcon: Icon(widget.icon),
-            suffixIcon: IconButton(
-              tooltip: 'Add',
-              onPressed: _add,
-              icon: const Icon(Icons.add_rounded),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _add() {
-    final value = _entry.text.trim();
-    if (value.isEmpty) return;
-    final values = _values;
-    if (!values.any((item) => item.toLowerCase() == value.toLowerCase())) {
-      values.add(value);
-      widget.controller.text = values.join(', ');
-    }
-    _entry.clear();
-    setState(() {});
-  }
-
-  void _remove(String value) {
-    final values = _values..remove(value);
-    widget.controller.text = values.join(', ');
-    setState(() {});
   }
 }
 
@@ -911,9 +862,21 @@ class _JobCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: LensColors.muted,
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${job.matchScore}% fit',
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
               ),
             ],
           ),
@@ -941,56 +904,48 @@ class _JobCard extends StatelessWidget {
                   icon: Icons.schedule_rounded,
                   label: _shortDate(job.postedAt!),
                 ),
-              if (job.updatedAt != null && job.updatedAt != job.postedAt)
-                _JobFact(
-                  icon: Icons.update_rounded,
-                  label: 'Updated ${_shortDate(job.updatedAt!, prefix: false)}',
-                ),
-              if (job.degrees.isNotEmpty)
-                _JobFact(
-                  icon: Icons.school_outlined,
-                  label: job.degrees.join(', '),
-                ),
             ],
           ),
           if (job.matchReasons.isNotEmpty) ...[
             const SizedBox(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.check_circle_outline_rounded,
-                  color: LensColors.aqua,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    job.matchReasons.first,
-                    style: const TextStyle(fontSize: 12, height: 1.35),
+            ...job.matchReasons.take(2).map(
+                  (reason) => Padding(
+                    padding: const EdgeInsets.only(bottom: 7),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline_rounded,
+                          color: LensColors.aqua,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            reason,
+                            style: const TextStyle(fontSize: 12, height: 1.35),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ],
-            ),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           Row(
             children: [
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'View role details',
-                  style: TextStyle(
-                    color: LensColors.indigo,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  '${job.inferredSkillGaps.length} gaps · '
+                  '${job.recommendedCourseIds.length} recommended courses',
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
-              const Icon(
-                Icons.arrow_forward_rounded,
-                color: LensColors.indigo,
-                size: 18,
-              ),
+              const Icon(Icons.chevron_right_rounded, size: 21),
             ],
           ),
         ],
@@ -998,7 +953,7 @@ class _JobCard extends StatelessWidget {
     );
   }
 
-  static String _shortDate(DateTime value, {bool prefix = true}) {
+  static String _shortDate(DateTime value) {
     const months = [
       'Jan',
       'Feb',
@@ -1013,8 +968,7 @@ class _JobCard extends StatelessWidget {
       'Nov',
       'Dec',
     ];
-    final date = '${months[value.month - 1]} ${value.day}';
-    return prefix ? 'Posted $date' : date;
+    return 'Posted ${months[value.month - 1]} ${value.day}';
   }
 }
 

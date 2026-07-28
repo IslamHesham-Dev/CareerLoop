@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'api_client.dart';
 import 'career_profile_repository.dart';
 import 'current_cv_repository.dart';
-import 'email_models.dart';
 import 'github_profile_repository.dart';
 import 'models.dart';
 import 'practice_repository.dart';
@@ -490,12 +489,6 @@ class AdvisorRepository extends ChangeNotifier {
       if (practiceSet != null) {
         await practiceRepository.save(practiceSet);
       }
-      final emailJson = json['email_draft'];
-      final emailDraft = emailJson is Map
-          ? GeneralEmailDraft.fromJson(
-              Map<String, dynamic>.from(emailJson),
-            )
-          : null;
       final response = ChatMessage(
         isUser: false,
         text: json['answer'] as String? ?? 'No response was returned.',
@@ -506,7 +499,6 @@ class AdvisorRepository extends ChangeNotifier {
                 ToolActivity.fromJson(Map<String, dynamic>.from(item as Map)))
             .toList(),
         practiceSet: practiceSet,
-        emailDraft: emailDraft,
       );
       messages.add(response);
       return response;

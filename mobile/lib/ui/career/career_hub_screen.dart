@@ -34,10 +34,17 @@ class CareerHubScreen extends StatelessWidget {
             'Career',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
+          const SizedBox(height: 6),
+          Text(
+            'Find a relevant role, then prepare a reviewed application.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: 24),
           _CareerAction(
             icon: Icons.search_rounded,
             title: 'Find matching roles',
+            subtitle:
+                'Search live openings and compare each role with your profile.',
             accent: LensColors.indigo,
             onTap: () => context.push('/opportunities'),
           ),
@@ -45,12 +52,14 @@ class CareerHubScreen extends StatelessWidget {
           _CareerAction(
             icon: Icons.forward_to_inbox_outlined,
             title: 'Apply from a post',
+            subtitle:
+                'Paste a job post, prepare the documents and review the email.',
             accent: LensColors.amber,
             onTap: () => context.push('/quick-apply'),
           ),
           const SizedBox(height: 28),
           Text(
-            'Evaluation profile',
+            'Profile readiness',
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 10),
@@ -67,12 +76,14 @@ class CareerHubScreen extends StatelessWidget {
 class _CareerAction extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String subtitle;
   final Color accent;
   final VoidCallback onTap;
 
   const _CareerAction({
     required this.icon,
     required this.title,
+    required this.subtitle,
     required this.accent,
     required this.onTap,
   });
@@ -103,9 +114,19 @@ class _CareerAction extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(width: 8),

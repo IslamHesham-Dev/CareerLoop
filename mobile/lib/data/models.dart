@@ -1,7 +1,4 @@
-import 'email_models.dart';
-
 class SessionInfo {
-  final String username;
   final String institution;
   final String currentSeason;
   final String advisoryYear;
@@ -12,7 +9,6 @@ class SessionInfo {
   final String? cmsMessage;
 
   const SessionInfo({
-    required this.username,
     required this.institution,
     required this.currentSeason,
     required this.advisoryYear,
@@ -24,7 +20,6 @@ class SessionInfo {
   });
 
   factory SessionInfo.fromJson(Map<String, dynamic> json) => SessionInfo(
-        username: json['username'] as String? ?? '',
         institution: json['institution'] as String? ?? 'giu',
         currentSeason: json['current_season'] as String? ?? 'Winter 2024',
         advisoryYear: json['advisory_year'] as String? ?? '2024-2025',
@@ -37,13 +32,6 @@ class SessionInfo {
       );
 
   String get universityLabel => institution.toUpperCase();
-
-  String get firstName {
-    final account = username.trim().split('@').first.split('\\').last;
-    final normalized = account.split('.').first.trim();
-    if (normalized.isEmpty) return 'there';
-    return '${normalized[0].toUpperCase()}${normalized.substring(1).toLowerCase()}';
-  }
 }
 
 class AdvisoryContext {
@@ -632,36 +620,6 @@ class OpportunityEvidence {
       );
 }
 
-class ProfileEvidenceCitation {
-  final String skill;
-  final String source;
-  final String evidenceType;
-  final String evidence;
-
-  const ProfileEvidenceCitation({
-    required this.skill,
-    required this.source,
-    required this.evidenceType,
-    required this.evidence,
-  });
-
-  factory ProfileEvidenceCitation.fromJson(Map<String, dynamic> json) =>
-      ProfileEvidenceCitation(
-        skill: json['skill'] as String? ?? '',
-        source: json['source'] as String? ?? '',
-        evidenceType: json['evidence_type'] as String? ?? '',
-        evidence: json['evidence'] as String? ?? '',
-      );
-
-  String get sourceLabel => switch (source) {
-        'academic_transcript' => 'Academic',
-        'linkedin_pdf' => 'LinkedIn',
-        'github' => 'GitHub',
-        'resume' => 'Resume',
-        _ => 'Profile',
-      };
-}
-
 class JobOpportunity {
   final String id;
   final String company;
@@ -679,15 +637,11 @@ class JobOpportunity {
   final Uri? companyLogoUrl;
   final bool active;
   final String roleFamily;
-  final List<String> requiredSkills;
   final int matchScore;
   final List<String> matchReasons;
   final List<String> keywordMatches;
   final List<String> profileSkillMatches;
-  final List<ProfileEvidenceCitation> profileEvidenceCitations;
   final List<String> inferredSkillGaps;
-  final String assessmentSummary;
-  final String assessmentConfidence;
   final List<String> recommendedCourseIds;
 
   const JobOpportunity({
@@ -707,15 +661,11 @@ class JobOpportunity {
     this.companyLogoUrl,
     this.active = true,
     required this.roleFamily,
-    this.requiredSkills = const [],
     required this.matchScore,
     required this.matchReasons,
     required this.keywordMatches,
     required this.profileSkillMatches,
-    this.profileEvidenceCitations = const [],
     required this.inferredSkillGaps,
-    this.assessmentSummary = '',
-    this.assessmentConfidence = 'low',
     required this.recommendedCourseIds,
   });
 
@@ -742,8 +692,6 @@ class JobOpportunity {
         ),
         active: json['active'] as bool? ?? true,
         roleFamily: json['role_family'] as String? ?? 'general',
-        requiredSkills:
-            List<String>.from(json['required_skills'] as List? ?? const []),
         matchScore: json['match_score'] as int? ?? 0,
         matchReasons:
             List<String>.from(json['match_reasons'] as List? ?? const []),
@@ -752,19 +700,9 @@ class JobOpportunity {
         profileSkillMatches: List<String>.from(
           json['profile_skill_matches'] as List? ?? const [],
         ),
-        profileEvidenceCitations:
-            (json['profile_evidence_citations'] as List? ?? const [])
-                .map(
-                  (item) => ProfileEvidenceCitation.fromJson(
-                    Map<String, dynamic>.from(item as Map),
-                  ),
-                )
-                .toList(),
         inferredSkillGaps: List<String>.from(
           json['inferred_skill_gaps'] as List? ?? const [],
         ),
-        assessmentSummary: json['assessment_summary'] as String? ?? '',
-        assessmentConfidence: json['assessment_confidence'] as String? ?? 'low',
         recommendedCourseIds: List<String>.from(
           json['recommended_course_ids'] as List? ?? const [],
         ),
@@ -778,22 +716,10 @@ class JobOpportunity {
         'url': url.toString(),
         'category': category,
         'role_family': roleFamily,
-        'required_skills': requiredSkills,
         'match_reasons': matchReasons,
         'keyword_matches': keywordMatches,
         'profile_skill_matches': profileSkillMatches,
-        'profile_evidence_citations': profileEvidenceCitations
-            .map(
-              (citation) => {
-                'skill': citation.skill,
-                'source': citation.source,
-                'evidence_type': citation.evidenceType,
-                'evidence': citation.evidence,
-              },
-            )
-            .toList(),
         'inferred_skill_gaps': inferredSkillGaps,
-        'assessment_summary': assessmentSummary,
       };
 }
 
@@ -856,7 +782,6 @@ class CareerCourseRecommendation {
   final List<String> skills;
   final List<String> roles;
   final List<String> addressesSkills;
-  final String recommendationReason;
 
   const CareerCourseRecommendation({
     required this.id,
@@ -869,7 +794,6 @@ class CareerCourseRecommendation {
     required this.skills,
     required this.roles,
     required this.addressesSkills,
-    required this.recommendationReason,
   });
 
   factory CareerCourseRecommendation.fromJson(Map<String, dynamic> json) =>
@@ -886,7 +810,6 @@ class CareerCourseRecommendation {
         addressesSkills: List<String>.from(
           json['addresses_skills'] as List? ?? const [],
         ),
-        recommendationReason: json['recommendation_reason'] as String? ?? '',
       );
 }
 
@@ -1033,7 +956,6 @@ class ChatMessage {
   final List<String> sources;
   final List<ToolActivity> tools;
   final PracticeSet? practiceSet;
-  final GeneralEmailDraft? emailDraft;
 
   const ChatMessage({
     required this.isUser,
@@ -1042,7 +964,6 @@ class ChatMessage {
     this.sources = const [],
     this.tools = const [],
     this.practiceSet,
-    this.emailDraft,
   });
 }
 

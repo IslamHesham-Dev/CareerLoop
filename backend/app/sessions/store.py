@@ -38,7 +38,6 @@ class SessionStore:
         portal: GucPortal,
         cms: CmsService | UnavailableCmsService,
         *,
-        username: str = "",
         enrollment_year: int | None = None,
         seasons: list[tuple[str, str]] | None = None,
     ) -> tuple[str, StudentSession]:
@@ -57,7 +56,6 @@ class SessionStore:
             ),
             created_at=now,
             expires_at=now + self.ttl_seconds,
-            username=username,
         )
         if seasons is not None:
             session.academic.prime_seasons(seasons)

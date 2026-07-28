@@ -20,7 +20,6 @@ class StudentSession:
     cms: CmsService | UnavailableCmsService
     created_at: float
     expires_at: float
-    username: str = ""
     conversation: list[Any] = field(default_factory=list)
     agent: Any = None
     pending_practice_set: dict[str, Any] | None = None

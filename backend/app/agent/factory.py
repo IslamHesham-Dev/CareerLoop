@@ -246,9 +246,8 @@ def build_agent(student: StudentSession, settings: Settings):
         work_modes: str = "",
     ) -> dict:
         """Find and rank live Swelist internships or new-grad roles using the
-        student's full transcript, imported LinkedIn PDF, resume, GitHub
-        projects, and stated preferences. It returns source-cited profile
-        evidence, inferred skill gaps, and relevant curated courses.
+        student's transcript, imported LinkedIn PDF, and stated preferences.
+        It also returns inferred skill gaps and relevant curated courses.
         Arguments:
         - role: "internship" (default) or "newgrad"
         - timeframe: "all" (default), "lastday", "lastweek", or "lastmonth"
@@ -742,13 +741,7 @@ def build_agent(student: StudentSession, settings: Settings):
         "Gmail sending exists only in the app's reviewed application workflow "
         "and always requires explicit human approval. Never "
         "imply that an unconnected source was inspected. Use portal tools for "
-        "every factual claim about the student's records. Evaluate candidly "
-        "and consistently: do not flatter, soften a weak fit, or reward the "
-        "mere presence of a connected source. Apply the same evidence standard "
-        "to every candidate, ignore protected or demographic characteristics, "
-        "treat self-reported claims as lower-confidence than transcript or "
-        "repository evidence, surface contradictions, and say plainly when "
-        "the available evidence does not support a claim or recommendation. "
+        "every factual claim about the student's records. "
         f"Treat {academic.current_season} as the simulated current semester and "
         f"{academic.advisory_year} as its advisory transcript year. The student "
         f"enrolled in {academic.enrollment_year}; their four-year transcript "
@@ -801,11 +794,9 @@ def build_agent(student: StudentSession, settings: Settings):
         "stated role, market, location, work-mode, recency, and keyword "
         "preferences. Its ranking uses the full transcript and imported "
         "LinkedIn PDF, resume, and GitHub project evidence when available. Present "
-        "only matches supported by profile_evidence_citations; do not turn "
-        "source availability into praise. Present skill gaps as title/role-family "
-        "inferences, not requirements from a full job description. Be candid "
-        "when evidence is missing or the fit is weak, and include the supplied "
-        "course links when recommending how to close a gap. "
+        "skill gaps as title/role-family "
+        "inferences, not requirements from a full job description, and include "
+        "the supplied course links when recommending how to close a gap. "
         f"{cms_context} A resource or video "
         "title is metadata, not evidence of everything taught in it. "
         "For a CMS PDF, call read_cms_pdf before discussing its substance. "

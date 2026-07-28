@@ -16,7 +16,7 @@ Authorization: Bearer <opaque-session-token>
 `institution` accepts `guc` or `giu` and defaults to `giu` for older clients.
 Login requires a valid portal session for that institution and attempts its CMS
 with the same credentials. Successful login/session responses include
-`username`, `institution`, and `cms_connected`; when CMS is unavailable, `cms_message`
+`institution` and `cms_connected`; when CMS is unavailable, `cms_message`
 explains the limitation while the remaining portal and advisory features work.
 
 ## Academic data
@@ -58,23 +58,14 @@ source labels so the mobile interface can distinguish portal facts from advice.
 }
 ```
 
-The endpoint reads live Swelist metadata and evaluates it against every
-available profile source: the full four-year transcript, imported LinkedIn
-PDF, imported resume, and connected GitHub project snapshot. Existing response
-fields remain unchanged. It additionally returns:
-
-- `profile_evidence_sources`: source availability, normalized skills, and
-  evidence-item counts for each of the four profile sources.
-- Per job, `required_skills`, `profile_evidence_citations`,
-  `assessment_summary`, and `assessment_confidence`.
-- Per recommended course, `recommendation_reason`.
-
-Each citation identifies the normalized skill, source, evidence type, and a
-short supporting excerpt. Required skills and gaps remain deliberately labeled
-as role-family/title inferences because Swelist does not provide complete job
-descriptions. Course recommendations come from the structured catalogue
-derived from `docs/Courses resources.txt`; each job receives directly mapped
-course IDs for its own gaps. Adzuna remains reported as unconnected.
+The endpoint reads live Swelist metadata, ranks openings against the student's
+four-year transcript, imported LinkedIn PDF, and connected GitHub project
+snapshot when available, and returns explainable match signals. Skill gaps are
+explicitly marked as role-family
+inferences because Swelist does not provide complete job descriptions. Course
+recommendations come from the structured catalogue derived from
+`docs/Courses resources.txt`. Imported resume evidence participates in ranking
+when connected. Adzuna remains reported as unconnected.
 
 ## GitHub career evidence
 
@@ -136,7 +127,7 @@ main agent's `ToneMiddleware` - the agent's own free-form chat replies.
 - `POST /v1/career/applications/send` as multipart form data with
   `application_id`, `subject`, `body`, and PDF field `cv`
 
-The preview accepts either `linkedin_post_url` or pasted `post_text`. The resulting
+The preview accepts `linkedin_post_url` and optional `post_text`. The resulting
 draft is temporary and does not send anything. The send route requires the
 reviewed draft ID, the candidate's connected Gmail, and a valid PDF up to
 10 MB. It ignores all client/post recipient values and uses the

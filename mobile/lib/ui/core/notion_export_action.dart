@@ -290,7 +290,7 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text(
-          'Complete authorization in Notion, then return to Profile.',
+          'Complete authorization in Notion, then return to Settings.',
         ),
       ),
     );

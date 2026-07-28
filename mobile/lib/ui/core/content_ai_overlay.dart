@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
-import '../../data/email_models.dart';
-import '../../data/email_repository.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import 'capability_footer.dart';
@@ -57,7 +54,7 @@ class ContentAiOverlay extends StatefulWidget {
 }
 
 class _ContentAiOverlayState extends State<ContentAiOverlay> {
-  static const _bubbleSize = 54.0;
+  static const _bubbleSize = 58.0;
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
@@ -141,7 +138,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                     button: true,
                     label: 'Open ${widget.title}',
                     child: Material(
-                      elevation: 2,
+                      elevation: 4,
                       shadowColor: LensColors.ink.withValues(alpha: .18),
                       shape: const CircleBorder(),
                       clipBehavior: Clip.antiAlias,
@@ -157,7 +154,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                           child: const Icon(
                             Icons.auto_awesome_rounded,
                             color: Colors.white,
-                            size: 23,
+                            size: 25,
                           ),
                         ),
                       ),
@@ -313,24 +310,24 @@ class _ChatPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return ColoredBox(
-      color: Colors.black.withValues(alpha: .22),
+      color: Colors.black.withValues(alpha: .26),
       child: SafeArea(
         minimum: const EdgeInsets.all(12),
         child: Align(
           alignment: Alignment.bottomCenter,
           child: FractionallySizedBox(
             widthFactor: 1,
-            heightFactor: .80,
+            heightFactor: .78,
             child: Material(
-              elevation: 16,
-              color: LensColors.canvas,
+              elevation: 22,
+              color: const Color(0xFFF8F9FD),
               shadowColor: Colors.black45,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(26),
               clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.fromLTRB(16, 13, 8, 12),
+                    padding: const EdgeInsets.fromLTRB(16, 13, 9, 12),
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       border: Border(
@@ -339,12 +336,20 @@ class _ChatPanel extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.auto_awesome_rounded,
-                          color: LensColors.indigo,
-                          size: 18,
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: LensColors.indigo.withValues(alpha: .1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.auto_awesome_rounded,
+                            color: LensColors.indigo,
+                            size: 20,
+                          ),
                         ),
-                        const SizedBox(width: 9),
+                        const SizedBox(width: 11),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,8 +359,8 @@ class _ChatPanel extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
                                 ),
                               ),
                               Text(
@@ -364,13 +369,13 @@ class _ChatPanel extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: LensColors.muted,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        IconButton(
+                        IconButton.filledTonal(
                           tooltip: 'Minimize assistant',
                           onPressed: onMinimize,
                           icon: const Icon(Icons.remove_rounded),
@@ -428,32 +433,6 @@ class _ChatPanel extends StatelessWidget {
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        SizedBox(
-                          width: 42,
-                          height: 42,
-                          child: PopupMenuButton<String>(
-                            tooltip: 'Quick prompts',
-                            enabled: !sending,
-                            padding: EdgeInsets.zero,
-                            icon: const Icon(Icons.add_rounded),
-                            onSelected: onPrompt,
-                            itemBuilder: (context) => quickActions
-                                .map(
-                                  (action) => PopupMenuItem(
-                                    value: action.prompt,
-                                    child: Row(
-                                      children: [
-                                        Icon(action.icon, size: 18),
-                                        const SizedBox(width: 9),
-                                        Flexible(child: Text(action.label)),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
                         Expanded(
                           child: TextField(
                             controller: controller,
@@ -461,30 +440,8 @@ class _ChatPanel extends StatelessWidget {
                             maxLines: 3,
                             textCapitalization: TextCapitalization.sentences,
                             decoration: InputDecoration(
-                              hintText: 'Ask...',
+                              hintText: 'Ask about what you are viewing...',
                               isDense: true,
-                              fillColor: LensColors.canvas,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 11,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide:
-                                    const BorderSide(color: LensColors.line),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide:
-                                    const BorderSide(color: LensColors.line),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(14),
-                                borderSide: const BorderSide(
-                                  color: LensColors.indigo,
-                                  width: 1.4,
-                                ),
-                              ),
                               suffixIcon: keyboardVisible
                                   ? IconButton(
                                       tooltip: 'Hide keyboard',
@@ -502,20 +459,32 @@ class _ChatPanel extends StatelessWidget {
                                 FocusManager.instance.primaryFocus?.unfocus(),
                           ),
                         ),
-                        const SizedBox(width: 7),
+                        PopupMenuButton<String>(
+                          tooltip: 'Quick prompts',
+                          enabled: !sending,
+                          icon: const Icon(Icons.bolt_rounded),
+                          onSelected: onPrompt,
+                          itemBuilder: (context) => quickActions
+                              .map(
+                                (action) => PopupMenuItem(
+                                  value: action.prompt,
+                                  child: Row(
+                                    children: [
+                                      Icon(action.icon, size: 18),
+                                      const SizedBox(width: 9),
+                                      Flexible(child: Text(action.label)),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                        const SizedBox(width: 8),
                         IconButton.filled(
                           tooltip: 'Send',
                           onPressed:
                               sending ? null : () => onPrompt(controller.text),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(42, 42),
-                            maximumSize: const Size(42, 42),
-                            padding: EdgeInsets.zero,
-                          ),
-                          icon: const Icon(
-                            Icons.arrow_upward_rounded,
-                            size: 20,
-                          ),
+                          icon: const Icon(Icons.arrow_upward_rounded),
                         ),
                       ],
                     ),
@@ -545,37 +514,38 @@ class _ChatWelcome extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
       children: [
         const Text(
-          'How can I help?',
-          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+          'Ask without leaving the content',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 7),
+        const Text(
+          'Choose a starting action or ask your own question. The response is grounded in the open content.',
+          style: TextStyle(color: LensColors.muted, height: 1.4),
+        ),
+        const SizedBox(height: 20),
         ...quickActions.map(
           (action) => Padding(
             padding: const EdgeInsets.only(bottom: 9),
             child: Material(
               color: Colors.white,
-              shape: RoundedRectangleBorder(
-                side: const BorderSide(color: LensColors.line),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              clipBehavior: Clip.antiAlias,
+              borderRadius: BorderRadius.circular(17),
               child: InkWell(
                 onTap: () => onPrompt(action.prompt),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(17),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Row(
                     children: [
-                      Icon(action.icon, color: LensColors.indigo, size: 20),
+                      Icon(action.icon, color: LensColors.violet, size: 20),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           action.label,
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
                         ),
                       ),
                       const Icon(
-                        Icons.chevron_right_rounded,
+                        Icons.arrow_forward_rounded,
                         color: LensColors.muted,
                         size: 18,
                       ),
@@ -598,152 +568,63 @@ class _ContentMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (message.isUser) {
-      return Align(
-        alignment: Alignment.centerRight,
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 330),
-          margin: const EdgeInsets.only(left: 42, bottom: 18),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          decoration: const BoxDecoration(
-            color: LensColors.indigo,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16),
-              topRight: Radius.circular(16),
-              bottomLeft: Radius.circular(16),
-              bottomRight: Radius.circular(5),
-            ),
-          ),
-          child: Text(
-            message.text,
-            style: const TextStyle(color: Colors.white, height: 1.4),
-          ),
+    return Align(
+      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 360),
+        margin: EdgeInsets.only(
+          left: message.isUser ? 42 : 0,
+          right: message.isUser ? 0 : 18,
+          bottom: 12,
         ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(
-                Icons.auto_awesome_rounded,
-                size: 16,
-                color: LensColors.indigo,
-              ),
-              SizedBox(width: 7),
-              Text(
-                'Career Loop',
-                style: TextStyle(
-                  color: LensColors.ink,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          MarkdownBody(
-            data: message.text,
-            selectable: true,
-            styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(
-                color: LensColors.ink,
-                fontSize: 14,
-                height: 1.45,
-              ),
-              h2: Theme.of(context).textTheme.titleLarge,
-              h3: Theme.of(context).textTheme.titleMedium,
-              listBullet: const TextStyle(color: LensColors.indigo),
-              tableBorder: TableBorder.all(color: LensColors.line),
-              tableCellsPadding: const EdgeInsets.all(6),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Align(
-            alignment: Alignment.centerRight,
-            child: NotionExportAction(
-              message: message,
-              compact: true,
-            ),
-          ),
-          if (message.practiceSet != null) ...[
-            const SizedBox(height: 10),
-            PracticeLaunchCard(practiceSet: message.practiceSet!),
-          ],
-          if (message.emailDraft != null) ...[
-            const SizedBox(height: 10),
-            _ContentEmailDraftCard(draft: message.emailDraft!),
-          ],
-          const SizedBox(height: 12),
-          CapabilityFooter(
-            tools: message.tools,
-            sources: message.sources,
-            compact: true,
-          ),
-          const SizedBox(height: 2),
-          const Divider(height: 1, color: LensColors.line),
-        ],
-      ),
-    );
-  }
-}
-
-class _ContentEmailDraftCard extends StatelessWidget {
-  final GeneralEmailDraft draft;
-
-  const _ContentEmailDraftCard({required this.draft});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-        color: LensColors.aqua.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: LensColors.aqua.withValues(alpha: .3),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+        decoration: BoxDecoration(
+          color: message.isUser ? LensColors.indigo : Colors.white,
+          border: message.isUser ? null : Border.all(color: LensColors.line),
+          borderRadius: BorderRadius.circular(18),
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.mark_email_unread_outlined,
-            color: Color(0xFF168D80),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Email ready for review',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  draft.subject,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 11.5,
+        child: message.isUser
+            ? Text(
+                message.text,
+                style: const TextStyle(color: Colors.white, height: 1.35),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  MarkdownBody(
+                    data: message.text,
+                    selectable: true,
+                    styleSheet: MarkdownStyleSheet(
+                      p: const TextStyle(
+                        color: LensColors.ink,
+                        fontSize: 13,
+                        height: 1.4,
+                      ),
+                      listBullet: const TextStyle(color: LensColors.indigo),
+                      tableBorder: TableBorder.all(color: LensColors.line),
+                      tableCellsPadding: const EdgeInsets.all(6),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              context.read<EmailRepository>().reviewDraft(draft);
-              context.push('/email-studio');
-            },
-            child: const Text('Review'),
-          ),
-        ],
+                  const SizedBox(height: 5),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: NotionExportAction(
+                      message: message,
+                      compact: true,
+                    ),
+                  ),
+                  if (message.practiceSet != null) ...[
+                    const SizedBox(height: 10),
+                    PracticeLaunchCard(practiceSet: message.practiceSet!),
+                  ],
+                  const SizedBox(height: 11),
+                  CapabilityFooter(
+                    tools: message.tools,
+                    sources: message.sources,
+                    compact: true,
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -768,7 +649,7 @@ class _ContentThinkingBubble extends StatelessWidget {
             ),
             SizedBox(width: 9),
             Text(
-              'Working on your answer…',
+              'Reading the open content...',
               style: TextStyle(color: LensColors.muted, fontSize: 11),
             ),
           ],

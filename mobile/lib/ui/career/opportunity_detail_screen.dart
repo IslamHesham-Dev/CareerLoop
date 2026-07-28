@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_icons/simple_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../data/api_client.dart';
 import '../../data/career_document_repository.dart';
 import '../../data/models.dart';
-import '../core/content_ai_overlay.dart';
+import '../../data/repositories.dart';
 import '../core/lens_components.dart';
 import 'career_document_viewer_screen.dart';
 
 class OpportunityDetailArgs {
   final JobOpportunity job;
   final OpportunityEvidence evidence;
+  final List<CareerCourseRecommendation> courses;
   final List<String> limitations;
 
   const OpportunityDetailArgs({
     required this.job,
     required this.evidence,
+    required this.courses,
     required this.limitations,
   });
 }
@@ -43,48 +46,38 @@ class CompanyLogo extends StatelessWidget {
       size: size * .48,
     );
     final url = logoUrl?.toString() ?? '';
-    return Semantics(
-      label: '$company logo',
-      image: true,
-      child: Container(
-        width: size,
-        height: size,
-        padding: EdgeInsets.all(size * .16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(size * .25),
-          border: Border.all(color: LensColors.line),
-        ),
-        child: url.isEmpty
-            ? fallback
-            : Image.network(
-                url,
-                fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => fallback,
-              ),
+    return Container(
+      width: size,
+      height: size,
+      padding: EdgeInsets.all(size * .16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size * .25),
+        border: Border.all(color: LensColors.line),
       ),
+      child: url.isEmpty
+          ? fallback
+          : Image.network(
+              url,
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => fallback,
+            ),
     );
   }
 }
 
-class OpportunityDetailScreen extends StatefulWidget {
+class OpportunityDetailScreen extends StatelessWidget {
   final OpportunityDetailArgs args;
 
   const OpportunityDetailScreen({super.key, required this.args});
 
-  @override
-  State<OpportunityDetailScreen> createState() =>
-      _OpportunityDetailScreenState();
-}
-
-class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
-  final _copilot = ContentAiOverlayController();
-
-  OpportunityDetailArgs get args => widget.args;
   JobOpportunity get job => args.job;
 
   @override
   Widget build(BuildContext context) {
+    final courses = args.courses
+        .where((course) => job.recommendedCourseIds.contains(course.id))
+        .toList();
     return Scaffold(
       backgroundColor: LensColors.canvas,
       appBar: AppBar(
@@ -96,105 +89,57 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
           onPressed: () => context.pop(),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
-        title: const Text('Job details'),
+        title: const Text('Job match'),
       ),
       bottomNavigationBar: _ActionBar(
-        onAskAi: _copilot.open,
+        onAskAi: () => _askAi(context),
         onApply: () => _open(job.url),
       ),
-      body: ContentAiOverlay(
-        key: ValueKey('job-copilot-${job.id}'),
-        controller: _copilot,
-        title: 'Job Copilot',
-        subtitle: '${job.title} · ${job.company}',
-        contextInstruction: _copilotContext,
-        quickActions: [
-          ContentAiQuickAction(
-            icon: Icons.fact_check_outlined,
-            label: 'Explain why this fits me',
-            prompt:
-                'Explain why ${job.title} at ${job.company} fits my profile. '
-                'Cite the profile source behind each supported claim and mark '
-                'anything inferred.',
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+        children: [
+          _PositionHeader(job: job),
+          const SizedBox(height: 14),
+          _ListingFacts(job: job),
+          const SizedBox(height: 24),
+          const _SectionTitle(
+            title: 'Why this role matches',
+            subtitle: 'Based on your search preferences and connected profile.',
           ),
-          ContentAiQuickAction(
-            icon: Icons.manage_search_rounded,
-            label: 'Review the requirements',
-            prompt: 'Review this opening against my profile evidence. Tell me '
-                'what is clearly supported and what I should verify on the '
-                'employer page.',
-          ),
-          ContentAiQuickAction(
-            icon: Icons.edit_document,
-            label: 'Prepare my application',
-            prompt: 'Help me prepare a concise application strategy for this '
-                'specific role using only verified profile evidence.',
+          const SizedBox(height: 11),
+          _FitCard(job: job, evidence: args.evidence),
+          const SizedBox(height: 24),
+          _ApplicationDocuments(job: job),
+          const SizedBox(height: 24),
+          _SkillMap(job: job),
+          const SizedBox(height: 24),
+          _QualificationPath(courses: courses),
+          const SizedBox(height: 18),
+          _EvidenceDisclosure(
+            evidence: args.evidence,
+            limitations: args.limitations,
           ),
         ],
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 92),
-          children: [
-            _PositionHeader(job: job),
-            const SizedBox(height: 14),
-            _ListingFacts(job: job),
-            if (job.requiredSkills.isNotEmpty) ...[
-              const SizedBox(height: 26),
-              const _SectionHeading('Role skills'),
-              const SizedBox(height: 11),
-              _RoleSkills(skills: job.requiredSkills),
-            ],
-            const SizedBox(height: 26),
-            const _SectionHeading('Profile evidence'),
-            const SizedBox(height: 11),
-            _ProfileMatchCard(
-              job: job,
-              limitations: args.limitations,
-            ),
-            const SizedBox(height: 26),
-            _ApplicationDocuments(job: job),
-          ],
-        ),
       ),
     );
   }
 
-  String get _copilotContext {
-    final sources = _connectedSources(args.evidence);
-    final citations = job.profileEvidenceCitations
-        .map(
-          (item) => '${item.skill} — ${item.evidence} [${item.sourceLabel}]',
-        )
-        .join(' | ');
-    return '''
-You are the in-page CareerLoop Job Copilot for one specific opening. Keep the
-conversation about ${job.title} at ${job.company}; never redirect the user to
-another chat. The listing URL is ${job.url}. Listing facts: location
-${job.location}; category ${job.category ?? 'not supplied'}; sponsorship
-${job.sponsorship ?? 'not supplied'}; degrees
-${job.degrees.isEmpty ? 'not supplied' : job.degrees.join(', ')}.
-
-The current match reasons are: ${job.matchReasons.join(' | ')}.
-The role skill model expects: ${job.requiredSkills.join(', ')}.
-Profile-aligned terms are: ${job.profileSkillMatches.join(', ')}.
-Verified source citations: ${citations.isEmpty ? 'none returned' : citations}.
-Evaluation summary: ${job.assessmentSummary}.
-Search-intent matches are: ${job.keywordMatches.join(', ')}.
-Connected profile sources: ${sources.isEmpty ? 'none' : sources.join(', ')}.
-Known limitations: ${args.limitations.join(' | ')}.
-
-For every personal claim, cite the provided source and evidence. Be candid:
-do not inflate weak or self-reported evidence, do not convert repository usage
-into mastery, and say when the available profile cannot support a requirement.
-Separate employer facts, verified profile evidence, and inference clearly.
-''';
+  void _askAi(BuildContext context) {
+    context.read<AdvisorRepository>().send(
+          'Deep-evaluate my fit for ${job.title} at ${job.company}. Use my '
+          'full transcript, imported LinkedIn PDF, and connected GitHub '
+          'project evidence. The live application page is ${job.url}. '
+          'Known listing metadata: category ${job.category ?? 'not supplied'}, '
+          'locations ${job.location}, sponsorship '
+          '${job.sponsorship ?? 'not supplied'}, and degrees '
+          '${job.degrees.isEmpty ? 'not supplied' : job.degrees.join(', ')}. '
+          'Validate the current inferred gaps '
+          '(${job.inferredSkillGaps.join(', ')}) against my evidence, clearly '
+          'separate facts from inferences, and build a focused qualification '
+          'and application plan.',
+        );
+    context.go('/advisor');
   }
-
-  static List<String> _connectedSources(OpportunityEvidence evidence) => [
-        if (evidence.academicTranscript) 'Academic transcript',
-        if (evidence.linkedInPdf) 'LinkedIn profile PDF',
-        if (evidence.github) 'GitHub',
-        if (evidence.resume) 'Resume',
-      ];
 
   static Future<void> _open(Uri uri) async {
     if (uri.toString().isEmpty) return;
@@ -255,9 +200,8 @@ class _PositionHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Icon(
                 Icons.location_on_outlined,
@@ -268,10 +212,29 @@ class _PositionHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   job.location,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: LensColors.muted,
                     fontSize: 12,
                     height: 1.35,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '${job.matchScore}% profile fit',
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
@@ -321,18 +284,13 @@ class _ListingFacts extends StatelessWidget {
           label: 'Degree',
           value: job.degrees.join(', '),
         ),
-      if (job.locations.length > 1)
-        (
-          icon: Icons.map_outlined,
-          label: 'Locations',
-          value: job.locations.join(', '),
-        ),
       (
         icon: Icons.verified_outlined,
         label: 'Status',
         value: job.active ? 'Active listing' : 'Status unavailable',
       ),
     ];
+    if (facts.isEmpty) return const SizedBox.shrink();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 4),
       decoration: BoxDecoration(
@@ -405,185 +363,129 @@ class _ListingFacts extends StatelessWidget {
   }
 }
 
-class _RoleSkills extends StatelessWidget {
-  final List<String> skills;
+class _FitCard extends StatelessWidget {
+  final JobOpportunity job;
+  final OpportunityEvidence evidence;
 
-  const _RoleSkills({required this.skills});
+  const _FitCard({required this.job, required this.evidence});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(15),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LensColors.line),
-      ),
-      child: Wrap(
-        spacing: 7,
-        runSpacing: 7,
-        children: skills
-            .map(
-              (skill) => Chip(
-                label: Text(skill),
-                visualDensity: VisualDensity.compact,
-                side: const BorderSide(color: LensColors.line),
-                backgroundColor: LensColors.canvas,
+    return LensCard(
+      padding: const EdgeInsets.all(17),
+      child: Column(
+        children: [
+          if (job.matchReasons.isEmpty)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'No specific match reasons were returned for this role.',
+                style: TextStyle(color: LensColors.muted, fontSize: 12),
               ),
             )
-            .toList(),
+          else
+            ...job.matchReasons.map(
+              (reason) => _ReasonRow(
+                icon: Icons.check_circle_rounded,
+                color: LensColors.aqua,
+                text: reason,
+              ),
+            ),
+          const Divider(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _EvidenceCount(
+                  value: '${job.profileSkillMatches.length}',
+                  label: 'Profile signals',
+                ),
+              ),
+              Container(width: 1, height: 36, color: LensColors.line),
+              Expanded(
+                child: _EvidenceCount(
+                  value: '${job.keywordMatches.length}',
+                  label: 'Preference matches',
+                ),
+              ),
+              Container(width: 1, height: 36, color: LensColors.line),
+              Expanded(
+                child: _EvidenceCount(
+                  value: '${_connectedCount(evidence)}',
+                  label: 'Sources used',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static int _connectedCount(OpportunityEvidence evidence) => [
+        evidence.academicTranscript,
+        evidence.linkedInPdf,
+        evidence.github,
+        evidence.resume,
+      ].where((value) => value).length;
+}
+
+class _ReasonRow extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String text;
+
+  const _ReasonRow({
+    required this.icon,
+    required this.color,
+    required this.text,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 9),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 17, color: color),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 12, height: 1.4),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _ProfileMatchCard extends StatelessWidget {
-  final JobOpportunity job;
-  final List<String> limitations;
+class _EvidenceCount extends StatelessWidget {
+  final String value;
+  final String label;
 
-  const _ProfileMatchCard({
-    required this.job,
-    required this.limitations,
-  });
+  const _EvidenceCount({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) {
-    final citations = job.profileEvidenceCitations;
-    return LensCard(
-      padding: const EdgeInsets.all(17),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (job.assessmentSummary.isNotEmpty) ...[
-            Text(
-              job.assessmentSummary,
-              style: const TextStyle(
-                color: LensColors.ink,
-                fontSize: 13,
-                height: 1.45,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 15),
-          ],
-          if (citations.isNotEmpty)
-            ...citations.take(6).map(
-                  (citation) => Padding(
-                    padding: const EdgeInsets.only(bottom: 9),
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: LensColors.canvas,
-                        borderRadius: BorderRadius.circular(13),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(
-                            Icons.verified_outlined,
-                            color: LensColors.aqua,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 9),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        citation.skill,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius:
-                                            BorderRadius.circular(999),
-                                        border:
-                                            Border.all(color: LensColors.line),
-                                      ),
-                                      child: Text(
-                                        citation.sourceLabel,
-                                        style: const TextStyle(
-                                          color: LensColors.indigo,
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  citation.evidence,
-                                  style: const TextStyle(
-                                    color: LensColors.muted,
-                                    fontSize: 11.5,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                )
-          else if (job.matchReasons.isEmpty)
-            const Text(
-              'No connected profile evidence supports this role yet. The '
-              'result is based on your search preferences only.',
-              style: TextStyle(color: LensColors.muted, fontSize: 12),
-            )
-          else
-            ...job.matchReasons.map(
-              (reason) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(
-                      Icons.info_outline_rounded,
-                      size: 17,
-                      color: LensColors.indigo,
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Text(
-                        reason,
-                        style: const TextStyle(fontSize: 12, height: 1.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          if (limitations.isNotEmpty) ...[
-            const Divider(height: 22),
-            Text(
-              limitations.first,
-              style: const TextStyle(
-                color: LensColors.muted,
-                fontSize: 11,
-                height: 1.4,
-              ),
-            ),
-          ],
-        ],
-      ),
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: LensColors.indigo,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: LensColors.muted, fontSize: 11),
+        ),
+      ],
     );
   }
 }
@@ -602,7 +504,11 @@ class _ApplicationDocuments extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionHeading('Application documents'),
+            const _SectionTitle(
+              title: 'Application documents',
+              subtitle:
+                  'Generate role-specific files, then review and refine them before applying.',
+            ),
             const SizedBox(height: 11),
             Container(
               padding: const EdgeInsets.all(15),
@@ -633,7 +539,7 @@ class _ApplicationDocuments extends StatelessWidget {
                     icon: Icons.mail_outline_rounded,
                     title: 'Tailored cover letter',
                     subtitle: coverLetter == null
-                        ? 'Your profile aligned to ${job.company}'
+                        ? 'Your evidence aligned to ${job.company}'
                         : 'Version ${coverLetter.version} · PDF ready',
                     ready: coverLetter != null,
                     loading: repository.isBusy(job, 'cover_letter'),
@@ -796,14 +702,326 @@ class _DocumentRow extends StatelessWidget {
   }
 }
 
-class _SectionHeading extends StatelessWidget {
-  final String text;
+class _SkillMap extends StatelessWidget {
+  final JobOpportunity job;
 
-  const _SectionHeading(this.text);
+  const _SkillMap({required this.job});
 
   @override
   Widget build(BuildContext context) {
-    return Text(text, style: Theme.of(context).textTheme.titleLarge);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionTitle(
+          title: 'Strengths and gaps',
+          subtitle:
+              'Gaps are inferred from the role family until the employer page is reviewed.',
+        ),
+        const SizedBox(height: 11),
+        LensCard(
+          padding: const EdgeInsets.all(17),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _TagGroup(
+                label: 'Supported by your profile',
+                emptyLabel: 'No explicit matching skill was detected yet.',
+                values: job.profileSkillMatches,
+                color: LensColors.aqua,
+                icon: Icons.verified_rounded,
+              ),
+              const SizedBox(height: 18),
+              _TagGroup(
+                label: 'Gaps to verify',
+                emptyLabel: 'No role-family gaps were inferred.',
+                values: job.inferredSkillGaps,
+                color: LensColors.amber,
+                icon: Icons.add_task_rounded,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TagGroup extends StatelessWidget {
+  final String label;
+  final String emptyLabel;
+  final List<String> values;
+  final Color color;
+  final IconData icon;
+
+  const _TagGroup({
+    required this.label,
+    required this.emptyLabel,
+    required this.values,
+    required this.color,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        if (values.isEmpty)
+          Text(
+            emptyLabel,
+            style: const TextStyle(color: LensColors.muted, fontSize: 12),
+          )
+        else
+          Wrap(
+            spacing: 7,
+            runSpacing: 7,
+            children: values
+                .map(
+                  (value) => Chip(
+                    avatar: Icon(icon, size: 14, color: color),
+                    label: Text(value),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                )
+                .toList(),
+          ),
+      ],
+    );
+  }
+}
+
+class _QualificationPath extends StatelessWidget {
+  final List<CareerCourseRecommendation> courses;
+
+  const _QualificationPath({required this.courses});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionTitle(
+          title: 'Recommended learning',
+          subtitle: 'Courses mapped to the inferred gaps for this role.',
+        ),
+        const SizedBox(height: 11),
+        if (courses.isEmpty)
+          const LensCard(
+            child: Text(
+              'No catalogue course maps strongly to this role yet. Ask AI for a focused preparation plan.',
+              style: TextStyle(color: LensColors.muted, height: 1.4),
+            ),
+          )
+        else
+          ...courses.asMap().entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _CourseStep(
+                    number: entry.key + 1,
+                    course: entry.value,
+                  ),
+                ),
+              ),
+      ],
+    );
+  }
+}
+
+class _CourseStep extends StatelessWidget {
+  final int number;
+  final CareerCourseRecommendation course;
+
+  const _CourseStep({required this.number, required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    return LensCard(
+      onTap: () => launchUrl(
+        course.url,
+        mode: LaunchMode.externalApplication,
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 45,
+                height: 45,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0056D2).withValues(alpha: .09),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  SimpleIcons.coursera,
+                  color: Color(0xFF0056D2),
+                  size: 23,
+                ),
+              ),
+              Positioned(
+                right: -4,
+                top: -5,
+                child: CircleAvatar(
+                  radius: 9,
+                  backgroundColor: LensColors.ink,
+                  child: Text(
+                    '$number',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  course.provider,
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  course.title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.25,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  '${course.level} · ${course.duration}',
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 11,
+                  ),
+                ),
+                if (course.addressesSkills.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Addresses ${course.addressesSkills.join(', ')}',
+                    style: const TextStyle(
+                      color: LensColors.aqua,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const Icon(Icons.arrow_outward_rounded, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+class _EvidenceDisclosure extends StatelessWidget {
+  final OpportunityEvidence evidence;
+  final List<String> limitations;
+
+  const _EvidenceDisclosure({
+    required this.evidence,
+    required this.limitations,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final used = <String>[
+      if (evidence.academicTranscript) 'Academic transcript',
+      if (evidence.linkedInPdf) 'LinkedIn profile PDF',
+      if (evidence.github) 'GitHub',
+      if (evidence.resume) 'Resume',
+    ];
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: LensColors.line),
+      ),
+      child: ExpansionTile(
+        shape: const Border(),
+        collapsedShape: const Border(),
+        title: const Text(
+          'Evidence used',
+          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+        subtitle: Text(
+          used.isEmpty ? 'Preference signals only' : used.join(' · '),
+          style: const TextStyle(color: LensColors.muted, fontSize: 11),
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        children: [
+          if (limitations.isEmpty)
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'No additional limitations were reported.',
+                style: TextStyle(color: LensColors.muted, fontSize: 12),
+              ),
+            )
+          else
+            ...limitations.map(
+              (item) => _ReasonRow(
+                icon: Icons.info_outline_rounded,
+                color: LensColors.muted,
+                text: item,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _SectionTitle({
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            color: LensColors.muted,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -826,20 +1044,14 @@ class _ActionBar extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
                 onPressed: onAskAi,
                 icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                label: const Text('Copilot'),
+                label: const Text('Ask CareerLoop'),
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               child: FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size.fromHeight(48),
-                ),
                 onPressed: onApply,
                 icon: const Icon(Icons.open_in_new_rounded, size: 18),
                 label: const Text('View opening'),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
@@ -47,6 +48,24 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
         children: [
+          Row(
+            children: [
+              Icon(
+                Icons.calendar_today_outlined,
+                size: 16,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              const SizedBox(width: 7),
+              Text(
+                academic.context?.currentSeason ?? 'Winter 2024',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           Text(
             widget.course.title,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -79,9 +98,19 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
           else if (grades != null) ...[
             _CourseSummary(grades: grades, university: university),
             const SizedBox(height: 28),
-            Text(
-              'Assessments',
-              style: Theme.of(context).textTheme.titleLarge,
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Assessments',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                Text(
+                  '${grades.assessments.length} items',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (grades.assessments.isEmpty)
@@ -97,6 +126,17 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
                   child: _AssessmentCard(assessment: assessment),
                 ),
               ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () {
+                context.read<AdvisorRepository>().send(
+                      'Analyze ${widget.course.code}. Explain the grades, identify the weakest assessment, and make a practical improvement plan.',
+                    );
+                context.go('/advisor');
+              },
+              icon: const Icon(Icons.auto_awesome_outlined),
+              label: const Text('Discuss this course'),
+            ),
           ],
         ],
       ),
