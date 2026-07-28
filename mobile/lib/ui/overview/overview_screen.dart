@@ -48,16 +48,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 14, 12, 0),
               sliver: SliverToBoxAdapter(
-                child: Row(
-                  children: [
-                    const Expanded(child: LensLogo(size: 36)),
-                    IconButton(
-                      tooltip: 'Settings',
-                      onPressed: () => context.push('/settings'),
-                      icon: const Icon(Icons.settings_outlined),
-                    ),
-                  ],
-                ),
+                child: LensLogo(size: 36),
               ),
             ),
             SliverPadding(
@@ -67,11 +58,6 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   Text(
                     'Today',
                     style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Your current academic and career priorities.',
-                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 20),
                   _AdvisorySemesterPicker(

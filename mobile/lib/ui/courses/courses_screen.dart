@@ -109,12 +109,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         'Learn',
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        academic.context?.currentSeason ??
-                            'Courses and study materials',
-                        style: const TextStyle(color: LensColors.muted),
-                      ),
                     ],
                   ),
                 ),

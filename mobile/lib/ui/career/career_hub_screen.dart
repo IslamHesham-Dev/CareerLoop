@@ -34,11 +34,6 @@ class CareerHubScreen extends StatelessWidget {
             'Career',
             style: Theme.of(context).textTheme.headlineMedium,
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Find a relevant role, then prepare a reviewed application.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
           const SizedBox(height: 24),
           _CareerAction(
             icon: Icons.search_rounded,

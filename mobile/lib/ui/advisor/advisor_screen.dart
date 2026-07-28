@@ -108,25 +108,12 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 ),
                 const SizedBox(width: 13),
                 const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'CareerLoop Copilot',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Academic and career context',
-                        style: TextStyle(
-                          color: LensColors.muted,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'CareerLoop Copilot',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 IconButton(

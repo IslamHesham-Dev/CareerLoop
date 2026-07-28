@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
+import '../../data/career_document_repository.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
+import '../../data/email_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
 import '../../data/tone_profile_repository.dart';
@@ -48,30 +50,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Profile',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'The information CareerLoop can use on your behalf.',
-                      style: TextStyle(color: LensColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton.filledTonal(
-                tooltip: 'Settings',
-                onPressed: () => context.push('/settings'),
-                icon: const Icon(Icons.tune_rounded),
-              ),
-            ],
+          Text(
+            'Profile',
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 20),
           _ProfileHero(
@@ -148,17 +129,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
             detail: '',
           ),
           const SizedBox(height: 12),
-          _EvidenceSource(
-            icon: Icons.settings_outlined,
-            title: 'Settings and integrations',
-            subtitle: 'Notion, privacy, data controls, and sign out',
-            status: 'OPEN',
-            color: LensColors.muted,
-            onTap: () => context.push('/settings'),
-          ),
+          _SignOutButton(auth: context.watch<AuthRepository>()),
         ],
       ),
     );
+  }
+}
+
+class _SignOutButton extends StatelessWidget {
+  final AuthRepository auth;
+
+  const _SignOutButton({required this.auth});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: LensColors.rose,
+        ),
+        onPressed: auth.isBusy ? null : () => _signOut(context),
+        icon: const Icon(Icons.logout_rounded),
+        label: const Text('Sign out and close portal session'),
+      ),
+    );
+  }
+
+  Future<void> _signOut(BuildContext context) async {
+    final academic = context.read<AcademicRepository>();
+    final advisor = context.read<AdvisorRepository>();
+    final cms = context.read<CmsRepository>();
+    final notion = context.read<NotionRepository>();
+    final career = context.read<CareerProfileRepository>();
+    final github = context.read<GithubProfileRepository>();
+    final resume = context.read<CurrentCvRepository>();
+    final documents = context.read<CareerDocumentRepository>();
+    final tone = context.read<ToneProfileRepository>();
+    final emails = context.read<EmailRepository>();
+    await advisor.reset();
+    academic.clearLocal();
+    cms.clearLocal();
+    notion.clearLocal();
+    career.markSessionChanged();
+    github.markSessionChanged();
+    resume.markSessionChanged();
+    tone.markSessionChanged();
+    emails.reset();
+    documents.clear();
+    await auth.logout();
   }
 }
 

@@ -102,23 +102,17 @@ class OpportunityDetailScreen extends StatelessWidget {
           const SizedBox(height: 14),
           _ListingFacts(job: job),
           const SizedBox(height: 24),
-          const _SectionTitle(
-            title: 'Why this role matches',
-            subtitle: 'Based on your search preferences and connected profile.',
-          ),
+          const _SectionTitle(title: 'Why this role matches'),
           const SizedBox(height: 11),
-          _FitCard(job: job, evidence: args.evidence),
-          const SizedBox(height: 24),
-          _ApplicationDocuments(job: job),
-          const SizedBox(height: 24),
-          _SkillMap(job: job),
-          const SizedBox(height: 24),
-          _QualificationPath(courses: courses),
-          const SizedBox(height: 18),
-          _EvidenceDisclosure(
+          _FitCard(
+            job: job,
             evidence: args.evidence,
             limitations: args.limitations,
           ),
+          const SizedBox(height: 24),
+          _ApplicationDocuments(job: job),
+          const SizedBox(height: 24),
+          _QualificationPath(courses: courses),
         ],
       ),
     );
@@ -366,14 +360,20 @@ class _ListingFacts extends StatelessWidget {
 class _FitCard extends StatelessWidget {
   final JobOpportunity job;
   final OpportunityEvidence evidence;
+  final List<String> limitations;
 
-  const _FitCard({required this.job, required this.evidence});
+  const _FitCard({
+    required this.job,
+    required this.evidence,
+    required this.limitations,
+  });
 
   @override
   Widget build(BuildContext context) {
     return LensCard(
       padding: const EdgeInsets.all(17),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (job.matchReasons.isEmpty)
             const Align(
@@ -391,42 +391,66 @@ class _FitCard extends StatelessWidget {
                 text: reason,
               ),
             ),
-          const Divider(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: _EvidenceCount(
-                  value: '${job.profileSkillMatches.length}',
-                  label: 'Profile signals',
-                ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              onPressed: () => _showEvidenceUsed(context),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                visualDensity: VisualDensity.compact,
               ),
-              Container(width: 1, height: 36, color: LensColors.line),
-              Expanded(
-                child: _EvidenceCount(
-                  value: '${job.keywordMatches.length}',
-                  label: 'Preference matches',
-                ),
-              ),
-              Container(width: 1, height: 36, color: LensColors.line),
-              Expanded(
-                child: _EvidenceCount(
-                  value: '${_connectedCount(evidence)}',
-                  label: 'Sources used',
-                ),
-              ),
-            ],
+              icon: const Icon(Icons.fact_check_outlined, size: 16),
+              label: const Text('Evidence used'),
+            ),
           ),
         ],
       ),
     );
   }
 
-  static int _connectedCount(OpportunityEvidence evidence) => [
-        evidence.academicTranscript,
-        evidence.linkedInPdf,
-        evidence.github,
-        evidence.resume,
-      ].where((value) => value).length;
+  void _showEvidenceUsed(BuildContext context) {
+    final used = <String>[
+      if (evidence.academicTranscript) 'Academic transcript',
+      if (evidence.linkedInPdf) 'LinkedIn profile PDF',
+      if (evidence.github) 'GitHub',
+      if (evidence.resume) 'Resume',
+    ];
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Evidence used'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                used.isEmpty ? 'Preference signals only' : used.join(' · '),
+                style: const TextStyle(color: LensColors.muted, fontSize: 12),
+              ),
+              if (limitations.isNotEmpty) ...[
+                const SizedBox(height: 14),
+                ...limitations.map(
+                  (item) => _ReasonRow(
+                    icon: Icons.info_outline_rounded,
+                    color: LensColors.muted,
+                    text: item,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _ReasonRow extends StatelessWidget {
@@ -461,35 +485,6 @@ class _ReasonRow extends StatelessWidget {
   }
 }
 
-class _EvidenceCount extends StatelessWidget {
-  final String value;
-  final String label;
-
-  const _EvidenceCount({required this.value, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: LensColors.indigo,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: LensColors.muted, fontSize: 11),
-        ),
-      ],
-    );
-  }
-}
-
 class _ApplicationDocuments extends StatelessWidget {
   final JobOpportunity job;
 
@@ -504,11 +499,7 @@ class _ApplicationDocuments extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionTitle(
-              title: 'Application documents',
-              subtitle:
-                  'Generate role-specific files, then review and refine them before applying.',
-            ),
+            const _SectionTitle(title: 'Application documents'),
             const SizedBox(height: 11),
             Container(
               padding: const EdgeInsets.all(15),
@@ -702,99 +693,6 @@ class _DocumentRow extends StatelessWidget {
   }
 }
 
-class _SkillMap extends StatelessWidget {
-  final JobOpportunity job;
-
-  const _SkillMap({required this.job});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _SectionTitle(
-          title: 'Strengths and gaps',
-          subtitle:
-              'Gaps are inferred from the role family until the employer page is reviewed.',
-        ),
-        const SizedBox(height: 11),
-        LensCard(
-          padding: const EdgeInsets.all(17),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _TagGroup(
-                label: 'Supported by your profile',
-                emptyLabel: 'No explicit matching skill was detected yet.',
-                values: job.profileSkillMatches,
-                color: LensColors.aqua,
-                icon: Icons.verified_rounded,
-              ),
-              const SizedBox(height: 18),
-              _TagGroup(
-                label: 'Gaps to verify',
-                emptyLabel: 'No role-family gaps were inferred.',
-                values: job.inferredSkillGaps,
-                color: LensColors.amber,
-                icon: Icons.add_task_rounded,
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TagGroup extends StatelessWidget {
-  final String label;
-  final String emptyLabel;
-  final List<String> values;
-  final Color color;
-  final IconData icon;
-
-  const _TagGroup({
-    required this.label,
-    required this.emptyLabel,
-    required this.values,
-    required this.color,
-    required this.icon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        if (values.isEmpty)
-          Text(
-            emptyLabel,
-            style: const TextStyle(color: LensColors.muted, fontSize: 12),
-          )
-        else
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: values
-                .map(
-                  (value) => Chip(
-                    avatar: Icon(icon, size: 14, color: color),
-                    label: Text(value),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                )
-                .toList(),
-          ),
-      ],
-    );
-  }
-}
-
 class _QualificationPath extends StatelessWidget {
   final List<CareerCourseRecommendation> courses;
 
@@ -805,10 +703,7 @@ class _QualificationPath extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(
-          title: 'Recommended learning',
-          subtitle: 'Courses mapped to the inferred gaps for this role.',
-        ),
+        const _SectionTitle(title: 'Recommended learning'),
         const SizedBox(height: 11),
         if (courses.isEmpty)
           const LensCard(
@@ -935,92 +830,16 @@ class _CourseStep extends StatelessWidget {
   }
 }
 
-class _EvidenceDisclosure extends StatelessWidget {
-  final OpportunityEvidence evidence;
-  final List<String> limitations;
-
-  const _EvidenceDisclosure({
-    required this.evidence,
-    required this.limitations,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final used = <String>[
-      if (evidence.academicTranscript) 'Academic transcript',
-      if (evidence.linkedInPdf) 'LinkedIn profile PDF',
-      if (evidence.github) 'GitHub',
-      if (evidence.resume) 'Resume',
-    ];
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: LensColors.line),
-      ),
-      child: ExpansionTile(
-        shape: const Border(),
-        collapsedShape: const Border(),
-        title: const Text(
-          'Evidence used',
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          used.isEmpty ? 'Preference signals only' : used.join(' · '),
-          style: const TextStyle(color: LensColors.muted, fontSize: 11),
-        ),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        children: [
-          if (limitations.isEmpty)
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'No additional limitations were reported.',
-                style: TextStyle(color: LensColors.muted, fontSize: 12),
-              ),
-            )
-          else
-            ...limitations.map(
-              (item) => _ReasonRow(
-                icon: Icons.info_outline_rounded,
-                color: LensColors.muted,
-                text: item,
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SectionTitle extends StatelessWidget {
   final String title;
-  final String subtitle;
 
-  const _SectionTitle({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          subtitle,
-          style: const TextStyle(
-            color: LensColors.muted,
-            fontSize: 12,
-            height: 1.4,
-          ),
-        ),
-      ],
+    return Text(
+      title,
+      style: Theme.of(context).textTheme.titleLarge,
     );
   }
 }

@@ -223,13 +223,21 @@ class _ReadinessCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cv = cvRepository.currentCv;
+    final ready = gmailConnected && cv != null;
     return LensCard(
       padding: const EdgeInsets.all(17),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Ready to send?',
-              style: Theme.of(context).textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(
+                child: Text('Ready to send?',
+                    style: Theme.of(context).textTheme.titleMedium),
+              ),
+              ReadinessPill(ready: ready),
+            ],
+          ),
           const SizedBox(height: 13),
           _SourceRow(
             icon: SimpleIcons.gmail,
@@ -519,21 +527,33 @@ class _ApplicationReview extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(
-                    Icons.pause_circle_outline_rounded,
-                    color: LensColors.indigo,
-                    size: 19,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Draft ready for review',
-                    style: TextStyle(
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: LensColors.indigo.withValues(alpha: .1),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: const Icon(
+                      Icons.mark_email_unread_rounded,
                       color: LensColors.indigo,
-                      fontWeight: FontWeight.w800,
+                      size: 17,
                     ),
                   ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Draft ready for review',
+                      style: TextStyle(
+                        color: LensColors.indigo,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  ReadinessPill(ready: ready),
                 ],
               ),
               const SizedBox(height: 14),

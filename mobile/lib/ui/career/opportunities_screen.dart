@@ -931,23 +931,6 @@ class _JobCard extends StatelessWidget {
                   ),
                 ),
           ],
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '${job.inferredSkillGaps.length} gaps · '
-                  '${job.recommendedCourseIds.length} recommended courses',
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              const Icon(Icons.chevron_right_rounded, size: 21),
-            ],
-          ),
         ],
       ),
     );

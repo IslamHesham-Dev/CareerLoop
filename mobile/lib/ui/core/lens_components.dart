@@ -161,6 +161,53 @@ class GradientPill extends StatelessWidget {
   }
 }
 
+/// Compact status pill for "ready to send" style review screens (quick
+/// apply, email studio) — shows at a glance whether a draft still needs
+/// something before it can go out.
+class ReadinessPill extends StatelessWidget {
+  final bool ready;
+  final String readyLabel;
+  final String pendingLabel;
+
+  const ReadinessPill({
+    super.key,
+    required this.ready,
+    this.readyLabel = 'Ready to send',
+    this.pendingLabel = 'Needs attention',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ready ? LensColors.aqua : LensColors.amber;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            ready ? Icons.check_circle_rounded : Icons.schedule_rounded,
+            size: 13,
+            color: color,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            ready ? readyLabel : pendingLabel,
+            style: TextStyle(
+              color: color,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class PageHeading extends StatelessWidget {
   final String eyebrow;
   final String title;

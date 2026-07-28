@@ -236,6 +236,18 @@ class _EmailReadiness extends StatelessWidget {
     return LensCard(
       child: Column(
         children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Before you send',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              ReadinessPill(ready: gmail.gmailConnected),
+            ],
+          ),
+          const SizedBox(height: 13),
           _ReadyRow(
             icon: SimpleIcons.gmail,
             title: gmail.gmailConnected
@@ -496,30 +508,41 @@ class _EmailReview extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.pause_circle_outline_rounded,
-                    color: LensColors.indigo,
-                    size: 18,
-                  ),
-                  SizedBox(width: 7),
-                  Text(
-                    'Draft ready for review',
-                    style: TextStyle(
-                      color: LensColors.indigo,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
+              Container(
+                width: 30,
+                height: 30,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.mark_email_unread_rounded,
+                  color: LensColors.indigo,
+                  size: 15,
+                ),
               ),
-              const Spacer(),
-              TextButton(
-                  onPressed: onStartOver, child: const Text('Start over')),
+              const SizedBox(width: 9),
+              const Expanded(
+                child: Text(
+                  'Draft ready for review',
+                  style: TextStyle(
+                    color: LensColors.indigo,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              ReadinessPill(ready: ready),
             ],
           ),
-          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: onStartOver,
+              child: const Text('Start over'),
+            ),
+          ),
+          const SizedBox(height: 6),
           Text(
             draft.recipientEmail,
             style: const TextStyle(
