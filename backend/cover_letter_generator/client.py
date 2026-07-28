@@ -60,14 +60,17 @@ class CoverLetterGenerator:
         career_data: dict,
         job_posting: dict,
         custom_input: str = "",
+        tone_reference: str = "",
     ) -> str:
         """Generate a personalized cover letter.
-        
+
         Args:
             career_data: Extracted CV/profile with name, skills, experience, education, summary
             job_posting: Job posting with title, description, company, requirements
             custom_input: User-provided context, preferences, or specific details
-            
+            tone_reference: Optional style reference from app.tone.build_tone_reference,
+                so this legacy convenience method matches the student's own voice too.
+
         Returns:
             A formatted cover letter as a string
         """
@@ -78,6 +81,7 @@ class CoverLetterGenerator:
             },
             job_posting=job_posting,
             custom_input=custom_input,
+            tone_reference=tone_reference,
             compile_pdf=False,
         )
         return "\n\n".join(
@@ -169,15 +173,18 @@ Generate only the cover letter text, without any additional commentary or metada
         job_posting: dict,
         custom_input: str = "",
         filename: str | None = None,
+        tone_reference: str = "",
     ) -> bytes:
         """Generate a cover letter as a PDF file.
-        
+
         Args:
             career_data: Extracted CV/profile with name, skills, experience, education, summary
             job_posting: Job posting with title, description, company, requirements
             custom_input: User-provided context, preferences, or specific details
             filename: Optional filename for the PDF (used in metadata)
-            
+            tone_reference: Optional style reference from app.tone.build_tone_reference,
+                so this legacy convenience method matches the student's own voice too.
+
         Returns:
             PDF file as bytes
         """
@@ -188,6 +195,7 @@ Generate only the cover letter text, without any additional commentary or metada
             },
             job_posting=job_posting,
             custom_input=custom_input,
+            tone_reference=tone_reference,
         )
         if result.pdf_bytes is None:
             raise RuntimeError(

@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.config import Settings
 from app.opportunities import OpportunityService
 from app.sessions.models import StudentSession
+from app.tone import ToneMiddleware, ToneProfile
 
 
 class PracticeQuestionInput(BaseModel):
@@ -343,6 +344,7 @@ def build_agent(student: StudentSession, settings: Settings):
         """Generate a personalized cover letter for a job opportunity.
         Use this when the student wants to create a cover letter for a specific job.
         Combines extracted CV/LinkedIn data with job posting details."""
+        from app.tone import build_tone_reference
         from cover_letter_generator import CoverLetterGenerator
 
         api_key = settings.anthropic_api_key.get_secret_value()
@@ -365,11 +367,18 @@ def build_agent(student: StudentSession, settings: Settings):
                 "company": company_name,
             }
 
+            tone_reference = ""
+            if student.tone_profile:
+                tone_reference = build_tone_reference(
+                    ToneProfile(answers=student.tone_profile)
+                )
+
             generator = CoverLetterGenerator(anthropic_api_key=api_key)
             cover_letter = generator.generate_cover_letter(
                 career_data=career_data,
                 job_posting=job_posting,
                 custom_input=custom_input,
+                tone_reference=tone_reference,
             )
 
             return {
@@ -393,6 +402,7 @@ def build_agent(student: StudentSession, settings: Settings):
         """Export a cover letter as a downloadable PDF file.
         Use this after generating a cover letter to create a PDF version.
         Returns the PDF as base64-encoded data that can be downloaded."""
+        from app.tone import build_tone_reference
         from cover_letter_generator import CoverLetterGenerator
         import base64
 
@@ -415,6 +425,12 @@ def build_agent(student: StudentSession, settings: Settings):
             candidate_name = career_data.get("name", "Candidate")
             filename = f"{candidate_name.replace(' ', '_')}_Cover_Letter.pdf"
 
+            tone_reference = ""
+            if student.tone_profile:
+                tone_reference = build_tone_reference(
+                    ToneProfile(answers=student.tone_profile)
+                )
+
             generator = CoverLetterGenerator(anthropic_api_key=api_key)
             pdf_bytes = generator.generate_cover_letter_pdf(
                 career_data=career_data,
@@ -424,6 +440,7 @@ def build_agent(student: StudentSession, settings: Settings):
                 },
                 custom_input="",
                 filename=filename,
+                tone_reference=tone_reference,
             )
 
             # Encode PDF as base64 for transmission
@@ -834,7 +851,20 @@ def build_agent(student: StudentSession, settings: Settings):
         "so make the fewest calls possible and reuse existing results. Do not fetch "
         "every course's details unless explicitly requested. Never invent records."
     )
-    return create_agent(model=model, tools=tools, system_prompt=prompt)
+    # An empty tone profile makes ToneMiddleware a documented no-op (see
+    # app/tone/middleware.py), so it's attached unconditionally rather than
+    # branching on whether the student has answered the onboarding
+    # questions yet. This is what makes the student's own writing voice
+    # apply to every agent reply - not just the CV/email tools that thread
+    # a tone_reference manually - so free-form chat answers sound like them
+    # too, once a tone profile exists.
+    tone_middleware = ToneMiddleware(ToneProfile(answers=student.tone_profile or {}))
+    return create_agent(
+        model=model,
+        tools=tools,
+        system_prompt=prompt,
+        middleware=[tone_middleware],
+    )
 
 
 def message_text(content: Any) -> str:
