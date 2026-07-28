@@ -1,3 +1,4 @@
+from langchain_openai import ChatOpenAI
 from langchain_openrouter import ChatOpenRouter
 
 from app.config import Settings
@@ -20,3 +21,25 @@ def test_openrouter_settings_select_fixed_free_gemma() -> None:
     assert isinstance(model, ChatOpenRouter)
     assert model.model_name == "google/gemma-4-31b-it:free"
     assert model.openrouter_provider == {"require_parameters": True}
+
+
+def test_litellm_settings_select_ihq_proxy() -> None:
+    settings = Settings(
+        _env_file=None,
+        LLM_PROVIDER="litellm",
+        LITELLM_API_KEY="test-litellm-key",
+        LITELLM_MODEL="anthropic/claude-haiku-4-5",
+        LITELLM_BASE_URL="https://litellm.i-hq.tech/v1/",
+    )
+
+    runtime = resolve_llm(settings)
+    model = build_chat_model(settings)
+
+    assert runtime.provider == "litellm"
+    assert runtime.model == "anthropic/claude-haiku-4-5"
+    assert runtime.base_url == "https://litellm.i-hq.tech/v1"
+    assert isinstance(model, ChatOpenAI)
+    assert model.model_name == "anthropic/claude-haiku-4-5"
+    assert str(model.openai_api_base).rstrip("/") == (
+        "https://litellm.i-hq.tech/v1"
+    )

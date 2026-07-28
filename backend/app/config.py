@@ -48,6 +48,18 @@ class Settings(BaseSettings):
         default="CareerLoop",
         validation_alias="OPENROUTER_APP_TITLE",
     )
+    litellm_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="LITELLM_API_KEY",
+    )
+    litellm_model: str = Field(
+        default="anthropic/claude-haiku-4-5",
+        validation_alias="LITELLM_MODEL",
+    )
+    litellm_base_url: str = Field(
+        default="https://litellm.i-hq.tech/v1",
+        validation_alias="LITELLM_BASE_URL",
+    )
     serper_api_key: SecretStr = Field(
         default=SecretStr(""),
         validation_alias=AliasChoices(

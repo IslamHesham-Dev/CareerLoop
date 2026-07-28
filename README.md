@@ -24,23 +24,22 @@ scripts/      Local development helpers
 Create `backend/.env` from `backend/.env.example` and set:
 
 ```env
-LLM_PROVIDER=openrouter
-OPENROUTER_API_KEY=your-server-side-openrouter-key
-OPENROUTER_MODEL=google/gemma-4-31b-it:free
-OPENROUTER_APP_URL=https://careerloop.onrender.com
-OPENROUTER_APP_TITLE=CareerLoop
+LLM_PROVIDER=litellm
+LITELLM_API_KEY=your-server-side-ihq-team-key
+LITELLM_MODEL=anthropic/claude-haiku-4-5
+LITELLM_BASE_URL=https://litellm.i-hq.tech/v1
 DEGREELENS_ENVIRONMENT=development
 DEGREELENS_SESSION_TTL_MINUTES=45
 DEGREELENS_CURRENT_SEASON=Winter 2024
 DEGREELENS_ADVISORY_YEAR=2024-2025
 ```
 
-The OpenRouter key belongs only in `backend/.env` locally and in the Render
-web service environment when deployed. It must never be compiled into Flutter
-or stored in GitHub Actions. To switch back later, set
-`LLM_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_MODEL`; the agent,
-structured document generators, career email writer, and job extraction all
-use the same provider selection.
+The LiteLLM key belongs only in `backend/.env` locally and in the Render web
+service environment when deployed. It must never be compiled into Flutter or
+stored in GitHub Actions. `LLM_PROVIDER=openrouter` or
+`LLM_PROVIDER=anthropic` selects the existing fallbacks. The agent, structured
+document generators, career email writer, and job extraction all use the same
+provider selection.
 
 Do not add GUC/GIU usernames or passwords to the backend environment. The login
 screen sends credentials over HTTPS to establish a short-lived, isolated portal
@@ -57,6 +56,13 @@ uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 API documentation is available at `http://127.0.0.1:8000/docs` in development.
+
+Check the assigned iHQ LiteLLM key's lifetime budget without printing the key:
+
+```powershell
+cd "D:\My Folder\UNI\Workshop\in_class_task\degreelens\backend"
+uv run python scripts/check_litellm_budget.py
+```
 
 ## 2. Flutter
 
