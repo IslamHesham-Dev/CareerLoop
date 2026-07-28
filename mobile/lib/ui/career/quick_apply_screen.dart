@@ -156,7 +156,6 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
               gmailConnected: repository.gmailConnected,
               gmailAvailable: repository.gmailAvailable,
               gmailEmail: repository.gmailEmail,
-              configurationMessage: repository.configurationMessage,
               checkingGmail: repository.checkingGmail,
               cvRepository: cvRepository,
               onConnectGmail: () => _connectGmail(
@@ -205,7 +204,6 @@ class _ReadinessCard extends StatelessWidget {
   final bool gmailConnected;
   final bool gmailAvailable;
   final String? gmailEmail;
-  final String? configurationMessage;
   final bool checkingGmail;
   final CurrentCvRepository cvRepository;
   final VoidCallback onConnectGmail;
@@ -214,7 +212,6 @@ class _ReadinessCard extends StatelessWidget {
     required this.gmailConnected,
     required this.gmailAvailable,
     required this.gmailEmail,
-    required this.configurationMessage,
     required this.checkingGmail,
     required this.cvRepository,
     required this.onConnectGmail,
@@ -242,56 +239,20 @@ class _ReadinessCard extends StatelessWidget {
           _SourceRow(
             icon: SimpleIcons.gmail,
             color: const Color(0xFFEA4335),
-            title: gmailConnected ? 'Gmail connected' : 'Connect Gmail',
-            subtitle: gmailConnected
-                ? (gmailEmail ?? 'Send-only access granted')
-                : (configurationMessage ??
-                    'CareerLoop requests send-only permission'),
+            title: gmailConnected
+                ? (gmailEmail ?? 'Gmail connected')
+                : 'Connect Gmail',
             ready: gmailConnected,
             busy: checkingGmail,
             actionLabel: gmailConnected ? 'Change' : 'Connect',
             onAction: onConnectGmail,
             enabled: gmailConnected || gmailAvailable,
           ),
-          if (!gmailConnected && gmailAvailable) ...[
-            const SizedBox(height: 9),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 9,
-              ),
-              decoration: BoxDecoration(
-                color: LensColors.amber.withValues(alpha: .09),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.person_add_alt_1_rounded,
-                    color: LensColors.amber,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'OAuth testing: this Gmail address must be added under '
-                      'Google Auth Platform → Audience → Test users.',
-                      style: TextStyle(fontSize: 11, height: 1.35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const Divider(height: 24),
           _SourceRow(
             icon: Icons.picture_as_pdf_rounded,
             color: LensColors.rose,
             title: cv == null ? 'Add current CV' : cv.fileName,
-            subtitle: cv == null
-                ? 'Stored privately on this device'
-                : '${(cv.sizeBytes / 1024).round()} KB · attached only when you approve',
             ready: cv != null,
             busy: cvRepository.selecting,
             actionLabel: cv == null ? 'Choose PDF' : 'Change',
@@ -307,7 +268,6 @@ class _SourceRow extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String title;
-  final String subtitle;
   final bool ready;
   final bool busy;
   final String actionLabel;
@@ -318,7 +278,6 @@ class _SourceRow extends StatelessWidget {
     required this.icon,
     required this.color,
     required this.title,
-    required this.subtitle,
     required this.ready,
     required this.busy,
     required this.actionLabel,
@@ -341,39 +300,24 @@ class _SourceRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Row(
             children: [
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontWeight: FontWeight.w900),
-                    ),
-                  ),
-                  if (ready) ...[
-                    const SizedBox(width: 5),
-                    const Icon(
-                      Icons.verified_rounded,
-                      color: LensColors.aqua,
-                      size: 15,
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: LensColors.muted,
-                  fontSize: 11,
+              Flexible(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
                 ),
               ),
+              if (ready) ...[
+                const SizedBox(width: 5),
+                const Icon(
+                  Icons.verified_rounded,
+                  color: LensColors.aqua,
+                  size: 15,
+                ),
+              ],
             ],
           ),
         ),
@@ -392,7 +336,7 @@ class _SourceRow extends StatelessWidget {
   }
 }
 
-class _PostIntake extends StatelessWidget {
+class _PostIntake extends StatefulWidget {
   final TextEditingController linkController;
   final TextEditingController postController;
   final bool analyzing;
@@ -406,6 +350,14 @@ class _PostIntake extends StatelessWidget {
   });
 
   @override
+  State<_PostIntake> createState() => _PostIntakeState();
+}
+
+class _PostIntakeState extends State<_PostIntake> {
+  late String _mode =
+      widget.postController.text.trim().isNotEmpty ? 'text' : 'link';
+
+  @override
   Widget build(BuildContext context) {
     return LensCard(
       child: Column(
@@ -416,64 +368,61 @@ class _PostIntake extends StatelessWidget {
               const LinkedInBrandMark(size: 38),
               const SizedBox(width: 11),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'LinkedIn opportunity',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const Text(
-                      'Paste a public post link',
-                      style: TextStyle(
-                        color: LensColors.muted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'LinkedIn opportunity',
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          TextField(
-            controller: linkController,
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.next,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'LinkedIn post URL',
-              hintText: 'https://www.linkedin.com/posts/...',
-              prefixIcon: Icon(Icons.link_rounded),
-            ),
+          const SizedBox(height: 16),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'link',
+                label: Text('Post link'),
+                icon: Icon(Icons.link_rounded, size: 17),
+              ),
+              ButtonSegment(
+                value: 'text',
+                label: Text('Post text'),
+                icon: Icon(Icons.notes_rounded, size: 17),
+              ),
+            ],
+            selected: {_mode},
+            showSelectedIcon: false,
+            onSelectionChanged: (value) => setState(() => _mode = value.first),
           ),
-          const SizedBox(height: 13),
-          TextField(
-            controller: postController,
-            minLines: 4,
-            maxLines: 9,
-            decoration: const InputDecoration(
-              labelText: 'Post text · optional fallback',
-              hintText:
-                  'Paste the job post here when LinkedIn hides its public preview...',
-              alignLabelWithHint: true,
+          const SizedBox(height: 16),
+          if (_mode == 'link')
+            TextField(
+              controller: widget.linkController,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'LinkedIn post URL',
+                hintText: 'https://www.linkedin.com/posts/...',
+                prefixIcon: Icon(Icons.link_rounded),
+              ),
+            )
+          else
+            TextField(
+              controller: widget.postController,
+              minLines: 4,
+              maxLines: 9,
+              decoration: const InputDecoration(
+                labelText: 'Post text',
+                hintText: 'Paste the full job post text here...',
+                alignLabelWithHint: true,
+              ),
             ),
-          ),
-          const SizedBox(height: 11),
-          const Text(
-            'LinkedIn often restricts post content. CareerLoop first checks public preview metadata and asks for pasted text only when needed.',
-            style: TextStyle(
-              color: LensColors.muted,
-              fontSize: 11,
-              height: 1.4,
-            ),
-          ),
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: FilledButton.icon(
-              onPressed: analyzing ? null : onAnalyze,
-              icon: analyzing
+              onPressed: widget.analyzing ? null : widget.onAnalyze,
+              icon: widget.analyzing
                   ? const SizedBox.square(
                       dimension: 17,
                       child: CircularProgressIndicator(
@@ -483,7 +432,9 @@ class _PostIntake extends StatelessWidget {
                     )
                   : const Icon(Icons.auto_awesome_rounded),
               label: Text(
-                analyzing ? 'Preparing application…' : 'Analyze opportunity',
+                widget.analyzing
+                    ? 'Preparing application…'
+                    : 'Analyze opportunity',
               ),
             ),
           ),

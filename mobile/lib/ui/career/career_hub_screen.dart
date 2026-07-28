@@ -38,8 +38,6 @@ class CareerHubScreen extends StatelessWidget {
           _CareerAction(
             icon: Icons.search_rounded,
             title: 'Find matching roles',
-            subtitle:
-                'Search live openings and compare each role with your profile.',
             accent: LensColors.indigo,
             onTap: () => context.push('/opportunities'),
           ),
@@ -47,8 +45,6 @@ class CareerHubScreen extends StatelessWidget {
           _CareerAction(
             icon: Icons.forward_to_inbox_outlined,
             title: 'Apply from a post',
-            subtitle:
-                'Paste a job post, prepare the documents and review the email.',
             accent: LensColors.amber,
             onTap: () => context.push('/quick-apply'),
           ),
@@ -71,14 +67,12 @@ class CareerHubScreen extends StatelessWidget {
 class _CareerAction extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String subtitle;
   final Color accent;
   final VoidCallback onTap;
 
   const _CareerAction({
     required this.icon,
     required this.title,
-    required this.subtitle,
     required this.accent,
     required this.onTap,
   });
@@ -109,19 +103,9 @@ class _CareerAction extends StatelessWidget {
               ),
               const SizedBox(width: 14),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
               const SizedBox(width: 8),
