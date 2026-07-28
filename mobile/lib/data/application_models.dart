@@ -159,6 +159,7 @@ class ApplicationSendResult {
   final String recipient;
   final String subject;
   final String attachmentName;
+  final List<String> attachmentNames;
   final DateTime sentAt;
 
   const ApplicationSendResult({
@@ -168,6 +169,7 @@ class ApplicationSendResult {
     required this.recipient,
     required this.subject,
     required this.attachmentName,
+    required this.attachmentNames,
     required this.sentAt,
   });
 
@@ -179,6 +181,13 @@ class ApplicationSendResult {
         recipient: json['recipient'] as String? ?? '',
         subject: json['subject'] as String? ?? '',
         attachmentName: json['attachment_name'] as String? ?? '',
+        attachmentNames: List<String>.from(
+          json['attachment_names'] as List? ??
+              [
+                if ((json['attachment_name'] as String? ?? '').isNotEmpty)
+                  json['attachment_name'] as String,
+              ],
+        ),
         sentAt: DateTime.tryParse(json['sent_at'] as String? ?? '') ??
             DateTime.now(),
       );

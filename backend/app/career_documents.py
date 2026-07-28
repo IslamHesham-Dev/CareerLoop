@@ -110,7 +110,9 @@ def generate_document(
     slug_company = _filename_part(job.company)
     slug_role = _filename_part(job.title)
     suffix = "Resume" if kind == "resume" else "Cover_Letter"
-    filename = f"{slug_name}_{slug_company}_{slug_role}_{suffix}.pdf"
+    filename = (
+        f"{slug_name}_{slug_company}_{slug_role}_{suffix}_v{version}.pdf"
+    )
     record: dict[str, Any] = {
         "id": document_id,
         "kind": kind,
@@ -198,4 +200,3 @@ def _trim_documents(documents: dict[str, dict[str, Any]]) -> None:
     )
     for record in oldest[: len(documents) - _MAX_DOCUMENTS_PER_SESSION]:
         documents.pop(str(record["id"]), None)
-

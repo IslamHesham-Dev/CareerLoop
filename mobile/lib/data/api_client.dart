@@ -33,6 +33,18 @@ class DownloadedFile {
       filename.toLowerCase().endsWith('.pdf');
 }
 
+class UploadFilePart {
+  final String fieldName;
+  final String filePath;
+  final String filename;
+
+  const UploadFilePart({
+    required this.fieldName,
+    required this.filePath,
+    required this.filename,
+  });
+}
+
 class ApiClient {
   final String baseUrl;
   final SessionStorage storage;
@@ -116,6 +128,32 @@ class ApiClient {
         filename: filename,
       ),
     );
+    final streamed =
+        await _client.send(request).timeout(const Duration(minutes: 4));
+    final response = await http.Response.fromStream(streamed);
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> uploadFiles(
+    String path, {
+    required List<UploadFilePart> files,
+    Map<String, String> fields = const {},
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(path));
+    request.headers.addAll({
+      'Accept': 'application/json',
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    });
+    request.fields.addAll(fields);
+    for (final file in files) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          file.fieldName,
+          file.filePath,
+          filename: file.filename,
+        ),
+      );
+    }
     final streamed =
         await _client.send(request).timeout(const Duration(minutes: 4));
     final response = await http.Response.fromStream(streamed);

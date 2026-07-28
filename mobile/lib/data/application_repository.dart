@@ -126,19 +126,37 @@ class ApplicationRepository extends ChangeNotifier {
   Future<ApplicationSendResult?> send({
     required String subject,
     required String body,
+    DownloadedFile? tailoredResume,
+    DownloadedFile? tailoredCoverLetter,
   }) async {
     final activeDraft = draft;
     final cv = currentCvRepository.currentCv;
-    if (activeDraft == null || cv == null || sending) return null;
+    if (activeDraft == null ||
+        (cv == null && tailoredResume == null) ||
+        sending) {
+      return null;
+    }
     sending = true;
     error = null;
     notifyListeners();
     try {
-      final json = await api.uploadFile(
+      final resumePath = tailoredResume?.path ?? cv!.localPath;
+      final resumeName = tailoredResume?.filename ?? cv!.fileName;
+      final json = await api.uploadFiles(
         '/v1/career/applications/send',
-        fieldName: 'cv',
-        filePath: cv.localPath,
-        filename: cv.fileName,
+        files: [
+          UploadFilePart(
+            fieldName: 'cv',
+            filePath: resumePath,
+            filename: resumeName,
+          ),
+          if (tailoredCoverLetter != null)
+            UploadFilePart(
+              fieldName: 'cover_letter',
+              filePath: tailoredCoverLetter.path,
+              filename: tailoredCoverLetter.filename,
+            ),
+        ],
         fields: {
           'application_id': activeDraft.id,
           'subject': subject.trim(),

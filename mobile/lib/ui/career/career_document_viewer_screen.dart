@@ -102,7 +102,9 @@ class _CareerDocumentViewerScreenState
           ),
         ],
         child: PDFView(
-          key: ValueKey(_localPath),
+          key: ValueKey(
+            '${_document.id}:${_document.version}:$_localPath',
+          ),
           filePath: _localPath,
           enableSwipe: true,
           swipeHorizontal: false,

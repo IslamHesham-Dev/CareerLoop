@@ -35,4 +35,5 @@ class ApplicationSendResponse(BaseModel):
     recipient: str
     subject: str
     attachment_name: str
+    attachment_names: list[str] = Field(default_factory=list)
     sent_at: datetime

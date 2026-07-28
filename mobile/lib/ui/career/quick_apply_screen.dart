@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:simple_icons/simple_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../data/api_client.dart';
+import '../../data/application_models.dart';
 import '../../data/application_repository.dart';
+import '../../data/career_document_repository.dart';
 import '../../data/current_cv_repository.dart';
+import '../../data/models.dart';
 import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
+import 'career_document_viewer_screen.dart';
 
 class QuickApplyScreen extends StatefulWidget {
   const QuickApplyScreen({super.key});
@@ -87,9 +93,33 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
   Future<void> _send() async {
     FocusManager.instance.primaryFocus?.unfocus();
     final repository = context.read<ApplicationRepository>();
+    final draft = repository.draft;
+    if (draft == null) return;
+    final job = _jobFromDraft(draft);
+    final documentRepository = context.read<CareerDocumentRepository>();
+    DownloadedFile? tailoredResume;
+    DownloadedFile? tailoredCoverLetter;
+    try {
+      final resume = documentRepository.documentFor(job, 'resume');
+      final coverLetter = documentRepository.documentFor(job, 'cover_letter');
+      if (resume != null) {
+        tailoredResume = await documentRepository.download(resume);
+      }
+      if (coverLetter != null) {
+        tailoredCoverLetter = await documentRepository.download(coverLetter);
+      }
+    } on ApiException catch (exception) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(exception.message)),
+      );
+      return;
+    }
     final result = await repository.send(
       subject: _subjectController.text,
       body: _bodyController.text,
+      tailoredResume: tailoredResume,
+      tailoredCoverLetter: tailoredCoverLetter,
     );
     if (result != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -525,10 +555,16 @@ class _ApplicationReview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final draft = repository.draft!;
+    final job = _jobFromDraft(draft);
+    final documents = context.watch<CareerDocumentRepository>();
+    final tailoredResume = documents.documentFor(job, 'resume');
+    final tailoredCoverLetter = documents.documentFor(job, 'cover_letter');
     final ready = repository.gmailConnected &&
-        cvRepository.hasCv &&
+        (cvRepository.hasCv || tailoredResume != null) &&
         subjectController.text.trim().length >= 3 &&
-        bodyController.text.trim().length >= 20;
+        bodyController.text.trim().length >= 20 &&
+        !documents.isBusy(job, 'resume') &&
+        !documents.isBusy(job, 'cover_letter');
     return Column(
       children: [
         LensCard(
@@ -572,8 +608,17 @@ class _ApplicationReview extends StatelessWidget {
               const SizedBox(height: 8),
               _EnvelopeLine(
                 label: 'CV',
-                value: cvRepository.currentCv?.fileName ?? 'Choose a PDF',
+                value: tailoredResume?.filename ??
+                    cvRepository.currentCv?.fileName ??
+                    'Generate or choose a PDF',
               ),
+              if (tailoredCoverLetter != null) ...[
+                const SizedBox(height: 8),
+                _EnvelopeLine(
+                  label: 'LETTER',
+                  value: tailoredCoverLetter.filename,
+                ),
+              ],
             ],
           ),
         ),
@@ -588,6 +633,11 @@ class _ApplicationReview extends StatelessWidget {
               ),
             ),
         ],
+        const SizedBox(height: 12),
+        _QuickApplyDocumentStudio(
+          job: job,
+          repository: documents,
+        ),
         const SizedBox(height: 12),
         LensCard(
           child: Column(
@@ -658,6 +708,225 @@ class _ApplicationReview extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _QuickApplyDocumentStudio extends StatelessWidget {
+  final JobOpportunity job;
+  final CareerDocumentRepository repository;
+
+  const _QuickApplyDocumentStudio({
+    required this.job,
+    required this.repository,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final resume = repository.documentFor(job, 'resume');
+    final coverLetter = repository.documentFor(job, 'cover_letter');
+    return LensCard(
+      color: const Color(0xFF162045),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const GradientPill(
+            label: 'Application documents',
+            icon: Icons.auto_awesome_rounded,
+            dark: true,
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            'Tailor before you send',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 5),
+          Text(
+            'Generate from your verified profile, then refine each PDF with '
+            'the floating Document Copilot. The latest versions are attached '
+            'when you approve the email.',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: .68),
+              fontSize: 10.5,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _QuickApplyDocumentAction(
+            icon: Icons.description_outlined,
+            title: 'Tailored resume',
+            subtitle: resume == null
+                ? 'Build for ${job.title}'
+                : 'Version ${resume.version} · ready to attach',
+            ready: resume != null,
+            loading: repository.isBusy(job, 'resume'),
+            onTap: () => _open(
+              context,
+              kind: 'resume',
+              document: resume,
+            ),
+          ),
+          const SizedBox(height: 9),
+          _QuickApplyDocumentAction(
+            icon: Icons.mail_outline_rounded,
+            title: 'Tailored cover letter',
+            subtitle: coverLetter == null
+                ? 'Build for ${job.company}'
+                : 'Version ${coverLetter.version} · ready to attach',
+            ready: coverLetter != null,
+            loading: repository.isBusy(job, 'cover_letter'),
+            onTap: () => _open(
+              context,
+              kind: 'cover_letter',
+              document: coverLetter,
+            ),
+          ),
+          if (repository.error != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              repository.error!,
+              style: const TextStyle(
+                color: Color(0xFFFFC8CD),
+                fontSize: 10.5,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _open(
+    BuildContext context, {
+    required String kind,
+    required CareerDocument? document,
+  }) async {
+    var active = document ?? await repository.generate(job, kind);
+    if (active == null || !context.mounted) return;
+    try {
+      final file = await repository.download(active);
+      if (!context.mounted) return;
+      await context.push(
+        '/career-document',
+        extra: CareerDocumentViewerArgs(
+          job: job,
+          document: active,
+          localPath: file.path,
+        ),
+      );
+    } on ApiException catch (exception) {
+      if (exception.statusCode == 404 && document != null) {
+        active = await repository.generate(job, kind);
+        if (active == null || !context.mounted) return;
+        final file = await repository.download(active);
+        if (!context.mounted) return;
+        await context.push(
+          '/career-document',
+          extra: CareerDocumentViewerArgs(
+            job: job,
+            document: active,
+            localPath: file.path,
+          ),
+        );
+        return;
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(exception.message)),
+      );
+    }
+  }
+}
+
+class _QuickApplyDocumentAction extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool ready;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _QuickApplyDocumentAction({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.ready,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        onTap: loading ? null : onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Row(
+            children: [
+              Container(
+                width: 39,
+                height: 39,
+                decoration: BoxDecoration(
+                  color: ready
+                      ? LensColors.aqua.withValues(alpha: .14)
+                      : Colors.white.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: loading
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CircularProgressIndicator(
+                          color: LensColors.aqua,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Icon(
+                        ready ? Icons.verified_rounded : icon,
+                        color: ready ? LensColors.aqua : Colors.white,
+                        size: 20,
+                      ),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      loading ? 'Generating and compiling PDF…' : subtitle,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: .58),
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                ready ? Icons.open_in_new_rounded : Icons.add_rounded,
+                color: LensColors.aqua,
+                size: 19,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -763,7 +1032,8 @@ class _SentReceipt extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${result.attachmentName} · Gmail message ${result.messageId}',
+                  '${result.attachmentNames.join(' + ')} · '
+                  'Gmail message ${result.messageId}',
                   style: const TextStyle(
                     color: LensColors.muted,
                     fontSize: 10.5,
@@ -851,4 +1121,27 @@ class _ErrorNotice extends StatelessWidget {
       ),
     );
   }
+}
+
+JobOpportunity _jobFromDraft(ApplicationDraft draft) {
+  return JobOpportunity(
+    id: 'linkedin-application-${draft.id}',
+    company: (draft.company?.trim().isNotEmpty ?? false)
+        ? draft.company!.trim()
+        : 'LinkedIn opportunity',
+    title: draft.role,
+    location: 'Location not specified',
+    url: Uri.parse(draft.linkedInPostUrl),
+    source: 'LinkedIn post',
+    category: draft.contentSource,
+    roleFamily: 'general',
+    matchScore: 0,
+    matchReasons: [
+      'LinkedIn post context: ${draft.postExcerpt}',
+    ],
+    keywordMatches: const [],
+    profileSkillMatches: const [],
+    inferredSkillGaps: const [],
+    recommendedCourseIds: const [],
+  );
 }

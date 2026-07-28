@@ -118,6 +118,7 @@ async def send_application(
     subject: str = Form(..., min_length=3, max_length=180),
     body: str = Form(..., min_length=20, max_length=5000),
     cv: UploadFile = File(...),
+    cover_letter: UploadFile | None = None,
     student: StudentSession = Depends(get_student_session),
     settings: Settings = Depends(get_settings),
 ) -> ApplicationSendResponse:
@@ -138,38 +139,44 @@ async def send_application(
 
     safe_subject = _safe_subject(subject)
     clean_body = body.strip()
-    file_name = cv.filename or "Current_CV.pdf"
-    if not file_name.casefold().endswith(".pdf"):
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Attach your current CV as a PDF.",
+    file_name, content = await _read_pdf(
+        cv,
+        fallback_name="Current_CV.pdf",
+        label="CV",
+    )
+    attachments = [(_safe_pdf_name(file_name), content)]
+    if cover_letter is not None:
+        cover_name, cover_content = await _read_pdf(
+            cover_letter,
+            fallback_name="Cover_Letter.pdf",
+            label="cover letter",
         )
-    content = await cv.read(MAX_CV_BYTES + 1)
-    await cv.close()
-    if not content.startswith(b"%PDF"):
-        raise HTTPException(
-            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="The selected CV is not a valid PDF.",
-        )
-    if len(content) > MAX_CV_BYTES:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail="Choose a CV that is 10 MB or smaller.",
-        )
+        attachments.append((_safe_pdf_name(cover_name), cover_content))
 
     access_token = await _valid_access_token(student, settings)
     recipient = _prototype_recipient(settings)
     try:
-        result = await run_in_threadpool(
-            GmailClient.send_pdf,
-            access_token=access_token,
-            sender=student.gmail_email,
-            recipient=recipient,
-            subject=safe_subject,
-            body=clean_body,
-            attachment=content,
-            attachment_name=_safe_pdf_name(file_name),
-        )
+        if len(attachments) == 1:
+            result = await run_in_threadpool(
+                GmailClient.send_pdf,
+                access_token=access_token,
+                sender=student.gmail_email,
+                recipient=recipient,
+                subject=safe_subject,
+                body=clean_body,
+                attachment=content,
+                attachment_name=_safe_pdf_name(file_name),
+            )
+        else:
+            result = await run_in_threadpool(
+                GmailClient.send_pdfs,
+                access_token=access_token,
+                sender=student.gmail_email,
+                recipient=recipient,
+                subject=safe_subject,
+                body=clean_body,
+                attachments=attachments,
+            )
     except GmailIntegrationError as exc:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
@@ -188,8 +195,37 @@ async def send_application(
         recipient=recipient,
         subject=safe_subject,
         attachment_name=_safe_pdf_name(file_name),
+        attachment_names=[name for name, _ in attachments],
         sent_at=datetime.now(timezone.utc),
     )
+
+
+async def _read_pdf(
+    upload: UploadFile,
+    *,
+    fallback_name: str,
+    label: str,
+) -> tuple[str, bytes]:
+    file_name = upload.filename or fallback_name
+    if not file_name.casefold().endswith(".pdf"):
+        await upload.close()
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Attach the {label} as a PDF.",
+        )
+    content = await upload.read(MAX_CV_BYTES + 1)
+    await upload.close()
+    if not content.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"The selected {label} is not a valid PDF.",
+        )
+    if len(content) > MAX_CV_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Choose a {label} that is 10 MB or smaller.",
+        )
+    return file_name, content
 
 
 async def _valid_access_token(

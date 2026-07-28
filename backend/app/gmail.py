@@ -110,17 +110,39 @@ class GmailClient:
         attachment_name: str,
         timeout: float = 45,
     ) -> dict[str, Any]:
+        return GmailClient.send_pdfs(
+            access_token=access_token,
+            sender=sender,
+            recipient=recipient,
+            subject=subject,
+            body=body,
+            attachments=[(attachment_name, attachment)],
+            timeout=timeout,
+        )
+
+    @staticmethod
+    def send_pdfs(
+        *,
+        access_token: str,
+        sender: str,
+        recipient: str,
+        subject: str,
+        body: str,
+        attachments: list[tuple[str, bytes]],
+        timeout: float = 45,
+    ) -> dict[str, Any]:
         message = EmailMessage()
         message["To"] = recipient
         message["From"] = sender
         message["Subject"] = subject
         message.set_content(body)
-        message.add_attachment(
-            attachment,
-            maintype="application",
-            subtype="pdf",
-            filename=attachment_name,
-        )
+        for attachment_name, attachment in attachments:
+            message.add_attachment(
+                attachment,
+                maintype="application",
+                subtype="pdf",
+                filename=attachment_name,
+            )
         return GmailClient._send(message, access_token=access_token, timeout=timeout)
 
     @staticmethod

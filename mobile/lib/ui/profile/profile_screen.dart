@@ -31,17 +31,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
-    final session = context.watch<AuthRepository>().session;
     final practiceCount = context.watch<PracticeRepository>().sets.length;
     final academicReady = academic.transcript != null;
-    final cmsReady = session?.cmsConnected ?? false;
     final linkedInReady = context.watch<CareerProfileRepository>().hasProfile;
     final github = context.watch<GithubProfileRepository>();
     final githubReady = github.hasProfile;
     final resume = context.watch<CurrentCvRepository>();
     final resumeReady = resume.hasProfile;
     final liveSignals = (academicReady ? 1 : 0) +
-        (cmsReady ? 1 : 0) +
         (linkedInReady ? 1 : 0) +
         (githubReady ? 1 : 0) +
         (resumeReady ? 1 : 0);
@@ -70,13 +67,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 20),
           _ProfileHero(
             liveSignals: liveSignals,
-            totalSignals: 5,
+            totalSignals: 4,
             gpa: academic.transcript?.cumulativeGpaWithGrade ?? '—',
           ),
           const SizedBox(height: 26),
           _Header(
             title: 'Evidence sources',
-            detail: '$liveSignals live · 5 designed',
+            detail: '$liveSignals live · 4 designed',
           ),
           const SizedBox(height: 12),
           _EvidenceSource(
@@ -85,16 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             subtitle: 'Transcript, grades, and semester history',
             status: academicReady ? 'LIVE' : 'SYNCING',
             color: LensColors.indigo,
-          ),
-          const SizedBox(height: 9),
-          _EvidenceSource(
-            icon: Icons.auto_stories_outlined,
-            title: 'Learning evidence',
-            subtitle: cmsReady
-                ? 'CMS materials, video transcripts, and practice'
-                : 'CMS access limited; local practice remains available',
-            status: cmsReady ? 'LIVE' : 'LIMITED',
-            color: cmsReady ? LensColors.aqua : LensColors.amber,
           ),
           const SizedBox(height: 9),
           _EvidenceSource(

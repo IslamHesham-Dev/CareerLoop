@@ -576,6 +576,7 @@ def download_career_document(
         io.BytesIO(record["pdf_bytes"]),
         media_type="application/pdf",
         headers={
+            "Cache-Control": "no-store",
             "Content-Disposition": (
                 f'inline; filename="{record["filename"]}"'
             ),

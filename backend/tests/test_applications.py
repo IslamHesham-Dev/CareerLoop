@@ -153,3 +153,61 @@ def test_send_endpoint_enforces_server_recipient(
     assert captured["recipient"] == "islammheshamm7@gmail.com"
     assert response.recipient == "islammheshamm7@gmail.com"
     assert ("a" * 32) not in student.pending_application_drafts
+
+
+def test_send_endpoint_attaches_tailored_resume_and_cover_letter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_send_pdfs(**kwargs):
+        captured.update(kwargs)
+        return {"id": "message-3", "threadId": "thread-3"}
+
+    monkeypatch.setattr(
+        applications.GmailClient,
+        "send_pdfs",
+        staticmethod(fake_send_pdfs),
+    )
+    student = SimpleNamespace(
+        pending_application_drafts={
+            "b" * 32: {
+                "recipient": "ignored@example.com",
+                "created_at": time.time(),
+            }
+        },
+        gmail_access_token="access",
+        gmail_refresh_token="refresh",
+        gmail_token_expires_at=time.time() + 3600,
+        gmail_email="candidate@gmail.com",
+    )
+    resume = UploadFile(
+        filename="Tailored_Resume_v2.pdf",
+        file=io.BytesIO(b"%PDF-resume"),
+    )
+    cover_letter = UploadFile(
+        filename="Tailored_Cover_Letter_v3.pdf",
+        file=io.BytesIO(b"%PDF-cover"),
+    )
+
+    response = asyncio.run(
+        applications.send_application(
+            application_id="b" * 32,
+            subject="Application — Engineer",
+            body="Hello, my tailored application documents are attached.",
+            cv=resume,
+            cover_letter=cover_letter,
+            student=student,
+            settings=Settings(),
+        )
+    )
+
+    attachments = captured["attachments"]
+    assert attachments == [
+        ("Tailored_Resume_v2.pdf", b"%PDF-resume"),
+        ("Tailored_Cover_Letter_v3.pdf", b"%PDF-cover"),
+    ]
+    assert response.attachment_names == [
+        "Tailored_Resume_v2.pdf",
+        "Tailored_Cover_Letter_v3.pdf",
+    ]
