@@ -59,6 +59,7 @@ Future<void> main() async {
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
     currentCvRepository: currentCv,
+    toneProfileRepository: toneProfile,
   );
   final careerDocuments = CareerDocumentRepository(
     api: api,

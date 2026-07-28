@@ -93,13 +93,15 @@ class ApiClient {
     return _decode(response);
   }
 
+  /// Fetch an endpoint whose top-level JSON value is a string array.
   Future<List<String>> getList(
     String path, {
+    Map<String, String?>? query,
     bool authenticated = true,
   }) async {
     final response = await _client
         .get(
-          _uri(path),
+          _uri(path, query),
           headers: _headers(authenticated: authenticated),
         )
         .timeout(const Duration(minutes: 3));
@@ -119,7 +121,10 @@ class ApiClient {
     if (decoded is! List) {
       throw const ApiException('The server returned an unexpected response.');
     }
-    return decoded.map((item) => '$item').toList();
+    if (decoded.any((item) => item is! String)) {
+      throw const ApiException('The server returned an unexpected response.');
+    }
+    return decoded.cast<String>();
   }
 
   Future<Map<String, dynamic>> post(

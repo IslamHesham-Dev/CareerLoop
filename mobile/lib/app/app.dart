@@ -24,7 +24,7 @@ import '../ui/practice/practice_screens.dart';
 import '../ui/profile/profile_screen.dart';
 import '../ui/profile/email_studio_screen.dart';
 import '../ui/profile/master_resume_screen.dart';
-import '../ui/profile/tone_profile_screen.dart';
+import '../ui/profile/tone_screen.dart';
 import '../ui/settings/settings_screen.dart';
 import '../ui/transcript/transcript_screen.dart';
 import '../ui/viewer/drive_video_screen.dart';
@@ -185,7 +185,11 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         ),
         GoRoute(
           path: '/writing-voice',
-          builder: (context, state) => const ToneProfileScreen(),
+          builder: (context, state) => const ToneScreen(),
+        ),
+        GoRoute(
+          path: '/tone-profile',
+          builder: (context, state) => const ToneScreen(),
         ),
         GoRoute(
           path: '/email-studio',
