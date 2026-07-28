@@ -196,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   colors: [_accentA, _accentB],
                                 ).createShader(rect),
                                 child: const Text(
-                                  'Turn your work\ninto your next\nopportunity.',
+                                  'Your work \n tells your story.',
                                   style: TextStyle(
                                     fontSize: 34,
                                     fontWeight: FontWeight.w800,
