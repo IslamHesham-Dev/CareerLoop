@@ -28,6 +28,13 @@ class Settings(BaseSettings):
         default="claude-haiku-4-5",
         validation_alias="ANTHROPIC_MODEL",
     )
+    serper_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias=AliasChoices(
+            "SERPER_API_KEY",
+            "DEGREELENS_SERPER_API_KEY",
+        ),
+    )
     notion_api_key: SecretStr = Field(
         default=SecretStr(""),
         validation_alias=AliasChoices(

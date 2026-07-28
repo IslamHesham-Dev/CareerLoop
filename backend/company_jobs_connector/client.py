@@ -16,22 +16,40 @@ class CompanyJobsConnector:
         self,
         anthropic_api_key: str,
         serper_api_key: str | None = None,
+        model: str = "claude-haiku-4-5",
         timeout: int = 15,
     ) -> None:
         self.timeout = timeout
+        # Falling back to a raw env var (rather than only the caller-supplied
+        # value) is deliberate here: this connector has no other way to be
+        # configured outside app.config.Settings, which is where callers
+        # should be getting this from - see app.agent.factory.get_company_jobs.
         self.serper_api_key = serper_api_key or os.getenv("SERPER_API_KEY")
 
-        # Using Haiku since it is fast and excellent at simple extraction
         self.llm = ChatAnthropic(
-            model="claude-3-haiku-20240307",
+            model=model,
             temperature=0,
             api_key=anthropic_api_key,
         )
         self.structured_llm = self.llm.with_structured_output(LLMJobExtraction)
 
+    # Minimum length of *rendered text* (not raw HTML/JS bytes) a page must
+    # have to count as a real careers page. Some ATS providers (Ashby in
+    # particular) return a 200 OK, multi-KB HTML shell even for a company
+    # slug with no real job board behind it - the page is a client-rendered
+    # app shell with almost no server-side text, so checking raw HTML size
+    # alone (the old behavior) accepts it as a false positive. This is the
+    # same threshold get_company_jobs already uses to guard the LLM call
+    # against garbage input, applied earlier so a bad URL is never accepted
+    # as "found" in the first place.
+    _MIN_CAREERS_PAGE_TEXT_LENGTH = 100
+
+    def _looks_like_a_careers_page(self, html: str) -> bool:
+        return len(self._extract_text(html)) >= self._MIN_CAREERS_PAGE_TEXT_LENGTH
+
     def _discover_careers_url(self, company_name: str) -> str | None:
         """Dynamically locates the exact job board URL using Google Search (via Serper).
-        
+
         Falls back to hardcoded ATS patterns if no search API key is available.
         """
         if self.serper_api_key:
@@ -55,7 +73,13 @@ class CompanyJobsConnector:
                     data = response.json()
                     organic_results = data.get("organic", [])
                     if organic_results and "link" in organic_results[0]:
-                        return organic_results[0]["link"]
+                        candidate = organic_results[0]["link"]
+                        html = self._fetch_page_html(candidate)
+                        if html and self._looks_like_a_careers_page(html):
+                            return candidate
+                        # A search hit that turned out to be a dead/empty page
+                        # is worth falling through to the ATS guesses below,
+                        # not trusting blindly.
             except requests.RequestException:
                 pass  # Fall through to standard fallback logic if search fails
 
@@ -74,7 +98,11 @@ class CompanyJobsConnector:
         for target_url in fallback_urls:
             try:
                 resp = requests.get(target_url, timeout=self.timeout)
-                if resp.ok and len(resp.text) > 1000:
+                if (
+                    resp.ok
+                    and len(resp.text) > 1000
+                    and self._looks_like_a_careers_page(resp.text)
+                ):
                     return target_url
             except requests.RequestException:
                 continue

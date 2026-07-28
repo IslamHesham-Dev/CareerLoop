@@ -312,7 +312,13 @@ def build_agent(student: StudentSession, settings: Settings):
             return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
             
         try:
-            connector = CompanyJobsConnector(anthropic_api_key=api_key)
+            connector = CompanyJobsConnector(
+                anthropic_api_key=api_key,
+                serper_api_key=(
+                    settings.serper_api_key.get_secret_value() or None
+                ),
+                model=settings.anthropic_model,
+            )
             jobs = connector.get_company_jobs(company_name)
             if not jobs:
                 return {
