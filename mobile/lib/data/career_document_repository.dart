@@ -5,12 +5,14 @@ import 'career_profile_repository.dart';
 import 'current_cv_repository.dart';
 import 'github_profile_repository.dart';
 import 'models.dart';
+import 'tone_repository.dart';
 
 class CareerDocumentRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
   final CurrentCvRepository currentCvRepository;
+  final ToneRepository toneRepository;
 
   final Map<String, CareerDocument> _documents = {};
   final Set<String> _busy = {};
@@ -21,6 +23,7 @@ class CareerDocumentRepository extends ChangeNotifier {
     required this.careerProfileRepository,
     required this.githubProfileRepository,
     required this.currentCvRepository,
+    required this.toneRepository,
   });
 
   CareerDocument? documentFor(JobOpportunity job, String kind) =>
@@ -112,6 +115,7 @@ class CareerDocumentRepository extends ChangeNotifier {
         'Your current resume could not be loaded into this session.',
       );
     }
+    await toneRepository.ensureSynced();
   }
 
   void clear() {

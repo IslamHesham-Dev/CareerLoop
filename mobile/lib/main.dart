@@ -13,6 +13,7 @@ import 'data/opportunity_repository.dart';
 import 'data/repositories.dart';
 import 'data/practice_repository.dart';
 import 'data/session_storage.dart';
+import 'data/tone_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,12 +34,15 @@ Future<void> main() async {
   await githubProfile.loadLocal();
   final currentCv = CurrentCvRepository(api: api);
   await currentCv.loadLocal();
+  final tone = ToneRepository(api: api);
+  await tone.loadLocal();
   final advisor = AdvisorRepository(
     api: api,
     practiceRepository: practice,
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
     currentCvRepository: currentCv,
+    toneRepository: tone,
   );
   final notion = NotionRepository(api: api);
   final opportunities = OpportunityRepository(
@@ -52,12 +56,14 @@ Future<void> main() async {
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
     currentCvRepository: currentCv,
+    toneRepository: tone,
   );
   final careerDocuments = CareerDocumentRepository(
     api: api,
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
     currentCvRepository: currentCv,
+    toneRepository: tone,
   );
 
   await auth.restoreSession();
@@ -77,6 +83,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: currentCv),
         ChangeNotifierProvider.value(value: applications),
         ChangeNotifierProvider.value(value: careerDocuments),
+        ChangeNotifierProvider.value(value: tone),
       ],
       child: const CareerLoopApp(),
     ),

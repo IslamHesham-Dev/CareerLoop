@@ -8,6 +8,7 @@ import '../../data/career_document_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
+import '../../data/tone_repository.dart';
 import '../core/lens_components.dart';
 import '../core/notion_export_action.dart';
 
@@ -161,6 +162,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final career = context.read<CareerProfileRepository>();
                         final github = context.read<GithubProfileRepository>();
                         final resume = context.read<CurrentCvRepository>();
+                        final tone = context.read<ToneRepository>();
                         final documents =
                             context.read<CareerDocumentRepository>();
                         await advisor.reset();
@@ -170,6 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         career.markSessionChanged();
                         github.markSessionChanged();
                         resume.markSessionChanged();
+                        tone.markSessionChanged();
                         documents.clear();
                         await auth.logout();
                       },

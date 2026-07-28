@@ -5,12 +5,14 @@ import 'application_models.dart';
 import 'career_profile_repository.dart';
 import 'current_cv_repository.dart';
 import 'github_profile_repository.dart';
+import 'tone_repository.dart';
 
 class ApplicationRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
   final CurrentCvRepository currentCvRepository;
+  final ToneRepository toneRepository;
 
   bool gmailAvailable = false;
   bool gmailConnected = false;
@@ -28,6 +30,7 @@ class ApplicationRepository extends ChangeNotifier {
     required this.careerProfileRepository,
     required this.githubProfileRepository,
     required this.currentCvRepository,
+    required this.toneRepository,
   });
 
   Future<bool> refreshGmailStatus() async {
@@ -94,6 +97,7 @@ class ApplicationRepository extends ChangeNotifier {
         githubProfileRepository.ensureSynced(),
         currentCvRepository.ensureSynced(),
       ]);
+      await toneRepository.ensureSynced();
       if (currentCvRepository.hasProfile && !synced.last) {
         throw const ApiException(
           'Your resume could not be loaded for this application. Try '

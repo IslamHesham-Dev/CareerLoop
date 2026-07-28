@@ -7,6 +7,7 @@ import 'github_profile_repository.dart';
 import 'models.dart';
 import 'practice_repository.dart';
 import 'session_storage.dart';
+import 'tone_repository.dart';
 
 class AuthRepository extends ChangeNotifier {
   final ApiClient api;
@@ -415,6 +416,7 @@ class AdvisorRepository extends ChangeNotifier {
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
   final CurrentCvRepository currentCvRepository;
+  final ToneRepository toneRepository;
 
   final List<ChatMessage> messages = [];
   bool isSending = false;
@@ -426,6 +428,7 @@ class AdvisorRepository extends ChangeNotifier {
     required this.careerProfileRepository,
     required this.githubProfileRepository,
     required this.currentCvRepository,
+    required this.toneRepository,
   });
 
   Future<ChatMessage?> send(String text) {
@@ -459,6 +462,7 @@ class AdvisorRepository extends ChangeNotifier {
           'the PDF or signing in again.',
         );
       }
+      await toneRepository.ensureSynced();
       final json = await api.post('/v1/chat', body: {'message': agent});
       final practiceJson = json['practice_set'];
       final practiceSet = practiceJson is Map

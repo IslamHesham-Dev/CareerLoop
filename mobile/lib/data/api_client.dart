@@ -81,6 +81,38 @@ class ApiClient {
     return _decode(response);
   }
 
+  /// Like [get], but for the rare endpoint that returns a bare JSON array
+  /// (e.g. `GET /v1/career/tone/questions`) instead of an object. [_decode]
+  /// only understands top-level objects, so a list response needs its own
+  /// decode path rather than being silently dropped to an empty map.
+  Future<List<dynamic>> getList(
+    String path, {
+    Map<String, String?>? query,
+    bool authenticated = true,
+  }) async {
+    final response = await _client
+        .get(
+          _uri(path, query),
+          headers: _headers(authenticated: authenticated),
+        )
+        .timeout(const Duration(minutes: 3));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      Map<String, dynamic> payload = const {};
+      if (response.body.isNotEmpty) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) payload = Map<String, dynamic>.from(decoded);
+      }
+      final detail = payload['detail'];
+      throw ApiException(
+        detail is String ? detail : 'The request could not be completed.',
+        statusCode: response.statusCode,
+      );
+    }
+    if (response.body.isEmpty) return const [];
+    final decoded = jsonDecode(response.body);
+    return decoded is List ? decoded : const [];
+  }
+
   Future<Map<String, dynamic>> post(
     String path, {
     Map<String, dynamic>? body,
