@@ -72,20 +72,20 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/branding/careerloop-icon-removebg-preview.png
+    - assets/branding/careerloop-icon.png
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/branding/careerloop-icon-removebg-preview.png"
+  image_path: "assets/branding/careerloop-icon.png"
   adaptive_icon_background: "#0E0F2B"
-  adaptive_icon_foreground: "assets/branding/careerloop-icon-removebg-preview.png"
+  adaptive_icon_foreground: "assets/branding/careerloop-icon.png"
   adaptive_icon_foreground_inset: 8
   remove_alpha_ios: true
   min_sdk_android: 21
   web:
     generate: true
-    image_path: "assets/branding/careerloop-icon-removebg-preview.png"
+    image_path: "assets/branding/careerloop-icon.png"
     background_color: "#0E0F2B"
     theme_color: "#0E0F2B"
 
