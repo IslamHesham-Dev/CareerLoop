@@ -4,6 +4,7 @@ import hashlib
 import re
 import threading
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 from urllib.parse import parse_qs, urljoin, urlparse
 
@@ -29,6 +30,20 @@ SEASON_HEADING = re.compile(
 
 def _clean(value: str | None) -> str:
     return " ".join((value or "").split())
+
+
+_WEEK_LABEL_RE = re.compile(r"\bweek\s*(\d+)\b", re.I)
+_WEEK_DATE_RE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
+
+
+def _parse_week_date(text: str) -> date | None:
+    match = _WEEK_DATE_RE.search(text)
+    if not match:
+        return None
+    try:
+        return date(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+    except ValueError:
+        return None
 
 
 def _stable_id(prefix: str, value: str) -> str:
@@ -512,22 +527,62 @@ class GiuCmsClient:
         return course, self._course_urls[course_id]
 
     @staticmethod
-    def _week(card: Tag, indexes: dict[int, int]) -> tuple[int | None, str | None]:
+    def _week_card(card: Tag) -> Tag | None:
         week_card = card.find_parent("div", class_=lambda value: value and "weeksdata" in value)
         if week_card is None:
             week_card = card.find_parent(class_=re.compile(r"\bweek", re.I))
-        if week_card is None:
-            return None, None
-        key = id(week_card)
-        header = week_card.find(["h2", "h3", "h4"], class_=re.compile(r"text-big", re.I))
-        header = header or week_card.find(["h2", "h3", "h4"])
-        text = _clean(header.get_text(" ", strip=True) if header else "")
-        explicit = re.search(r"\bweek\s*(\d+)\b", text, re.I)
-        if explicit:
-            return int(explicit.group(1)), text
-        if key not in indexes:
-            indexes[key] = len(indexes) + 1
-        return indexes[key], text or f"Week {indexes[key]}"
+        return week_card
+
+    @staticmethod
+    def _week_numbers(soup: BeautifulSoup) -> dict[int, tuple[int, str]]:
+        """Map each week block's identity to a (week_number, label) pair.
+
+        A week block usually only carries a date header (e.g. "2026-02-10"),
+        and the CMS page may list the most recent week first, so raw page
+        order can't be trusted for numbering. An explicit "Week N" label
+        always wins; otherwise blocks with a parseable date are numbered by
+        that date (earliest = Week 1); page order is the last resort for
+        blocks with neither.
+        """
+        cards = soup.find_all(
+            "div", class_=lambda value: value and "weeksdata" in value
+        )
+        if not cards:
+            cards = soup.find_all(class_=re.compile(r"\bweek", re.I))
+
+        headers: list[tuple[int, str]] = []
+        for card in cards:
+            header = card.find(["h2", "h3", "h4"], class_=re.compile(r"text-big", re.I))
+            header = header or card.find(["h2", "h3", "h4"])
+            headers.append(
+                (id(card), _clean(header.get_text(" ", strip=True) if header else "")),
+            )
+
+        explicit: dict[int, int] = {}
+        dated: list[tuple[int, date]] = []
+        undated: list[int] = []
+        for key, text in headers:
+            match = _WEEK_LABEL_RE.search(text)
+            if match:
+                explicit[key] = int(match.group(1))
+                continue
+            parsed_date = _parse_week_date(text)
+            if parsed_date is not None:
+                dated.append((key, parsed_date))
+            else:
+                undated.append(key)
+        dated.sort(key=lambda item: item[1])
+
+        labels = dict(headers)
+        mapping = {
+            key: (number, labels.get(key) or f"Week {number}")
+            for key, number in explicit.items()
+        }
+        for rank, (key, _date) in enumerate(dated, start=1):
+            mapping[key] = (rank, labels.get(key) or f"Week {rank}")
+        for rank, key in enumerate(undated, start=len(dated) + 1):
+            mapping[key] = (rank, labels.get(key) or f"Week {rank}")
+        return mapping
 
     def _parse_resources(
         self,
@@ -549,7 +604,7 @@ class GiuCmsClient:
         title = _course_title(title_text, code)
         resources: list[dict[str, Any]] = []
         seen: set[str] = set()
-        week_indexes: dict[int, int] = {}
+        week_numbers = self._week_numbers(soup)
 
         for anchor in soup.select(
             "a#download, a[id$='download'], a[href^='/Uploads/']"
@@ -583,7 +638,12 @@ class GiuCmsClient:
             content_type = _clean(content_match.group(1) if content_match else "")
             divs = body.find_all("div", recursive=True)
             subtitle = _clean(divs[1].get_text(" ", strip=True)) if len(divs) > 1 else ""
-            week, week_label = self._week(body, week_indexes)
+            week_card = self._week_card(body)
+            week, week_label = (
+                week_numbers.get(id(week_card), (None, None))
+                if week_card is not None
+                else (None, None)
+            )
             parsed = urlparse(url)
             extension = parsed.path.rsplit(".", 1)[-1].lower() if "." in parsed.path else ""
             resource_id = _stable_id("resource", url)

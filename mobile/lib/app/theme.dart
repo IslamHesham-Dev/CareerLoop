@@ -131,6 +131,20 @@ abstract final class CareerLoopTheme {
           ),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: LensColors.indigo,
+          minimumSize: const Size(0, 50),
+          side: const BorderSide(color: LensColors.line),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
       navigationBarTheme: NavigationBarThemeData(
         height: 68,
         elevation: 0,
