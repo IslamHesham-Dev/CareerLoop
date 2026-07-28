@@ -28,7 +28,7 @@ class LensLogo extends StatelessWidget {
           ),
           clipBehavior: Clip.antiAlias,
           child: Image.asset(
-            'assets/branding/careerloop-icon.png',
+            'assets/branding/careerloop-icon-removebg-preview.png',
             fit: BoxFit.cover,
             filterQuality: FilterQuality.high,
             semanticLabel: 'CareerLoop',
