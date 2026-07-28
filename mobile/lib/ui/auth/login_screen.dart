@@ -144,9 +144,28 @@ class _LoginScreenState extends State<LoginScreen> {
         body: SafeArea(
           child: Stack(
             children: [
-              Positioned(top: -120, left: -80, child: _glow(_accentA, 320)),
-              Positioned(
-                  bottom: -140, right: -100, child: _glow(_accentB, 360)),
+          Builder(
+                builder: (context) {
+                  final size = MediaQuery.of(context).size;
+                  final glowSize = size.shortestSide * 0.55;
+                  return Positioned(
+                    top: -glowSize * 0.35,
+                    left: -glowSize * 0.3,
+                    child: _glow(_accentA, glowSize),
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final size = MediaQuery.of(context).size;
+                  final glowSize = size.shortestSide * 0.6;
+                  return Positioned(
+                    bottom: -glowSize * 0.4,
+                    right: -glowSize * 0.35,
+                    child: _glow(_accentB, glowSize),
+                  );
+                },
+              ),
               LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
@@ -200,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   colors: [_accentA, _accentB],
                                 ).createShader(rect),
                                 child: const Text(
-                                  'Your work \n tells your story.',
+                                  'Your Work \n Tells Your Story.',
                                   style: TextStyle(
                                     fontSize: 34,
                                     fontWeight: FontWeight.w800,
@@ -311,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _glow(Color color, double size) {
+Widget _glow(Color color, double size) {
     return IgnorePointer(
       child: Container(
         width: size,
@@ -320,7 +339,7 @@ class _LoginScreenState extends State<LoginScreen> {
           shape: BoxShape.circle,
           gradient: RadialGradient(
             colors: [
-              color.withValues(alpha: _isDark ? .35 : .22),
+              color.withValues(alpha: _isDark ? .30 : .12),
               color.withValues(alpha: 0),
             ],
           ),
