@@ -265,27 +265,22 @@ class _ProfileHero extends StatelessWidget {
 
 class _EvidenceSource extends StatelessWidget {
   final IconData icon;
-  final Widget? brand;
   final String title;
   final String subtitle;
   final String status;
   final Color color;
-  final VoidCallback? onTap;
 
   const _EvidenceSource({
     required this.icon,
-    this.brand,
     required this.title,
     required this.subtitle,
     required this.status,
     required this.color,
-    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return LensCard(
-      onTap: onTap,
       padding: const EdgeInsets.all(15),
       child: Row(
         children: [
@@ -296,7 +291,7 @@ class _EvidenceSource extends StatelessWidget {
               color: color.withValues(alpha: .09),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: brand ?? Icon(icon, color: color, size: 20),
+            child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
