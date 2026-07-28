@@ -20,6 +20,23 @@ from app.application_service import (
 )
 from app.config import Settings
 from app.gmail import GMAIL_SEND_SCOPE, GmailClient
+from app.schemas.applications import ApplicationPreviewRequest
+
+
+def test_application_preview_accepts_pasted_post_without_a_url() -> None:
+    payload = ApplicationPreviewRequest(
+        post_text=(
+            "We are hiring a graduate backend engineer. Send a CV to "
+            "jobs@example.com and include relevant Python projects."
+        )
+    )
+    assert payload.linkedin_post_url is None
+    assert "backend engineer" in (payload.post_text or "")
+
+
+def test_application_preview_requires_a_link_or_post_text() -> None:
+    with pytest.raises(ValueError):
+        ApplicationPreviewRequest()
 
 
 def test_linkedin_intake_prefers_user_supplied_post_text() -> None:

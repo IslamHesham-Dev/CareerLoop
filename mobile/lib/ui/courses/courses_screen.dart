@@ -7,6 +7,8 @@ import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
 
+enum _LearnSection { materials, grades }
+
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});
 
@@ -15,7 +17,7 @@ class CoursesScreen extends StatefulWidget {
 }
 
 class _CoursesScreenState extends State<CoursesScreen> {
-  final _search = TextEditingController();
+  _LearnSection _section = _LearnSection.materials;
   String? _cmsSeasonRequested;
 
   @override
@@ -36,86 +38,49 @@ class _CoursesScreenState extends State<CoursesScreen> {
   }
 
   @override
-  void dispose() {
-    _search.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
     final cms = context.watch<CmsRepository>();
     final session = context.watch<AuthRepository>().session;
-    final university = session?.universityLabel ?? 'University';
     final cmsConnected = session?.cmsConnected ?? false;
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     final desiredSeason = academic.context?.currentSeason;
+
     if (cmsConnected &&
         desiredSeason != null &&
         _cmsSeasonRequested != desiredSeason) {
       _cmsSeasonRequested = desiredSeason;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.read<CmsRepository>().loadCourses(
-                force: true,
-                season: desiredSeason,
-              );
-        }
+        if (!mounted) return;
+        context.read<CmsRepository>().loadCourses(
+              force: true,
+              season: desiredSeason,
+            );
       });
     }
-    final needle = _search.text.trim().toLowerCase();
-    final cmsCourses = cms.courses
-        .where(
-          (course) =>
-              needle.isEmpty ||
-              course.code.toLowerCase().contains(needle) ||
-              course.title.toLowerCase().contains(needle) ||
-              course.cmsLabel.toLowerCase().contains(needle),
-        )
-        .toList();
-    final semesterCourses = academic.courses
-        .where(
-          (course) =>
-              needle.isEmpty ||
-              course.code.toLowerCase().contains(needle) ||
-              course.title.toLowerCase().contains(needle),
-        )
-        .toList();
 
     return SafeArea(
       bottom: false,
       child: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
+            academic.loadDashboard(force: true),
             if (cmsConnected)
               cms.loadCourses(
                 force: true,
                 season: academic.context?.currentSeason,
               ),
-            academic.loadDashboard(force: true),
           ]);
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
           children: [
             Row(
               children: [
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Learn',
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        academic.context?.currentSeason ??
-                            'Courses and study materials',
-                        style: const TextStyle(color: LensColors.muted),
-                      ),
-                    ],
+                  child: Text(
+                    'Learn',
+                    style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
                 IconButton(
@@ -123,122 +88,38 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   onPressed: () => context.push('/practice'),
                   icon: const Icon(Icons.quiz_outlined),
                 ),
-                IconButton.filledTonal(
-                  tooltip: 'Ask CareerLoop',
-                  onPressed: () => context.go('/advisor'),
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                ),
               ],
             ),
-            if (!cmsConnected) ...[
-              const SizedBox(height: 18),
-              CmsAccessNotice(message: session?.cmsMessage),
-            ] else ...[
-              const SizedBox(height: 14),
-              _CmsStatus(
-                courseCount: cms.courses.length,
-                loading: cms.loadingCourses,
-                university: university,
-              ),
-            ],
-            const SizedBox(height: 18),
-            TextField(
-              controller: _search,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => FocusManager.instance.primaryFocus?.unfocus(),
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(
-                hintText: 'Find a course or code',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: keyboardVisible
-                    ? IconButton(
-                        tooltip: 'Hide keyboard',
-                        onPressed: () =>
-                            FocusManager.instance.primaryFocus?.unfocus(),
-                        icon: const Icon(Icons.keyboard_hide_rounded),
-                      )
-                    : null,
-              ),
+            const SizedBox(height: 20),
+            SegmentedButton<_LearnSection>(
+              showSelectedIcon: false,
+              segments: const [
+                ButtonSegment(
+                  value: _LearnSection.materials,
+                  icon: Icon(Icons.folder_copy_outlined, size: 18),
+                  label: Text('Materials'),
+                ),
+                ButtonSegment(
+                  value: _LearnSection.grades,
+                  icon: Icon(Icons.analytics_outlined, size: 18),
+                  label: Text('Grades'),
+                ),
+              ],
+              selected: {_section},
+              onSelectionChanged: (selection) {
+                setState(() => _section = selection.single);
+              },
             ),
             const SizedBox(height: 26),
-            _SectionHeading(
-              title: 'Semester courses',
-              detail: academic.context?.currentSeason ?? 'Portal',
-            ),
-            const SizedBox(height: 11),
-            if (academic.loadingDashboard && academic.courses.isEmpty)
-              const LensCard(
-                child: LensLoading(label: 'Loading semester courses...'),
-              )
-            else if (semesterCourses.isEmpty)
-              const LensCard(
-                child: Text(
-                  'No advisory-semester course matches this search.',
-                  textAlign: TextAlign.center,
-                ),
+            if (_section == _LearnSection.materials)
+              _MaterialsSection(
+                cmsConnected: cmsConnected,
+                cmsMessage: session?.cmsMessage,
+                cms: cms,
+                season: academic.context?.currentSeason,
               )
             else
-              LensCard(
-                padding: const EdgeInsets.all(14),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: semesterCourses
-                      .map(
-                        (course) => ActionChip(
-                          avatar: const Icon(
-                            Icons.analytics_outlined,
-                            size: 17,
-                          ),
-                          label: Text(course.code),
-                          tooltip: course.title,
-                          onPressed: () => context.push(
-                            '/courses/${course.code}',
-                            extra: course,
-                          ),
-                        ),
-                      )
-                      .toList(),
-                ),
-              ),
-            if (cmsConnected) ...[
-              const SizedBox(height: 28),
-              _SectionHeading(
-                title: 'Course materials',
-                detail: cms.courses.isEmpty
-                    ? cms.season
-                    : '${cms.courses.length} · ${cms.season ?? ''}',
-              ),
-              const SizedBox(height: 11),
-              if (cms.loadingCourses && cms.courses.isEmpty)
-                LensCard(
-                  child: LensLoading(
-                    label: 'Connecting to $university CMS...',
-                  ),
-                )
-              else if (cms.error != null && cms.courses.isEmpty)
-                LensError(
-                  message: cms.error!,
-                  onRetry: () => cms.loadCourses(
-                    force: true,
-                    season: academic.context?.currentSeason,
-                  ),
-                )
-              else if (cmsCourses.isEmpty)
-                const LensCard(
-                  child: Text(
-                    'No CMS course matches this search.',
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              else
-                ...cmsCourses.map(
-                  (course) => Padding(
-                    padding: const EdgeInsets.only(bottom: 11),
-                    child: _CmsCourseCard(course: course),
-                  ),
-                ),
-            ],
+              _GradesSection(academic: academic),
           ],
         ),
       ),
@@ -246,81 +127,92 @@ class _CoursesScreenState extends State<CoursesScreen> {
   }
 }
 
-class _CmsStatus extends StatelessWidget {
-  final int courseCount;
-  final bool loading;
-  final String university;
+class _MaterialsSection extends StatelessWidget {
+  final bool cmsConnected;
+  final String? cmsMessage;
+  final CmsRepository cms;
+  final String? season;
 
-  const _CmsStatus({
-    required this.courseCount,
-    required this.loading,
-    required this.university,
+  const _MaterialsSection({
+    required this.cmsConnected,
+    required this.cmsMessage,
+    required this.cms,
+    required this.season,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-      decoration: BoxDecoration(
-        color: LensColors.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: LensColors.line),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 9,
-            height: 9,
-            decoration: BoxDecoration(
-              color: loading ? LensColors.amber : LensColors.aqua,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: (loading ? LensColors.amber : LensColors.aqua)
-                      .withValues(alpha: .35),
-                  blurRadius: 8,
-                ),
-              ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Course materials',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 12),
+        if (!cmsConnected)
+          CmsAccessNotice(message: cmsMessage)
+        else if (cms.loadingCourses && cms.courses.isEmpty)
+          const LensCard(
+            child: LensLoading(label: 'Loading course materials…'),
+          )
+        else if (cms.error != null && cms.courses.isEmpty)
+          LensError(
+            message: cms.error!,
+            onRetry: () => cms.loadCourses(
+              force: true,
+              season: season,
             ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
+          )
+        else if (cms.courses.isEmpty)
+          const LensCard(
             child: Text(
-              loading ? 'Syncing $university CMS' : '$university CMS connected',
-              style: const TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
+              'No course materials are available.',
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          ...cms.courses.map(
+            (course) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _CmsCourseCard(course: course),
             ),
           ),
-          if (courseCount > 0)
-            Text(
-              '$courseCount courses',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: 11,
-                  ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
 
-class _SectionHeading extends StatelessWidget {
-  final String title;
-  final String? detail;
+class _GradesSection extends StatelessWidget {
+  final AcademicRepository academic;
 
-  const _SectionHeading({required this.title, this.detail});
+  const _GradesSection({required this.academic});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        ),
-        if (detail != null)
-          Text(detail!, style: Theme.of(context).textTheme.bodyMedium),
+        Text('Grades', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 12),
+        if (academic.loadingDashboard && academic.courses.isEmpty)
+          const LensCard(
+            child: LensLoading(label: 'Loading grades…'),
+          )
+        else if (academic.courses.isEmpty)
+          const LensCard(
+            child: Text(
+              'No course grades are available.',
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          ...academic.courses.map(
+            (course) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _GradeCourseCard(course: course),
+            ),
+          ),
       ],
     );
   }
@@ -333,87 +225,25 @@ class _CmsCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resourceLabel = course.resourceCount == null
-        ? 'Open course resources'
-        : '${course.resourceCount} CMS resources';
     return LensCard(
       onTap: () => context.push('/courses/cms/${course.id}', extra: course),
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Container(
-            width: 52,
-            height: 58,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: LensColors.indigo.withValues(alpha: .09),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: LensColors.indigo.withValues(alpha: .12),
-              ),
-            ),
-            child: Text(
-              course.code,
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              style: const TextStyle(
-                color: LensColors.indigo,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ),
+          _CourseCode(code: course.code),
           const SizedBox(width: 14),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  course.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      resourceLabel,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontSize: 11),
-                    ),
-                    if (course.hasSupplementalVideos)
-                      _VideoBadge(count: course.videoCount),
-                  ],
-                ),
-              ],
+            child: Text(
+              course.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
             ),
           ),
-          const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Ask AI about ${course.code}',
-            onPressed: () {
-              context.read<AdvisorRepository>().send(
-                    'Help me study ${course.code} ${course.title} in '
-                    '${course.season}. Use the live CMS course tools first and '
-                    'base suggestions only on resources you can verify.',
-                  );
-              context.go('/advisor');
-            },
-            icon: const Icon(
-              Icons.auto_awesome_outlined,
-              color: LensColors.violet,
-              size: 20,
-            ),
-          ),
+          const SizedBox(width: 10),
           const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
         ],
       ),
@@ -421,37 +251,65 @@ class _CmsCourseCard extends StatelessWidget {
   }
 }
 
-class _VideoBadge extends StatelessWidget {
-  final int count;
+class _GradeCourseCard extends StatelessWidget {
+  final CourseSummary course;
 
-  const _VideoBadge({required this.count});
+  const _GradeCourseCard({required this.course});
+
+  @override
+  Widget build(BuildContext context) {
+    return LensCard(
+      onTap: () => context.push('/courses/${course.code}', extra: course),
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          _CourseCode(code: course.code),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Text(
+              course.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
+        ],
+      ),
+    );
+  }
+}
+
+class _CourseCode extends StatelessWidget {
+  final String code;
+
+  const _CourseCode({required this.code});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      width: 56,
+      height: 48,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(
-        color: LensColors.violet.withValues(alpha: .09),
-        borderRadius: BorderRadius.circular(999),
+        color: LensColors.indigo.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.play_circle_outline_rounded,
-            size: 13,
-            color: LensColors.violet,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '$count videos',
-            style: const TextStyle(
-              color: LensColors.violet,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ],
+      child: Text(
+        code,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: LensColors.indigo,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }

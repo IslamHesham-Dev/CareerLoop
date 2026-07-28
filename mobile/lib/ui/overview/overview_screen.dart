@@ -35,8 +35,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final professionalSources = [linkedInReady, githubReady, resumeReady]
         .where((ready) => ready)
         .length;
+    final evidenceSources =
+        professionalSources + (academic.transcript != null ? 1 : 0);
     final currentSeason =
         academic.context?.currentSeason ?? session?.currentSeason ?? 'Current';
+    final firstName = session?.firstName ?? 'there';
 
     return SafeArea(
       bottom: false,
@@ -46,17 +49,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 12, 0),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
               sliver: SliverToBoxAdapter(
-                child: Row(
-                  children: [
-                    const Expanded(child: LensLogo(size: 36)),
-                    IconButton(
-                      tooltip: 'Settings',
-                      onPressed: () => context.push('/settings'),
-                      icon: const Icon(Icons.settings_outlined),
-                    ),
-                  ],
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: LensLogo(size: 36),
                 ),
               ),
             ),
@@ -65,13 +62,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
               sliver: SliverList.list(
                 children: [
                   Text(
-                    'Today',
+                    'Welcome, $firstName',
                     style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    'Your current academic and career priorities.',
-                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 20),
                   _AdvisorySemesterPicker(
@@ -97,20 +89,20 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       gpa: academic.transcript?.cumulativeGpaWithGrade ??
                           'Not loaded',
                       courseCount: academic.courses.length,
-                      professionalSources: professionalSources,
+                      evidenceSources: evidenceSources,
                     ),
                     const SizedBox(height: 26),
-                    const _SectionTitle(title: 'Next up'),
+                    const _SectionTitle(title: 'Continue'),
                     const SizedBox(height: 10),
                     _ActionRow(
-                      icon: Icons.menu_book_outlined,
+                      icon: Icons.bolt_outlined,
                       iconColor: LensColors.indigo,
                       title: academic.courses.isEmpty
                           ? 'Review your academic record'
-                          : 'Open your $currentSeason courses',
+                          : 'Prepare from your course material',
                       subtitle: academic.courses.isEmpty
                           ? 'Your transcript and course history are ready to review.'
-                          : '${academic.courses.length} current courses are available.',
+                          : '${academic.courses.length} courses are ready for notes, prep, and practice.',
                       onTap: () => context.go('/courses'),
                     ),
                     const SizedBox(height: 10),
@@ -120,11 +112,11 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           : Icons.person_add_alt_1_outlined,
                       iconColor: LensColors.aqua,
                       title: professionalSources == 3
-                          ? 'Find roles matched to your profile'
+                          ? 'Review roles matched to your profile'
                           : 'Complete your career profile',
                       subtitle: professionalSources == 3
-                          ? 'LinkedIn, GitHub, and your resume can support role matching.'
-                          : '$professionalSources of 3 professional sources are ready.',
+                          ? 'Compare live openings against your verified evidence.'
+                          : 'Add LinkedIn, GitHub, and resume evidence for better evaluations.',
                       onTap: () => professionalSources == 3
                           ? context.push('/opportunities')
                           : context.go('/profile'),
@@ -161,7 +153,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               context.go('/advisor');
                             },
                             icon: const Icon(Icons.auto_awesome_outlined),
-                            label: const Text('Ask Copilot'),
+                            label: const Text('Ask'),
                           ),
                         ),
                       ],
@@ -258,12 +250,12 @@ class _AdvisorySemesterPicker extends StatelessWidget {
 class _Snapshot extends StatelessWidget {
   final String gpa;
   final int courseCount;
-  final int professionalSources;
+  final int evidenceSources;
 
   const _Snapshot({
     required this.gpa,
     required this.courseCount,
-    required this.professionalSources,
+    required this.evidenceSources,
   });
 
   @override
@@ -288,8 +280,8 @@ class _Snapshot extends StatelessWidget {
           const _MetricDivider(),
           Expanded(
             child: _SnapshotValue(
-              value: '$professionalSources/3',
-              label: 'Profile',
+              value: '$evidenceSources/4',
+              label: 'Evidence',
             ),
           ),
         ],

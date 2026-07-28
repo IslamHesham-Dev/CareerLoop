@@ -24,7 +24,6 @@ import '../ui/profile/profile_screen.dart';
 import '../ui/profile/email_studio_screen.dart';
 import '../ui/profile/master_resume_screen.dart';
 import '../ui/profile/tone_screen.dart';
-import '../ui/settings/settings_screen.dart';
 import '../ui/transcript/transcript_screen.dart';
 import '../ui/viewer/drive_video_screen.dart';
 import '../ui/viewer/pdf_viewer_screen.dart';
@@ -195,10 +194,6 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
           builder: (context, state) => const EmailStudioScreen(),
         ),
         GoRoute(
-          path: '/settings',
-          builder: (context, state) => const SettingsScreen(),
-        ),
-        GoRoute(
           path: '/viewer/pdf',
           builder: (context, state) {
             final args = state.extra as PdfViewerArgs;
@@ -242,9 +237,14 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'CareerLoop',
+      title: 'Career Loop',
       debugShowCheckedModeBanner: false,
       theme: CareerLoopTheme.light(),
+      builder: (context, child) => GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: child ?? const SizedBox.shrink(),
+      ),
       routerConfig: _router,
     );
   }

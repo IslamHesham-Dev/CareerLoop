@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, Field, HttpUrl
+from pydantic import BaseModel, Field, HttpUrl, model_validator
 
 
 class ApplicationPreviewRequest(BaseModel):
-    linkedin_post_url: HttpUrl
+    linkedin_post_url: HttpUrl | None = None
     post_text: str | None = Field(default=None, max_length=20_000)
+
+    @model_validator(mode="after")
+    def require_link_or_text(self) -> "ApplicationPreviewRequest":
+        if self.linkedin_post_url is None and not (self.post_text or "").strip():
+            raise ValueError("Provide a LinkedIn post link or paste the post text.")
+        return self
 
 
 class ApplicationDraftResponse(BaseModel):

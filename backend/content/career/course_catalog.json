@@ -201,6 +201,83 @@
       "roles": ["it-support", "devops"]
     },
     {
+      "id": "google-it-support",
+      "title": "Google IT Support Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-it-support",
+      "level": "Beginner",
+      "duration": "6 courses",
+      "skills": ["troubleshooting", "networking", "linux", "tcp/ip", "cybersecurity"],
+      "roles": ["it-support", "networking"]
+    },
+    {
+      "id": "ibm-technical-support",
+      "title": "IBM IT Support Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/ibm-technical-support",
+      "level": "Beginner",
+      "duration": "9 courses",
+      "skills": ["troubleshooting", "linux", "networking", "cloud", "databases"],
+      "roles": ["it-support", "networking", "cloud"]
+    },
+    {
+      "id": "google-project-management",
+      "title": "Google Project Management Professional Certificate",
+      "provider": "Google",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-project-management",
+      "level": "Beginner",
+      "duration": "7 courses",
+      "skills": ["project management", "agile", "scrum", "communication", "risk management"],
+      "roles": ["business"]
+    },
+    {
+      "id": "ibm-full-stack",
+      "title": "IBM Full Stack Software Developer Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/ibm-full-stack-cloud-developer",
+      "level": "Beginner",
+      "duration": "15 courses",
+      "skills": ["javascript", "react", "node.js", "python", "django", "docker", "microservices"],
+      "roles": ["fullstack", "frontend", "backend", "software"]
+    },
+    {
+      "id": "aws-cloud-consultant",
+      "title": "AWS Cloud Technology Consultant Professional Certificate",
+      "provider": "AWS",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/aws-cloud-technology-consultant",
+      "level": "Beginner",
+      "duration": "9 courses",
+      "skills": ["aws", "cloud", "python", "etl", "databases", "communication"],
+      "roles": ["cloud", "business"]
+    },
+    {
+      "id": "google-cloud-cybersecurity",
+      "title": "Google Cloud Cybersecurity Professional Certificate",
+      "provider": "Google Cloud",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/google-cloud-cybersecurity-certificate",
+      "level": "Beginner",
+      "duration": "8 courses",
+      "skills": ["cybersecurity", "cloud", "network security", "linux", "siem"],
+      "roles": ["security", "cloud"]
+    },
+    {
+      "id": "ibm-data-analyst",
+      "title": "IBM Data Analyst Professional Certificate",
+      "provider": "IBM",
+      "platform": "Coursera",
+      "url": "https://www.coursera.org/professional-certificates/ibm-data-analyst",
+      "level": "Beginner",
+      "duration": "11 courses",
+      "skills": ["python", "sql", "spreadsheets", "data visualization", "rest api"],
+      "roles": ["data", "business"]
+    },
+    {
       "id": "boulder-algorithms",
       "title": "Data Structures and Algorithms Specialization",
       "provider": "University of Colorado Boulder",

@@ -32,12 +32,10 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
   bool _attachResume = false;
 
   static const _purposes = [
-    'Ask a professor for a recommendation letter',
-    'Request an appointment with an academic advisor',
-    'Ask a lecturer about a course or grade',
-    'Follow up on an internship or job application',
-    'Introduce myself to a recruiter',
-    'Send a professional thank-you note',
+    'Academic question',
+    'Recommendation request',
+    'Meeting request',
+    'Job application follow-up',
   ];
 
   @override
@@ -49,6 +47,11 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ApplicationRepository>().refreshGmailStatus();
       _initializeName();
+      final existing = context.read<EmailRepository>().draft;
+      if (existing != null) {
+        _subjectController.text = existing.subject;
+        _bodyController.text = existing.body;
+      }
     });
   }
 
@@ -158,16 +161,6 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            Text(
-              'Draft a contextual email',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'CareerLoop prepares the message. You review it before Gmail sends anything.',
-              style: TextStyle(color: LensColors.muted, height: 1.45),
-            ),
-            const SizedBox(height: 16),
             _EmailReadiness(
               gmail: gmail,
               cv: cv,
@@ -241,7 +234,7 @@ class _EmailReadiness extends StatelessWidget {
             title: gmail.gmailConnected
                 ? gmail.gmailEmail ?? 'Gmail connected'
                 : 'Connect Gmail',
-            detail: 'Send-only OAuth permission',
+            detail: gmail.gmailConnected ? 'Ready to send' : '',
             ready: gmail.gmailConnected,
             action: onConnect,
             actionLabel: gmail.gmailConnected ? 'Change' : 'Connect',
@@ -304,13 +297,14 @@ class _ReadyRow extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Text(
-                detail,
-                style: const TextStyle(
-                  color: LensColors.muted,
-                  fontSize: 12,
+              if (detail.isNotEmpty)
+                Text(
+                  detail,
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
@@ -390,7 +384,7 @@ class _EmailIntake extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           const Text(
-            'Common purposes',
+            'What is this about?',
             style: TextStyle(
               color: LensColors.muted,
               fontSize: 12,
@@ -403,10 +397,10 @@ class _EmailIntake extends StatelessWidget {
             runSpacing: 7,
             children: purposes
                 .map(
-                  (purpose) => ActionChip(
-                    avatar: const Icon(Icons.bolt_rounded, size: 15),
+                  (purpose) => ChoiceChip(
+                    selected: purposeController.text == purpose,
                     label: Text(purpose),
-                    onPressed: () {
+                    onSelected: (_) {
                       purposeController.text = purpose;
                       onChanged();
                     },

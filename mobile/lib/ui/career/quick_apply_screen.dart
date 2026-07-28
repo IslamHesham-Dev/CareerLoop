@@ -28,6 +28,7 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
   final _postController = TextEditingController();
   final _subjectController = TextEditingController();
   final _bodyController = TextEditingController();
+  String _inputMode = 'link';
 
   @override
   void initState() {
@@ -65,10 +66,25 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
 
   Future<void> _analyze() async {
     FocusManager.instance.primaryFocus?.unfocus();
+    final link = _linkController.text.trim();
+    final post = _postController.text.trim();
+    if ((_inputMode == 'link' && !link.startsWith('http')) ||
+        (_inputMode == 'text' && post.length < 40)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _inputMode == 'link'
+                ? 'Enter a valid LinkedIn post link.'
+                : 'Paste enough of the post to identify the role and requirements.',
+          ),
+        ),
+      );
+      return;
+    }
     final repository = context.read<ApplicationRepository>();
     final draft = await repository.analyze(
-      linkedInPostUrl: _linkController.text,
-      postText: _postController.text,
+      linkedInPostUrl: _inputMode == 'link' ? link : '',
+      postText: _inputMode == 'text' ? post : '',
     );
     if (draft == null || !mounted) return;
     _subjectController.text = draft.subject;
@@ -134,7 +150,7 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
     final cvRepository = context.watch<CurrentCvRepository>();
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Post to Application'),
+        title: const Text('Apply from a post'),
       ),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
@@ -142,21 +158,10 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
           children: [
-            Text(
-              'Apply from a LinkedIn post',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Paste the opportunity, review the email and documents, then approve the Gmail send.',
-              style: TextStyle(color: LensColors.muted, height: 1.45),
-            ),
-            const SizedBox(height: 16),
             _ReadinessCard(
               gmailConnected: repository.gmailConnected,
               gmailAvailable: repository.gmailAvailable,
               gmailEmail: repository.gmailEmail,
-              configurationMessage: repository.configurationMessage,
               checkingGmail: repository.checkingGmail,
               cvRepository: cvRepository,
               onConnectGmail: () => _connectGmail(
@@ -179,6 +184,9 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
               _PostIntake(
                 linkController: _linkController,
                 postController: _postController,
+                inputMode: _inputMode,
+                onInputModeChanged: (value) =>
+                    setState(() => _inputMode = value),
                 analyzing: repository.analyzing,
                 onAnalyze: _analyze,
               )
@@ -205,7 +213,6 @@ class _ReadinessCard extends StatelessWidget {
   final bool gmailConnected;
   final bool gmailAvailable;
   final String? gmailEmail;
-  final String? configurationMessage;
   final bool checkingGmail;
   final CurrentCvRepository cvRepository;
   final VoidCallback onConnectGmail;
@@ -214,7 +221,6 @@ class _ReadinessCard extends StatelessWidget {
     required this.gmailConnected,
     required this.gmailAvailable,
     required this.gmailEmail,
-    required this.configurationMessage,
     required this.checkingGmail,
     required this.cvRepository,
     required this.onConnectGmail,
@@ -228,62 +234,28 @@ class _ReadinessCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Ready to send?',
+          Text('Application setup',
               style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 13),
           _SourceRow(
             icon: SimpleIcons.gmail,
             color: const Color(0xFFEA4335),
             title: gmailConnected ? 'Gmail connected' : 'Connect Gmail',
-            subtitle: gmailConnected
-                ? (gmailEmail ?? 'Send-only access granted')
-                : (configurationMessage ??
-                    'CareerLoop requests send-only permission'),
+            subtitle: gmailConnected ? (gmailEmail ?? '') : '',
             ready: gmailConnected,
             busy: checkingGmail,
             actionLabel: gmailConnected ? 'Change' : 'Connect',
             onAction: onConnectGmail,
             enabled: gmailConnected || gmailAvailable,
           ),
-          if (!gmailConnected && gmailAvailable) ...[
-            const SizedBox(height: 9),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 11,
-                vertical: 9,
-              ),
-              decoration: BoxDecoration(
-                color: LensColors.amber.withValues(alpha: .09),
-                borderRadius: BorderRadius.circular(13),
-              ),
-              child: const Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.person_add_alt_1_rounded,
-                    color: LensColors.amber,
-                    size: 16,
-                  ),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'OAuth testing: this Gmail address must be added under '
-                      'Google Auth Platform → Audience → Test users.',
-                      style: TextStyle(fontSize: 11, height: 1.35),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
           const Divider(height: 24),
           _SourceRow(
             icon: Icons.picture_as_pdf_rounded,
             color: LensColors.rose,
             title: cv == null ? 'Add current CV' : cv.fileName,
             subtitle: cv == null
-                ? 'Stored privately on this device'
-                : '${(cv.sizeBytes / 1024).round()} KB · attached only when you approve',
+                ? ''
+                : '${(cv.sizeBytes / 1024).round()} KB · PDF ready',
             ready: cv != null,
             busy: cvRepository.selecting,
             actionLabel: cv == null ? 'Choose PDF' : 'Change',
@@ -356,16 +328,18 @@ class _SourceRow extends StatelessWidget {
                   ],
                 ],
               ),
-              const SizedBox(height: 3),
-              Text(
-                subtitle,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: LensColors.muted,
-                  fontSize: 11,
+              if (subtitle.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 11,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ),
@@ -387,12 +361,16 @@ class _SourceRow extends StatelessWidget {
 class _PostIntake extends StatelessWidget {
   final TextEditingController linkController;
   final TextEditingController postController;
+  final String inputMode;
+  final ValueChanged<String> onInputModeChanged;
   final bool analyzing;
   final VoidCallback onAnalyze;
 
   const _PostIntake({
     required this.linkController,
     required this.postController,
+    required this.inputMode,
+    required this.onInputModeChanged,
     required this.analyzing,
     required this.onAnalyze,
   });
@@ -403,63 +381,61 @@ class _PostIntake extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
-              const LinkedInBrandMark(size: 38),
-              const SizedBox(width: 11),
+              LinkedInBrandMark(size: 38),
+              SizedBox(width: 11),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'LinkedIn opportunity',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const Text(
-                      'Paste a public post link',
-                      style: TextStyle(
-                        color: LensColors.muted,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  'LinkedIn opportunity',
+                  style: TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
-          TextField(
-            controller: linkController,
-            keyboardType: TextInputType.url,
-            textInputAction: TextInputAction.next,
-            autocorrect: false,
-            decoration: const InputDecoration(
-              labelText: 'LinkedIn post URL',
-              hintText: 'https://www.linkedin.com/posts/...',
-              prefixIcon: Icon(Icons.link_rounded),
-            ),
+          const SizedBox(height: 16),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'link',
+                icon: Icon(Icons.link_rounded, size: 18),
+                label: Text('Use link'),
+              ),
+              ButtonSegment(
+                value: 'text',
+                icon: Icon(Icons.content_paste_rounded, size: 18),
+                label: Text('Paste post'),
+              ),
+            ],
+            selected: {inputMode},
+            showSelectedIcon: false,
+            onSelectionChanged: (values) => onInputModeChanged(values.first),
           ),
           const SizedBox(height: 13),
-          TextField(
-            controller: postController,
-            minLines: 4,
-            maxLines: 9,
-            decoration: const InputDecoration(
-              labelText: 'Post text · optional fallback',
-              hintText:
-                  'Paste the job post here when LinkedIn hides its public preview...',
-              alignLabelWithHint: true,
+          if (inputMode == 'link')
+            TextField(
+              controller: linkController,
+              keyboardType: TextInputType.url,
+              textInputAction: TextInputAction.done,
+              autocorrect: false,
+              decoration: const InputDecoration(
+                labelText: 'LinkedIn post URL',
+                hintText: 'https://www.linkedin.com/posts/...',
+                prefixIcon: Icon(Icons.link_rounded),
+              ),
+            )
+          else
+            TextField(
+              controller: postController,
+              minLines: 6,
+              maxLines: 12,
+              decoration: const InputDecoration(
+                labelText: 'Job post text',
+                hintText:
+                    'Paste the role, company, requirements, and contact email...',
+                alignLabelWithHint: true,
+              ),
             ),
-          ),
-          const SizedBox(height: 11),
-          const Text(
-            'LinkedIn often restricts post content. CareerLoop first checks public preview metadata and asks for pasted text only when needed.',
-            style: TextStyle(
-              color: LensColors.muted,
-              fontSize: 11,
-              height: 1.4,
-            ),
-          ),
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,

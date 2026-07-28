@@ -44,7 +44,7 @@ class AppShell extends StatelessWidget {
               NavigationDestination(
                 icon: Icon(Icons.auto_awesome_outlined),
                 selectedIcon: Icon(Icons.auto_awesome_rounded),
-                label: 'Copilot',
+                label: 'Ask',
               ),
               NavigationDestination(
                 icon: Icon(Icons.rocket_launch_outlined),

@@ -107,6 +107,7 @@ async def login(payload: LoginRequest) -> LoginResponse:
         token, student = session_store.create(
             portal,
             cms,
+            username=username,
             enrollment_year=payload.enrollment_year,
             seasons=seasons,
         )
@@ -132,6 +133,7 @@ async def login(payload: LoginRequest) -> LoginResponse:
         transcript_years=student.academic.transcript_window_years,
         cms_connected=cms.connected,
         cms_message=cms.unavailable_message,
+        username=getattr(student, "username", username),
     )
 
 
@@ -149,6 +151,7 @@ def session_status(
         transcript_years=student.academic.transcript_window_years,
         cms_connected=student.cms.connected,
         cms_message=student.cms.unavailable_message,
+        username=getattr(student, "username", ""),
     )
 
 

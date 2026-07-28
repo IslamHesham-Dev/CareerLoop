@@ -47,17 +47,32 @@ async def preview_application(
     student: StudentSession = Depends(get_student_session),
     settings: Settings = Depends(get_settings),
 ) -> ApplicationDraftResponse:
+    post_url = (
+        str(payload.linkedin_post_url)
+        if payload.linkedin_post_url is not None
+        else ""
+    )
+    supplied_text = (payload.post_text or "").strip()
+    if supplied_text:
+        post_text = supplied_text
+        source = "pasted post"
+        warnings: list[str] = []
+    else:
+        try:
+            post_text, source, warnings = await run_in_threadpool(
+                linkedin_post_text,
+                post_url,
+            )
+        except ApplicationIntakeError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail=str(exc),
+            ) from None
+
     try:
-        post_text, source, warnings = await run_in_threadpool(
-            linkedin_post_text,
-            str(payload.linkedin_post_url),
-            supplied_text=payload.post_text,
-        )
-    except ApplicationIntakeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=str(exc),
-        ) from None
+        transcript = await run_in_threadpool(student.academic.full_transcript)
+    except Exception:
+        transcript = None
 
     draft = await run_in_threadpool(
         generate_application_draft,
@@ -67,6 +82,7 @@ async def preview_application(
         github_profile=student.github_profile,
         settings=settings,
         resume_profile=student.resume_profile,
+        transcript=transcript,
     )
     recipient = _prototype_recipient(settings)
     if draft.detected_contact_email:
@@ -78,16 +94,17 @@ async def preview_application(
         not student.linkedin_profile
         and not student.github_profile
         and not student.resume_profile
+        and not transcript
     ):
         warnings.append(
-            "No LinkedIn or GitHub profile evidence was connected, so the "
-            "draft intentionally avoids detailed personal claims."
+            "No academic, LinkedIn, resume, or GitHub evidence was available, "
+            "so the draft intentionally avoids personal qualification claims."
         )
 
     draft_id = uuid.uuid4().hex
     stored = {
         "id": draft_id,
-        "linkedin_post_url": str(payload.linkedin_post_url),
+        "linkedin_post_url": post_url or "https://www.linkedin.com/",
         "content_source": source,
         "post_excerpt": post_text[:600],
         "role": draft.role,

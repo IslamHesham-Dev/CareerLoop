@@ -26,6 +26,7 @@ void main() {
 
   test('keeps the CMS limited-access message without failing the session', () {
     final session = SessionInfo.fromJson({
+      'username': 'ada.lovelace',
       'institution': 'guc',
       'current_season': 'Winter 2025',
       'advisory_year': '2024-2025',
@@ -39,6 +40,7 @@ void main() {
     expect(session.cmsConnected, isFalse);
     expect(session.cmsMessage, contains('graduation'));
     expect(session.universityLabel, 'GUC');
+    expect(session.firstName, 'Ada');
   });
 
   test('extracts a GIU course code and title from its long portal label', () {
@@ -158,11 +160,23 @@ void main() {
           'company_logo_url':
               'https://www.google.com/s2/favicons?domain_url=example.com',
           'role_family': 'backend',
+          'required_skills': ['python', 'docker', 'rest api'],
           'match_score': 82,
           'match_reasons': ['Profile evidence: python'],
           'keyword_matches': ['backend'],
           'profile_skill_matches': ['python'],
+          'profile_evidence_citations': [
+            {
+              'skill': 'python',
+              'source': 'github',
+              'evidence_type': 'project',
+              'evidence': 'GitHub repository careerloop-api',
+            },
+          ],
           'inferred_skill_gaps': ['docker'],
+          'assessment_summary':
+              'Profile evidence supports one inferred requirement.',
+          'assessment_confidence': 'medium',
           'recommended_course_ids': ['ibm-devops'],
         },
       ],
@@ -185,7 +199,11 @@ void main() {
     });
 
     expect(result.jobs.single.matchScore, 82);
+    expect(result.jobs.single.requiredSkills, contains('rest api'));
     expect(result.jobs.single.inferredSkillGaps, ['docker']);
+    expect(result.jobs.single.profileEvidenceCitations.single.sourceLabel,
+        'GitHub');
+    expect(result.jobs.single.assessmentConfidence, 'medium');
     expect(result.jobs.single.category, 'Software Engineering');
     expect(result.jobs.single.locations, ['Berlin, Germany', 'Remote']);
     expect(result.jobs.single.companyLogoUrl?.host, 'www.google.com');

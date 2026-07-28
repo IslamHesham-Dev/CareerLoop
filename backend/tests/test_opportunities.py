@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from app.opportunities import CourseCatalog, OpportunityService
+from app.schemas.career import OpportunitySearchResponse
 from swelist_connector.models import JobPosting
 
 
@@ -205,3 +206,156 @@ def test_curated_course_catalog_has_unique_secure_links() -> None:
         for course in courses
     )
     assert all(course["skills"] for course in courses)
+
+
+def test_match_cites_every_available_profile_source() -> None:
+    service = OpportunityService(
+        connector=FakeSwelistConnector()  # type: ignore[arg-type]
+    )
+
+    result = service.search(
+        role_type="newgrad",
+        timeframe="all",
+        target_market="europe",
+        locations=["Berlin"],
+        keywords=["backend"],
+        work_modes=[],
+        transcript={
+            "courses": [
+                {
+                    "course": "Software Engineering",
+                    "grade": "A",
+                },
+                {
+                    "course": "Database Systems",
+                    "grade": "B+",
+                },
+            ]
+        },
+        linkedin_profile={"skills": ["Python"]},
+        github_profile={
+            "skills": [
+                {
+                    "skill": "Docker",
+                    "evidence_repos": ["careerloop-api"],
+                }
+            ],
+            "repositories": [
+                {
+                    "name": "careerloop-api",
+                    "description": "Dockerized API",
+                    "detected_skills": ["Docker"],
+                }
+            ],
+        },
+        resume_profile={
+            "skills": ["Git", "Software testing"],
+            "experience": ["Built and tested backend services"],
+        },
+    )
+
+    job = result["jobs"][0]
+    sources = {
+        item["source"] for item in job["profile_evidence_citations"]
+    }
+    assert sources == {
+        "academic_transcript",
+        "linkedin_pdf",
+        "github",
+        "resume",
+    }
+    assert {"python", "docker", "git", "databases"}.issubset(
+        job["profile_skill_matches"]
+    )
+    assert all(item["evidence"] for item in job["profile_evidence_citations"])
+    assert {
+        item["source"] for item in result["profile_evidence_sources"]
+        if item["available"]
+    } == sources
+    OpportunitySearchResponse.model_validate(result)
+
+
+class JavaBackendConnector:
+    def get_postings(self, **_kwargs):
+        return [
+            JobPosting(
+                company="Example Bank",
+                title="Graduate Java Backend Engineer",
+                location="Frankfurt, Germany",
+                link="https://example.com/java-backend",
+                category="Software",
+            )
+        ]
+
+
+def test_role_requirements_are_inferred_without_listing_skills() -> None:
+    service = OpportunityService(
+        connector=JavaBackendConnector()  # type: ignore[arg-type]
+    )
+
+    result = service.search(
+        role_type="newgrad",
+        timeframe="all",
+        target_market="global",
+        locations=[],
+        keywords=[],
+        work_modes=[],
+        transcript=None,
+        linkedin_profile=None,
+        github_profile=None,
+        resume_profile=None,
+    )
+
+    job = result["jobs"][0]
+    assert {"java", "spring", "databases", "rest api"}.issubset(
+        job["required_skills"]
+    )
+    assert "python" not in job["required_skills"]
+    assert job["profile_skill_matches"] == []
+    assert job["profile_evidence_citations"] == []
+    assert job["assessment_confidence"] == "low"
+    assert "No connected profile source" in job["assessment_summary"]
+    assert "No direct profile-skill" in job["match_reasons"][0]
+    assert job["match_score"] <= 20
+
+
+class SoftwareConnector:
+    def get_postings(self, **_kwargs):
+        return [
+            JobPosting(
+                company="Example Product",
+                title="Graduate Software Engineer",
+                location="Remote",
+                link="https://example.com/software",
+            )
+        ]
+
+
+def test_each_job_maps_its_gaps_to_curated_courses() -> None:
+    service = OpportunityService(
+        connector=SoftwareConnector()  # type: ignore[arg-type]
+    )
+
+    result = service.search(
+        role_type="newgrad",
+        timeframe="all",
+        target_market="global",
+        locations=[],
+        keywords=[],
+        work_modes=["remote"],
+        transcript=None,
+        linkedin_profile=None,
+        github_profile=None,
+        resume_profile=None,
+    )
+
+    job = result["jobs"][0]
+    courses = {
+        course["id"]: course for course in result["recommended_courses"]
+    }
+    assert "boulder-algorithms" in job["recommended_course_ids"]
+    assert set(job["recommended_course_ids"]).issubset(courses)
+    assert {"algorithms", "data structures"}.issubset(
+        courses["boulder-algorithms"]["addresses_skills"]
+    )
+    assert courses["boulder-algorithms"]["recommendation_reason"]

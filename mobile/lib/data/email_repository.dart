@@ -28,6 +28,13 @@ class EmailRepository extends ChangeNotifier {
     required this.toneProfileRepository,
   });
 
+  void reviewDraft(GeneralEmailDraft value) {
+    draft = value;
+    sent = null;
+    error = null;
+    notifyListeners();
+  }
+
   Future<GeneralEmailDraft?> preview({
     required String recipientEmail,
     required String senderName,

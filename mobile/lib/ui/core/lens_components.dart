@@ -31,13 +31,13 @@ class LensLogo extends StatelessWidget {
             'assets/branding/careerloop-icon.png',
             fit: BoxFit.cover,
             filterQuality: FilterQuality.high,
-            semanticLabel: 'CareerLoop',
+            semanticLabel: 'Career Loop',
           ),
         ),
         if (showWordmark) ...[
           const SizedBox(width: 12),
           Text(
-            'CareerLoop',
+            'Career Loop',
             style: TextStyle(
               color: wordmarkColor ?? LensColors.ink,
               fontWeight: FontWeight.w900,
@@ -315,7 +315,7 @@ class CmsAccessNotice extends StatelessWidget {
                       'This commonly happens when final-year or graduate '
                           'students no longer have active CMS course access. '
                           'Your portal grades, transcripts, semester history, '
-                          'and CareerLoop Copilot will continue to work.',
+                          'and Career Loop Copilot will continue to work.',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontSize: 11,
                         height: 1.45,

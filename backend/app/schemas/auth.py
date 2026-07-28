@@ -23,6 +23,7 @@ class LoginResponse(BaseModel):
     transcript_years: list[str]
     cms_connected: bool
     cms_message: str | None = None
+    username: str
 
 
 class SessionResponse(BaseModel):
@@ -35,6 +36,7 @@ class SessionResponse(BaseModel):
     transcript_years: list[str]
     cms_connected: bool
     cms_message: str | None = None
+    username: str
 
 
 class MessageResponse(BaseModel):

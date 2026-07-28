@@ -107,7 +107,8 @@ class ApplicationRepository extends ChangeNotifier {
       final json = await api.post(
         '/v1/career/applications/preview',
         body: {
-          'linkedin_post_url': linkedInPostUrl.trim(),
+          if (linkedInPostUrl.trim().isNotEmpty)
+            'linkedin_post_url': linkedInPostUrl.trim(),
           if (postText.trim().isNotEmpty) 'post_text': postText.trim(),
         },
       );

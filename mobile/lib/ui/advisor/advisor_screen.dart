@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
+import '../../data/email_repository.dart';
+import '../../data/email_models.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/capability_footer.dart';
@@ -108,25 +110,12 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 ),
                 const SizedBox(width: 13),
                 const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'CareerLoop Copilot',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Academic and career context',
-                        style: TextStyle(
-                          color: LensColors.muted,
-                          fontSize: 11.5,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    'Copilot',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -246,13 +235,6 @@ class _AdvisorWelcome extends StatelessWidget {
           'How can I help?',
           style: Theme.of(context).textTheme.headlineSmall,
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Ask about your academic record, course progress, or career profile.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: LensColors.muted,
-              ),
-        ),
         const SizedBox(height: 24),
         ..._AdvisorScreenState._suggestions.map(
           (suggestion) => Padding(
@@ -343,7 +325,7 @@ class _MessageBubble extends StatelessWidget {
               ),
               SizedBox(width: 7),
               Text(
-                'CareerLoop',
+                'Career Loop',
                 style: TextStyle(
                   color: LensColors.ink,
                   fontSize: 12,
@@ -377,6 +359,10 @@ class _MessageBubble extends StatelessWidget {
             const SizedBox(height: 13),
             PracticeLaunchCard(practiceSet: message.practiceSet!),
           ],
+          if (message.emailDraft != null) ...[
+            const SizedBox(height: 13),
+            _EmailDraftCard(draft: message.emailDraft!),
+          ],
           const SizedBox(height: 14),
           CapabilityFooter(
             tools: message.tools,
@@ -384,6 +370,87 @@ class _MessageBubble extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           const Divider(height: 1, color: LensColors.line),
+        ],
+      ),
+    );
+  }
+}
+
+class _EmailDraftCard extends StatelessWidget {
+  final GeneralEmailDraft draft;
+
+  const _EmailDraftCard({required this.draft});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: LensColors.aqua.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: LensColors.aqua.withValues(alpha: .32),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.mark_email_unread_outlined,
+                color: Color(0xFF168D80),
+                size: 20,
+              ),
+              SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'Email ready for review',
+                  style: TextStyle(
+                    color: LensColors.ink,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            draft.subject,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: LensColors.ink,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'To ${draft.recipientEmail}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: LensColors.muted,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 13),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                context.read<EmailRepository>().reviewDraft(draft);
+                context.push('/email-studio');
+              },
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Review email'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                backgroundColor: LensColors.ink,
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -476,7 +543,7 @@ class _Composer extends StatelessWidget {
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 isDense: true,
-                hintText: 'Ask CareerLoop...',
+                hintText: 'Ask...',
                 hintStyle: const TextStyle(
                   color: LensColors.muted,
                   fontSize: 14,

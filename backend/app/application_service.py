@@ -85,6 +85,7 @@ def generate_application_draft(
     github_profile: dict[str, Any] | None,
     settings: Settings,
     resume_profile: dict[str, Any] | None = None,
+    transcript: dict[str, Any] | None = None,
 ) -> GeneratedApplicationDraft:
     try:
         model = build_chat_model(
@@ -96,6 +97,7 @@ def generate_application_draft(
                 linkedin_profile,
                 github_profile,
                 resume_profile,
+                transcript,
             )
             result = model.invoke(
                 [
@@ -189,6 +191,7 @@ def _candidate_context(
     linkedin_profile: dict[str, Any] | None,
     github_profile: dict[str, Any] | None,
     resume_profile: dict[str, Any] | None = None,
+    transcript: dict[str, Any] | None = None,
 ) -> str:
     values: list[str] = []
     if linkedin_profile:
@@ -232,6 +235,18 @@ def _candidate_context(
             value = resume_profile.get(key)
             if value:
                 values.append(f"resume_{key}: {value}")
+    if transcript:
+        courses = [
+            {
+                "course": item.get("course"),
+                "grade": item.get("grade"),
+                "academic_year": item.get("academic_year"),
+            }
+            for item in transcript.get("courses", [])[:80]
+            if isinstance(item, dict) and item.get("course")
+        ]
+        if courses:
+            values.append(f"academic_transcript: {courses}")
     return "\n".join(values)[:12_000] or "No additional profile evidence."
 
 

@@ -248,6 +248,10 @@ class SwelistConnector:
             metadata={
                 "source": item.get("source"),
                 "is_visible": item.get("is_visible"),
+                "skills": item.get("skills"),
+                "tags": item.get("tags"),
+                "description": item.get("description"),
+                "requirements": item.get("requirements"),
             },
         )
 

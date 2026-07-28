@@ -24,14 +24,16 @@ class _LoginScreenState extends State<LoginScreen> {
   int? _enrollmentYear;
   String _institution = 'giu';
   bool _obscure = true;
+  bool _isDark = false;
   int _step = 0;
 
-  static const _bg = LensColors.canvas;
-  static const _card = LensColors.card;
-  static const _cardBorder = LensColors.line;
-  static const _fieldFill = Color(0xFFFBFCFD);
-  static const _textPrimary = LensColors.ink;
-  static const _textMuted = LensColors.muted;
+  Color get _bg => _isDark ? const Color(0xFF090F21) : LensColors.canvas;
+  Color get _card => _isDark ? const Color(0xFF121A30) : LensColors.card;
+  Color get _cardBorder => _isDark ? const Color(0xFF29324D) : LensColors.line;
+  Color get _fieldFill =>
+      _isDark ? const Color(0xFF0D1428) : const Color(0xFFFBFCFD);
+  Color get _textPrimary => _isDark ? Colors.white : LensColors.ink;
+  Color get _textMuted => _isDark ? const Color(0xFF9AA4BF) : LensColors.muted;
   static const _accentA = LensColors.indigo;
 
   @override
@@ -131,23 +133,45 @@ class _LoginScreenState extends State<LoginScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: LensLogo(size: 46),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: LensLogo(
+                                size: 46,
+                                wordmarkColor: _textPrimary,
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: _isDark
+                                  ? 'Switch to light mode'
+                                  : 'Switch to dark mode',
+                              onPressed: () =>
+                                  setState(() => _isDark = !_isDark),
+                              icon: Icon(
+                                _isDark
+                                    ? Icons.light_mode_outlined
+                                    : Icons.dark_mode_outlined,
+                                color: _textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 40),
                         Text(
                           _step == 0
                               ? 'Sign in to your university'
                               : 'Complete your academic context',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineMedium
+                              ?.copyWith(color: _textPrimary),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           _step == 0
                               ? 'Use the same account you use for the '
                                   '$university student portal.'
-                              : 'Your enrollment year lets CareerLoop load '
+                              : 'Your enrollment year lets Career Loop load '
                                   'the correct transcript history.',
                           style:
                               Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -161,6 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: _StepIndicator(
                                 active: true,
                                 label: 'University account',
+                                dark: _isDark,
                               ),
                             ),
                             const SizedBox(width: 8),
@@ -168,6 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: _StepIndicator(
                                 active: _step == 1,
                                 label: 'Enrollment year',
+                                dark: _isDark,
                               ),
                             ),
                           ],
@@ -194,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         const SizedBox(height: 18),
-                        const Row(
+                        Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Icon(
@@ -202,7 +228,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               size: 18,
                               color: _textMuted,
                             ),
-                            SizedBox(width: 10),
+                            const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 'Credentials establish a read-only portal '
@@ -460,8 +486,13 @@ class _LoginScreenState extends State<LoginScreen> {
 class _StepIndicator extends StatelessWidget {
   final bool active;
   final String label;
+  final bool dark;
 
-  const _StepIndicator({required this.active, required this.label});
+  const _StepIndicator({
+    required this.active,
+    required this.label,
+    required this.dark,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -471,7 +502,11 @@ class _StepIndicator extends StatelessWidget {
         Container(
           height: 3,
           decoration: BoxDecoration(
-            color: active ? LensColors.indigo : LensColors.line,
+            color: active
+                ? LensColors.indigo
+                : dark
+                    ? const Color(0xFF29324D)
+                    : LensColors.line,
             borderRadius: BorderRadius.circular(3),
           ),
         ),
@@ -479,7 +514,9 @@ class _StepIndicator extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            color: active ? LensColors.ink : LensColors.muted,
+            color: active
+                ? (dark ? Colors.white : LensColors.ink)
+                : (dark ? const Color(0xFF9AA4BF) : LensColors.muted),
             fontSize: 11,
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
           ),

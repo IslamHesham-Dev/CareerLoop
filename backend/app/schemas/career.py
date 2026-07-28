@@ -171,6 +171,35 @@ class OpportunityEvidence(BaseModel):
     resume: bool
 
 
+class ProfileEvidenceSource(BaseModel):
+    source: Literal[
+        "academic_transcript",
+        "linkedin_pdf",
+        "github",
+        "resume",
+    ]
+    available: bool
+    skills: list[str] = Field(default_factory=list, max_length=120)
+    evidence_items: int = Field(default=0, ge=0)
+
+
+class ProfileEvidenceCitation(BaseModel):
+    skill: str
+    source: Literal[
+        "academic_transcript",
+        "linkedin_pdf",
+        "github",
+        "resume",
+    ]
+    evidence_type: Literal[
+        "coursework",
+        "self_reported",
+        "project",
+        "resume_claim",
+    ]
+    evidence: str
+
+
 class JobMatch(BaseModel):
     id: str
     company: str
@@ -188,11 +217,17 @@ class JobMatch(BaseModel):
     company_logo_url: str | None = None
     active: bool = True
     role_family: str
+    required_skills: list[str] = Field(default_factory=list)
     match_score: int = Field(ge=0, le=100)
     match_reasons: list[str]
     keyword_matches: list[str]
     profile_skill_matches: list[str]
+    profile_evidence_citations: list[ProfileEvidenceCitation] = Field(
+        default_factory=list
+    )
     inferred_skill_gaps: list[str]
+    assessment_summary: str = ""
+    assessment_confidence: Literal["low", "medium"] = "low"
     recommended_course_ids: list[str]
 
 
@@ -208,6 +243,7 @@ class CareerCourse(BaseModel):
     roles: list[str]
     addresses_skills: list[str]
     catalog_source: str
+    recommendation_reason: str = ""
 
 
 class OpportunitySearchResponse(BaseModel):
@@ -216,6 +252,9 @@ class OpportunitySearchResponse(BaseModel):
     searched_at: str
     preferences: OpportunityPreferences
     evidence: OpportunityEvidence
+    profile_evidence_sources: list[ProfileEvidenceSource] = Field(
+        default_factory=list
+    )
     jobs: list[JobMatch]
     recommended_courses: list[CareerCourse]
     message: str | None = None

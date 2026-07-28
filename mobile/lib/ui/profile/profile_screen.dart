@@ -4,13 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
+import '../../data/career_document_repository.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
+import '../../data/email_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
 import '../../data/tone_profile_repository.dart';
 import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
+import '../core/notion_export_action.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -26,6 +29,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AcademicRepository>().loadDashboard();
     });
+  }
+
+  Future<void> _signOut() async {
+    final auth = context.read<AuthRepository>();
+    final academic = context.read<AcademicRepository>();
+    final advisor = context.read<AdvisorRepository>();
+    final cms = context.read<CmsRepository>();
+    final notion = context.read<NotionRepository>();
+    final career = context.read<CareerProfileRepository>();
+    final github = context.read<GithubProfileRepository>();
+    final resume = context.read<CurrentCvRepository>();
+    final documents = context.read<CareerDocumentRepository>();
+    final tone = context.read<ToneProfileRepository>();
+    final emails = context.read<EmailRepository>();
+
+    await advisor.reset();
+    academic.clearLocal();
+    cms.clearLocal();
+    notion.clearLocal();
+    career.markSessionChanged();
+    github.markSessionChanged();
+    resume.markSessionChanged();
+    tone.markSessionChanged();
+    emails.reset();
+    documents.clear();
+    await auth.logout();
   }
 
   @override
@@ -48,30 +77,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Profile',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'The information CareerLoop can use on your behalf.',
-                      style: TextStyle(color: LensColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton.filledTonal(
-                tooltip: 'Settings',
-                onPressed: () => context.push('/settings'),
-                icon: const Icon(Icons.tune_rounded),
-              ),
-            ],
+          Text(
+            'Profile',
+            style: Theme.of(context).textTheme.headlineMedium,
           ),
           const SizedBox(height: 20),
           _ProfileHero(
@@ -89,7 +97,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             icon: Icons.school_outlined,
             title: 'Academic record',
             subtitle: 'Transcript, grades, and semester history',
-            status: academicReady ? 'LIVE' : 'SYNCING',
+            status: academicReady ? 'Ready' : 'Loading',
             color: LensColors.indigo,
             onTap: () => context.push('/transcript'),
           ),
@@ -114,7 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => context.push('/resume-profile'),
           ),
           const SizedBox(height: 26),
-          const _Header(title: 'Preferences and tools', detail: ''),
+          const _Header(title: 'Writing and documents', detail: ''),
           const SizedBox(height: 12),
           _ToneConnectorCard(
             connected: tone.configured,
@@ -136,25 +144,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 9),
           _EvidenceSource(
             icon: Icons.mail_outline_rounded,
-            title: 'Email composer',
-            subtitle: 'Draft with context, review it, then send with Gmail',
-            status: 'OPEN',
+            title: 'Write an email',
+            subtitle: 'Choose a purpose, review the draft, and send with Gmail',
+            status: 'Open',
             color: LensColors.violet,
             onTap: () => context.push('/email-studio'),
           ),
           const SizedBox(height: 26),
-          const _Header(
-            title: 'Account',
-            detail: '',
-          ),
+          const _Header(title: 'Connected services', detail: ''),
           const SizedBox(height: 12),
-          _EvidenceSource(
-            icon: Icons.settings_outlined,
-            title: 'Settings and integrations',
-            subtitle: 'Notion, privacy, data controls, and sign out',
-            status: 'OPEN',
-            color: LensColors.muted,
-            onTap: () => context.push('/settings'),
+          const NotionConnectionCard(),
+          const SizedBox(height: 28),
+          OutlinedButton.icon(
+            onPressed: context.watch<AuthRepository>().isBusy ? null : _signOut,
+            icon: const Icon(Icons.logout_rounded),
+            label: const Text('Sign Out'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: LensColors.rose,
+              side: const BorderSide(color: LensColors.rose),
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
           ),
         ],
       ),
@@ -176,57 +188,54 @@ class _ProfileHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final progress = liveSignals / totalSignals;
+    final complete = liveSignals == totalSignals;
     return LensCard(
       padding: const EdgeInsets.all(18),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 66,
-            height: 66,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 62,
-                  height: 62,
-                  child: CircularProgressIndicator(
-                    value: progress,
-                    strokeWidth: 6,
-                    backgroundColor: LensColors.line,
-                    color: LensColors.aqua,
-                  ),
-                ),
-                Text(
-                  '${(progress * 100).round()}%',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '$liveSignals of $totalSignals sources connected',
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  complete
+                      ? 'Ready for full-profile evaluation'
+                      : 'Build a stronger evaluation profile',
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 7),
-                Text(
-                  'Current GPA $gpa',
-                  style: const TextStyle(
-                    color: LensColors.muted,
-                    fontSize: 12,
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '$liveSignals/$totalSignals',
+                style: const TextStyle(
+                  color: LensColors.indigo,
+                  fontWeight: FontWeight.w800,
                 ),
-              ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 7,
+              backgroundColor: LensColors.line,
+              color: complete ? LensColors.aqua : LensColors.indigo,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            complete
+                ? 'Academic, LinkedIn, GitHub, and resume evidence can be checked together. GPA $gpa.'
+                : 'Connect the remaining evidence so recommendations can distinguish verified strengths from assumptions. GPA $gpa.',
+            style: const TextStyle(
+              color: LensColors.muted,
+              fontSize: 12,
+              height: 1.4,
             ),
           ),
         ],
