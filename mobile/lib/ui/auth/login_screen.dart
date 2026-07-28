@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   colors: [_accentA, _accentB],
                                 ).createShader(rect),
                                 child: const Text(
-                                  'Start your\nevidence loop.',
+                                  'Turn your work \ninto your next opportunity.',
                                   style: TextStyle(
                                     fontSize: 36,
                                     fontWeight: FontWeight.w800,
