@@ -32,6 +32,21 @@ Ground rules:
 - Keep the summary to 2-3 sentences.
 - Bullets are outcome-oriented and concrete ("built X that did Y"), not
   generic ("worked on various projects").
+- Use the imported resume as the most detailed evidence for work history,
+  education, certifications, phone, and email. Preserve every relevant
+  experience rather than keeping only the newest one.
+- Set contact.github_url to the connected GitHub profile html_url and
+  contact.linkedin_url to the imported LinkedIn profile_url whenever those
+  values exist. Never substitute guessed URLs.
+- Select at most three GitHub projects that best demonstrate the target
+  role. Use repository name, URL, README excerpt, description, detected
+  skills, topics, and languages to write accurate titles, technology stacks,
+  and bullets. Do not turn a language percentage or repository name into an
+  unsupported accomplishment.
+- Make the headline and summary specific to the target role while remaining
+  truthful to the candidate's career and academic evidence.
+- Keep the complete rendered document to one page: prefer 2-4 bullets per
+  relevant role/project and omit weak or duplicate claims.
 - Every section is optional: omit any section with no supporting evidence
   rather than padding it.
 """.strip()

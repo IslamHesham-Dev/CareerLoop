@@ -5,9 +5,12 @@ import 'package:simple_icons/simple_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
+import '../../data/api_client.dart';
+import '../../data/career_document_repository.dart';
 import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
+import 'career_document_viewer_screen.dart';
 
 class OpportunityDetailArgs {
   final JobOpportunity job;
@@ -123,6 +126,11 @@ class OpportunityDetailScreen extends StatelessWidget {
                     const SizedBox(height: 11),
                     _FitCard(job: job, evidence: args.evidence),
                     const SizedBox(height: 20),
+                    _ApplicationStudio(
+                      job: job,
+                      evidence: args.evidence,
+                    ),
+                    const SizedBox(height: 22),
                     _SkillMap(job: job),
                     const SizedBox(height: 22),
                     _QualificationPath(courses: courses, job: job),
@@ -541,6 +549,329 @@ class _EvidenceCount extends StatelessWidget {
           style: const TextStyle(color: LensColors.muted, fontSize: 8.5),
         ),
       ],
+    );
+  }
+}
+
+class _ApplicationStudio extends StatelessWidget {
+  final JobOpportunity job;
+  final OpportunityEvidence evidence;
+
+  const _ApplicationStudio({
+    required this.job,
+    required this.evidence,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<CareerDocumentRepository>(
+      builder: (context, repository, _) {
+        final resume = repository.documentFor(job, 'resume');
+        final coverLetter = repository.documentFor(job, 'cover_letter');
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF162045), Color(0xFF34419A)],
+            ),
+            borderRadius: BorderRadius.circular(25),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(
+                    Icons.auto_awesome_rounded,
+                    color: LensColors.aqua,
+                    size: 18,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'APPLICATION STUDIO',
+                    style: TextStyle(
+                      color: LensColors.aqua,
+                      fontSize: 9,
+                      letterSpacing: 1.05,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Build the evidence for this role',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'CareerLoop selects role-relevant proof, fills your fixed '
+                'LaTeX templates, and compiles review-ready PDFs.',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: .68),
+                  fontSize: 11,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 13),
+              Wrap(
+                spacing: 7,
+                runSpacing: 7,
+                children: [
+                  _StudioEvidencePill(
+                    label: 'CV',
+                    available: evidence.resume,
+                  ),
+                  _StudioEvidencePill(
+                    label: 'LinkedIn',
+                    available: evidence.linkedInPdf,
+                  ),
+                  _StudioEvidencePill(
+                    label: 'GitHub',
+                    available: evidence.github,
+                  ),
+                  _StudioEvidencePill(
+                    label: 'Transcript',
+                    available: evidence.academicTranscript,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              _StudioDocumentCard(
+                icon: Icons.description_outlined,
+                title: 'Role-tailored resume',
+                subtitle: resume == null
+                    ? 'Relevant projects, stack, experience and role summary'
+                    : 'Version ${resume.version} · PDF ready',
+                ready: resume != null,
+                loading: repository.isBusy(job, 'resume'),
+                onTap: () => _open(
+                  context,
+                  repository,
+                  kind: 'resume',
+                  document: resume,
+                ),
+              ),
+              const SizedBox(height: 9),
+              _StudioDocumentCard(
+                icon: Icons.mail_outline_rounded,
+                title: 'Tailored cover letter',
+                subtitle: coverLetter == null
+                    ? 'Candidate evidence aligned to ${job.company}'
+                    : 'Version ${coverLetter.version} · PDF ready',
+                ready: coverLetter != null,
+                loading: repository.isBusy(job, 'cover_letter'),
+                onTap: () => _open(
+                  context,
+                  repository,
+                  kind: 'cover_letter',
+                  document: coverLetter,
+                ),
+              ),
+              if (repository.error != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  repository.error!,
+                  style: const TextStyle(
+                    color: Color(0xFFFFC8CD),
+                    fontSize: 10.5,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _open(
+    BuildContext context,
+    CareerDocumentRepository repository, {
+    required String kind,
+    required CareerDocument? document,
+  }) async {
+    var generated = document ?? await repository.generate(job, kind);
+    if (generated == null || !context.mounted) return;
+    try {
+      var file = await repository.download(generated);
+      if (!context.mounted) return;
+      await context.push(
+        '/career-document',
+        extra: CareerDocumentViewerArgs(
+          job: job,
+          document: generated,
+          localPath: file.path,
+        ),
+      );
+    } on ApiException catch (exception) {
+      if (exception.statusCode == 404 && document != null) {
+        generated = await repository.generate(job, kind);
+        if (generated == null || !context.mounted) return;
+        final file = await repository.download(generated);
+        if (!context.mounted) return;
+        await context.push(
+          '/career-document',
+          extra: CareerDocumentViewerArgs(
+            job: job,
+            document: generated,
+            localPath: file.path,
+          ),
+        );
+        return;
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(exception.message)),
+      );
+    }
+  }
+}
+
+class _StudioEvidencePill extends StatelessWidget {
+  final String label;
+  final bool available;
+
+  const _StudioEvidencePill({
+    required this.label,
+    required this.available,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: available ? .11 : .05),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: available ? .18 : .08),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            available ? Icons.check_circle_rounded : Icons.circle_outlined,
+            size: 12,
+            color: available ? LensColors.aqua : Colors.white38,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: available ? Colors.white : Colors.white54,
+              fontSize: 9.5,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StudioDocumentCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool ready;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _StudioDocumentCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.ready,
+    required this.loading,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: .09),
+      borderRadius: BorderRadius.circular(17),
+      child: InkWell(
+        onTap: loading ? null : onTap,
+        borderRadius: BorderRadius.circular(17),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: Colors.white, size: 19),
+              ),
+              const SizedBox(width: 11),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 9.5,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (loading)
+                const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: LensColors.aqua,
+                  ),
+                )
+              else
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: ready ? LensColors.aqua : Colors.white,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Text(
+                    ready ? 'VIEW' : 'GENERATE',
+                    style: const TextStyle(
+                      color: LensColors.ink,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

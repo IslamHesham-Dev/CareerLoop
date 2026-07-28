@@ -228,3 +228,42 @@ class OpportunityStatusResponse(BaseModel):
     adzuna_connected: bool
     course_count: int
     preferences: OpportunityPreferences | None = None
+
+
+class JobDocumentTarget(BaseModel):
+    id: str = Field(max_length=240)
+    company: str = Field(min_length=1, max_length=240)
+    title: str = Field(min_length=1, max_length=300)
+    location: str = Field(default="", max_length=500)
+    url: str = Field(default="", max_length=2000)
+    category: str | None = Field(default=None, max_length=240)
+    role_family: str = Field(default="general", max_length=120)
+    match_reasons: list[str] = Field(default_factory=list, max_length=20)
+    keyword_matches: list[str] = Field(default_factory=list, max_length=40)
+    profile_skill_matches: list[str] = Field(default_factory=list, max_length=60)
+    inferred_skill_gaps: list[str] = Field(default_factory=list, max_length=40)
+
+
+class CareerDocumentGenerateRequest(BaseModel):
+    kind: Literal["resume", "cover_letter"]
+    job: JobDocumentTarget
+    instructions: str = Field(default="", max_length=2000)
+
+
+class CareerDocumentRefineRequest(BaseModel):
+    instruction: str = Field(min_length=2, max_length=2000)
+
+
+class CareerDocumentResponse(BaseModel):
+    id: str
+    kind: Literal["resume", "cover_letter"]
+    version: int = Field(ge=1)
+    filename: str
+    title: str
+    company: str
+    job_title: str
+    preview: str
+    sources_used: list[str]
+    pdf_path: str
+    created_at: str
+    updated_at: str

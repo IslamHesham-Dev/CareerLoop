@@ -17,9 +17,14 @@ generator package, since neither should depend on the other.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 _STRONG_GRADES = {"A+", "A", "A-"}
+_LINKEDIN_URL_RE = re.compile(
+    r"(?:(?:https?://)?(?:[\w-]+\.)?linkedin\.com/in/[^\s<>()]+)",
+    re.IGNORECASE,
+)
 
 
 def _strong_courses(courses: list[dict[str, Any]], *, top_n: int = 8) -> list[str]:
@@ -69,10 +74,28 @@ def build_career_context(
             "experience": resume_profile.get("experience") or [],
             "education": resume_profile.get("education") or [],
             "certifications": resume_profile.get("certifications") or [],
+            # Keep the extracted CV as the primary evidence source. It often
+            # contains project and experience detail that section heuristics
+            # cannot safely normalize without losing information.
+            "raw_text": (resume_profile.get("raw_text") or "")[:30_000],
         }
 
     if linkedin_profile:
         sources_used.append("linkedin")
+        raw_linkedin = linkedin_profile.get("raw_text") or ""
+        contact_text = "\n".join(linkedin_profile.get("contact") or [])
+        linkedin_url_match = _LINKEDIN_URL_RE.search(
+            f"{contact_text}\n{raw_linkedin}"
+        )
+        linkedin_url = (
+            linkedin_url_match.group(0).rstrip(".,;)")
+            if linkedin_url_match
+            else None
+        )
+        if linkedin_url and not linkedin_url.casefold().startswith(
+            ("http://", "https://")
+        ):
+            linkedin_url = f"https://{linkedin_url}"
         context["linkedin"] = {
             "name": linkedin_profile.get("name"),
             "headline": linkedin_profile.get("headline"),
@@ -82,6 +105,7 @@ def build_career_context(
             "education": linkedin_profile.get("education") or [],
             "certifications": linkedin_profile.get("certifications") or [],
             "skills": linkedin_profile.get("skills") or [],
+            "profile_url": linkedin_url,
         }
 
     if github_profile:
@@ -98,6 +122,11 @@ def build_career_context(
                     "name": repo.get("name"),
                     "description": repo.get("description"),
                     "html_url": repo.get("html_url"),
+                    "primary_language": repo.get("primary_language"),
+                    "languages": repo.get("languages") or {},
+                    "topics": repo.get("topics") or [],
+                    "stars": repo.get("stars") or 0,
+                    "forks": repo.get("forks") or 0,
                     "readme_excerpt": repo.get("readme_excerpt"),
                     "detected_skills": repo.get("detected_skills") or [],
                     "pushed_at": repo.get("pushed_at"),
@@ -113,6 +142,15 @@ def build_career_context(
             "loaded_years": transcript.get("loaded_years") or [],
             "course_count": len(transcript.get("courses") or []),
             "strong_courses": _strong_courses(transcript.get("courses") or []),
+            "courses": [
+                {
+                    "academic_year": row.get("academic_year"),
+                    "course": row.get("course"),
+                    "grade": row.get("grade"),
+                    "credits": row.get("credits"),
+                }
+                for row in (transcript.get("courses") or [])[:80]
+            ],
         }
 
     if cms_course_titles:

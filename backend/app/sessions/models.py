@@ -48,6 +48,7 @@ class StudentSession:
     pending_email_drafts: dict[str, dict[str, Any]] = field(default_factory=dict)
     last_email_draft_id: str | None = None
     career_preferences: dict[str, Any] | None = None
+    career_documents: dict[str, dict[str, Any]] = field(default_factory=dict)
     chat_lock: threading.RLock = field(default_factory=threading.RLock)
 
     @property
@@ -85,6 +86,7 @@ class StudentSession:
         self.pending_email_drafts.clear()
         self.last_email_draft_id = None
         self.career_preferences = None
+        self.career_documents.clear()
         self.academic.clear_cache()
         self.cms.close()
         self.portal.session.auth = None

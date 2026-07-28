@@ -6,6 +6,7 @@ import 'core/environment.dart';
 import 'data/api_client.dart';
 import 'data/application_repository.dart';
 import 'data/career_profile_repository.dart';
+import 'data/career_document_repository.dart';
 import 'data/current_cv_repository.dart';
 import 'data/github_profile_repository.dart';
 import 'data/opportunity_repository.dart';
@@ -52,6 +53,12 @@ Future<void> main() async {
     githubProfileRepository: githubProfile,
     currentCvRepository: currentCv,
   );
+  final careerDocuments = CareerDocumentRepository(
+    api: api,
+    careerProfileRepository: careerProfile,
+    githubProfileRepository: githubProfile,
+    currentCvRepository: currentCv,
+  );
 
   await auth.restoreSession();
 
@@ -69,6 +76,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: opportunities),
         ChangeNotifierProvider.value(value: currentCv),
         ChangeNotifierProvider.value(value: applications),
+        ChangeNotifierProvider.value(value: careerDocuments),
       ],
       child: const CareerLoopApp(),
     ),

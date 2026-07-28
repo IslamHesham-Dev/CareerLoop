@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import time
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import StreamingResponse
 
+from app.career_documents import (
+    CareerDocumentError,
+    generate_document,
+    public_document,
+)
 from app.config import Settings, get_settings
 from cv_connector import CVExtractionError, extract_cv_profile_from_bytes
 from app.dependencies import get_student_session
@@ -40,6 +47,10 @@ from app.schemas.career import (
     GithubProfileEvidence,
     GithubProfileMessage,
     GithubProfileStatus,
+    CareerDocumentGenerateRequest,
+    CareerDocumentRefineRequest,
+    CareerDocumentResponse,
+    JobDocumentTarget,
 )
 from app.tone import ONBOARDING_QUESTIONS
 from app.sessions.models import StudentSession
@@ -480,12 +491,106 @@ async def search_opportunities(
         ) from None
 
 
+@router.post(
+    "/documents/generate",
+    response_model=CareerDocumentResponse,
+)
+async def generate_career_document(
+    payload: CareerDocumentGenerateRequest,
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    try:
+        record = await run_in_threadpool(
+            generate_document,
+            student=student,
+            settings=settings,
+            kind=payload.kind,
+            job=payload.job,
+            instructions=payload.instructions,
+        )
+    except CareerDocumentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from None
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"The tailored document could not be generated: {exc}",
+        ) from None
+    return public_document(record)
+
+
+@router.post(
+    "/documents/{document_id}/refine",
+    response_model=CareerDocumentResponse,
+)
+async def refine_career_document(
+    document_id: str,
+    payload: CareerDocumentRefineRequest,
+    student: StudentSession = Depends(get_student_session),
+    settings: Settings = Depends(get_settings),
+) -> dict:
+    existing = student.career_documents.get(document_id)
+    if not existing:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This generated document is no longer in the active session.",
+        )
+    try:
+        record = await run_in_threadpool(
+            generate_document,
+            student=student,
+            settings=settings,
+            kind=existing["kind"],
+            job=JobDocumentTarget.model_validate(existing["job"]),
+            instructions=payload.instruction,
+            existing=existing,
+        )
+    except CareerDocumentError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=str(exc),
+        ) from None
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"The document could not be refined: {exc}",
+        ) from None
+    return public_document(record)
+
+
+@router.get("/documents/{document_id}/pdf")
+def download_career_document(
+    document_id: str,
+    student: StudentSession = Depends(get_student_session),
+) -> StreamingResponse:
+    record = student.career_documents.get(document_id)
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This generated document is no longer in the active session.",
+        )
+    return StreamingResponse(
+        io.BytesIO(record["pdf_bytes"]),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": (
+                f'inline; filename="{record["filename"]}"'
+            ),
+            "Cache-Control": "private, no-store",
+        },
+    )
+
+
 def _replace_profile(
     student: StudentSession,
     profile: LinkedInProfile | None,
 ) -> None:
     with student.chat_lock:
         student.linkedin_profile = profile.model_dump() if profile else None
+        _clear_career_documents(student)
         student.conversation.clear()
         student.agent = None
 
@@ -495,6 +600,7 @@ def _replace_github_profile(
     profile: GithubProfileEvidence | None,
 ) -> None:
     student.github_profile = profile.model_dump() if profile else None
+    _clear_career_documents(student)
     student.conversation.clear()
     student.agent = None
 
@@ -505,6 +611,7 @@ def _replace_resume_profile(
 ) -> None:
     with student.chat_lock:
         student.resume_profile = profile.model_dump() if profile else None
+        _clear_career_documents(student)
         student.conversation.clear()
         student.agent = None
 
@@ -515,6 +622,7 @@ def _replace_tone_profile(
 ) -> None:
     with student.chat_lock:
         student.tone_profile = answers
+        _clear_career_documents(student)
         student.conversation.clear()
         student.agent = None
 
@@ -523,3 +631,9 @@ def _clear_github_device_flow(student: StudentSession) -> None:
     student.github_device_code = None
     student.github_device_expires_at = None
     student.github_last_poll_at = None
+
+
+def _clear_career_documents(student: StudentSession) -> None:
+    documents = getattr(student, "career_documents", None)
+    if documents is not None:
+        documents.clear()

@@ -649,6 +649,68 @@ class JobOpportunity {
           json['recommended_course_ids'] as List? ?? const [],
         ),
       );
+
+  Map<String, dynamic> toDocumentJson() => {
+        'id': id,
+        'company': company,
+        'title': title,
+        'location': location,
+        'url': url.toString(),
+        'category': category,
+        'role_family': roleFamily,
+        'match_reasons': matchReasons,
+        'keyword_matches': keywordMatches,
+        'profile_skill_matches': profileSkillMatches,
+        'inferred_skill_gaps': inferredSkillGaps,
+      };
+}
+
+class CareerDocument {
+  final String id;
+  final String kind;
+  final int version;
+  final String filename;
+  final String title;
+  final String company;
+  final String jobTitle;
+  final String preview;
+  final List<String> sourcesUsed;
+  final String pdfPath;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+
+  const CareerDocument({
+    required this.id,
+    required this.kind,
+    required this.version,
+    required this.filename,
+    required this.title,
+    required this.company,
+    required this.jobTitle,
+    required this.preview,
+    required this.sourcesUsed,
+    required this.pdfPath,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory CareerDocument.fromJson(Map<String, dynamic> json) => CareerDocument(
+        id: json['id'] as String? ?? '',
+        kind: json['kind'] as String? ?? 'resume',
+        version: json['version'] as int? ?? 1,
+        filename: json['filename'] as String? ?? 'CareerLoop_Document.pdf',
+        title: json['title'] as String? ?? 'Tailored document',
+        company: json['company'] as String? ?? '',
+        jobTitle: json['job_title'] as String? ?? '',
+        preview: json['preview'] as String? ?? '',
+        sourcesUsed:
+            List<String>.from(json['sources_used'] as List? ?? const []),
+        pdfPath: json['pdf_path'] as String? ?? '',
+        createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+            DateTime.now(),
+        updatedAt: DateTime.tryParse(json['updated_at'] as String? ?? '') ??
+            DateTime.now(),
+      );
 }
 
 class CareerCourseRecommendation {

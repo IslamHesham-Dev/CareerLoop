@@ -132,7 +132,7 @@ class ApiClient {
         await _client.send(request).timeout(const Duration(minutes: 5));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
-      var message = 'The CMS file could not be downloaded.';
+      var message = 'The file could not be downloaded.';
       try {
         final payload = jsonDecode(body);
         if (payload is Map && payload['detail'] is String) {

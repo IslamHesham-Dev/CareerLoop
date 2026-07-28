@@ -19,7 +19,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-_TIMEOUT_SECONDS = 40
+_TIMEOUT_SECONDS = 120
 
 
 def _find_engine() -> str | None:
@@ -32,7 +32,13 @@ def _find_engine() -> str | None:
 
 def _command_for(engine: str, tex_path: Path, out_dir: Path) -> list[str]:
     if engine == "tectonic":
-        return ["tectonic", "--outdir", str(out_dir), str(tex_path)]
+        return [
+            "tectonic",
+            "--untrusted",
+            "--outdir",
+            str(out_dir),
+            str(tex_path),
+        ]
     # pdflatex: a single pass is enough - this template has no TOC, citations,
     # or cross-references that would need a second pass to resolve.
     return [

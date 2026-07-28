@@ -7,6 +7,7 @@ import '../data/repositories.dart';
 import '../ui/advisor/advisor_screen.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/career/career_hub_screen.dart';
+import '../ui/career/career_document_viewer_screen.dart';
 import '../ui/career/linkedin_import_screen.dart';
 import '../ui/career/github_profile_screen.dart';
 import '../ui/career/opportunities_screen.dart';
@@ -164,6 +165,12 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         GoRoute(
           path: '/quick-apply',
           builder: (context, state) => const QuickApplyScreen(),
+        ),
+        GoRoute(
+          path: '/career-document',
+          builder: (context, state) => CareerDocumentViewerScreen(
+            args: state.extra as CareerDocumentViewerArgs,
+          ),
         ),
         GoRoute(
           path: '/resume-profile',

@@ -10,6 +10,8 @@ titlesec, hyperref) that any LaTeX engine — including a from-scratch
 
 from __future__ import annotations
 
+from urllib.parse import quote
+
 from .models import (
     ContactInfo,
     CVContent,
@@ -32,16 +34,39 @@ _LATEX_SPECIAL_CHARS = {
     "\\": r"\textbackslash{}",
 }
 
-_PREAMBLE = r"""\documentclass[11pt]{article}
-\usepackage[margin=0.75in]{geometry}
+_PREAMBLE = r"""\documentclass[letterpaper,10pt]{article}
+\usepackage[margin=0.42in]{geometry}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage{hyperref}
-\hypersetup{colorlinks=true, urlcolor=blue}
+\usepackage{tabularx}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{fancyhdr}
+\hypersetup{hidelinks}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
 \pagestyle{empty}
-\setlist[itemize]{leftmargin=*, itemsep=1pt, topsep=2pt}
-\titleformat{\section}{\large\bfseries}{}{0em}{}[\titlerule]
-\titlespacing{\section}{0pt}{10pt}{4pt}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+\setlist[itemize]{leftmargin=0.27in, itemsep=0pt, topsep=1pt, parsep=0pt}
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+\titleformat{\section}{\scshape\raggedright\large}{}{0em}{}[\color{black}\titlerule]
+\titlespacing{\section}{0pt}{7pt}{3pt}
+\newcommand{\resumeItem}[1]{\item\small{#1}\vspace{-1pt}}
+\newcommand{\resumeEntry}[4]{%
+  \noindent\begin{tabularx}{\textwidth}{@{}Xr@{}}
+  \textbf{#1} & #2\\
+  \textit{\small #3} & \textit{\small #4}
+  \end{tabularx}\vspace{1pt}}
+\newcommand{\resumeProject}[3]{%
+  \noindent\begin{tabularx}{\textwidth}{@{}Xr@{}}
+  \textbf{#1} & \textit{\small #2}\\
+  \multicolumn{2}{@{}l@{}}{\small #3}
+  \end{tabularx}\vspace{1pt}}
 """
 
 
@@ -67,7 +92,8 @@ def _escape_url(url: str) -> str:
     URL argument; a full `escape_latex` pass would also mangle legitimate
     URL characters like `_`, so this is deliberately narrower.
     """
-    return url.replace("%", r"\%").replace("#", r"\#").replace("&", r"\&")
+    encoded = quote(url, safe=":/?&=%#._~+-@")
+    return encoded.replace("%", r"\%").replace("#", r"\#").replace("&", r"\&")
 
 
 def _contact_line(contact: ContactInfo) -> str:
@@ -95,7 +121,7 @@ def _skills_section(groups: list[SkillGroup]) -> str:
     for group in lines:
         category = escape_latex(group.category.title())
         skills = ", ".join(escape_latex(skill) for skill in group.skills)
-        out.append(rf"\textbf{{{category}:}} {skills} \\")
+        out.append(rf"\small\textbf{{{category}:}} {skills}\\")
     return "\n".join(out) + "\n"
 
 
@@ -104,8 +130,8 @@ def _bulleted(bullets: list[str]) -> list[str]:
         return []
     return [
         r"\begin{itemize}",
-        *(rf"\item {escape_latex(bullet)}" for bullet in bullets),
-        r"\end{itemize}",
+        *(rf"\resumeItem{{{escape_latex(bullet)}}}" for bullet in bullets),
+        r"\end{itemize}\vspace{2pt}",
     ]
 
 
@@ -117,7 +143,7 @@ def _experience_section(entries: list[ExperienceEntry]) -> str:
         title = escape_latex(entry.title)
         org = escape_latex(entry.organization)
         dates = escape_latex(entry.dates)
-        out.append(rf"\textbf{{{title}}}, {org} \hfill {dates}\\")
+        out.append(rf"\resumeEntry{{{org}}}{{{dates}}}{{{title}}}{{}}")
         out.extend(_bulleted(entry.bullets))
     return "\n".join(out) + "\n"
 
@@ -127,13 +153,16 @@ def _projects_section(entries: list[ProjectEntry]) -> str:
         return ""
     out = [r"\section*{Projects}"]
     for entry in entries:
-        header = rf"\textbf{{{escape_latex(entry.name)}}}"
+        project_name = escape_latex(entry.name)
+        if entry.url:
+            project_name += (
+                rf" $|$ \href{{{_escape_url(entry.url)}}}{{\textbf{{Link}}}}"
+            )
+        tech = ""
         if entry.technologies:
             tech = ", ".join(escape_latex(t) for t in entry.technologies)
-            header += f" ({tech})"
-        if entry.dates:
-            header += rf" \hfill {escape_latex(entry.dates)}"
-        out.append(header + r"\\")
+        dates = escape_latex(entry.dates)
+        out.append(rf"\resumeProject{{{project_name}}}{{{dates}}}{{{tech}}}")
         out.extend(_bulleted(entry.bullets))
     return "\n".join(out) + "\n"
 
@@ -146,9 +175,9 @@ def _education_section(entries: list[EducationEntry]) -> str:
         institution = escape_latex(entry.institution)
         degree = escape_latex(entry.degree)
         dates = escape_latex(entry.dates)
-        out.append(rf"\textbf{{{institution}}}, {degree} \hfill {dates}\\")
+        out.append(rf"\resumeEntry{{{institution}}}{{{dates}}}{{{degree}}}{{}}")
         if entry.gpa_or_honors:
-            out.append(escape_latex(entry.gpa_or_honors) + r"\\")
+            out.append(rf"\small {escape_latex(entry.gpa_or_honors)}\\")
         out.extend(_bulleted(entry.highlights))
     return "\n".join(out) + "\n"
 
@@ -168,9 +197,11 @@ def render_latex(content: CVContent) -> str:
     LLM-supplied text touches the `.tex` source, so it's the only place that
     needs to guard a broken compile.
     """
-    header_lines = [rf"{{\Huge {escape_latex(content.full_name)}}}\\[4pt]"]
+    header_lines = [
+        rf"{{\Huge\scshape {escape_latex(content.full_name)}}}\\[2pt]"
+    ]
     if content.headline:
-        header_lines.append(rf"{escape_latex(content.headline)}\\[2pt]")
+        header_lines.append(rf"\normalsize {escape_latex(content.headline)}\\[2pt]")
     contact_line = _contact_line(content.contact)
     if contact_line:
         header_lines.append(contact_line)
@@ -178,15 +209,21 @@ def render_latex(content: CVContent) -> str:
 
     summary = ""
     if content.summary:
-        summary = r"\section*{Summary}" + "\n" + escape_latex(content.summary) + "\n"
+        summary = (
+            r"\section*{Professional Summary}"
+            + "\n"
+            + r"\small "
+            + escape_latex(content.summary)
+            + "\n"
+        )
 
     body = "".join(
         [
+            _education_section(content.education),
             summary,
-            _skills_section(content.skills),
             _experience_section(content.experience),
             _projects_section(content.projects),
-            _education_section(content.education),
+            _skills_section(content.skills),
             _certifications_section(content.certifications),
         ]
     )

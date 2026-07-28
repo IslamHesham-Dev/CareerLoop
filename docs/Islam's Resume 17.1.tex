@@ -1,0 +1,280 @@
+\documentclass[letterpaper,11pt]{article}
+
+% ====== PACKAGES ======
+\usepackage{latexsym}
+\usepackage[margin=0.30in]{geometry}
+\usepackage{titlesec}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage{tabularx}
+\usepackage[english]{babel}
+\input{glyphtounicode}
+
+% ====== PAGE SETUP ======
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% ====== SECTION TITLE FORMAT ======
+\titleformat{\section}{
+\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule]
+
+% ====== GLOBAL MACROS ======
+% Add negative vspace after items to tighten vertical spacing, matching old style
+\newcommand{\resumeItem}[1]{\item\small{#1}\vspace{-2pt}}
+
+\newcommand{\resumeSubheading}[4]{
+\item
+\begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+\textbf{#1} & #2 \\
+\textit{\small#3} & \textit{\small#4} \\
+\end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeEducationSubheading}[4]{
+\item
+\begin{tabularx}{0.97\textwidth}[t]{>{\raggedright\arraybackslash}Xr}
+\textbf{#1} & #2 \\
+\small #3 & \small #4 \\
+\end{tabularx}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+\item
+\begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+\small#1 & #2 \\
+\end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeEducationDetail}[1]{%
+  {\small\hspace*{0.12in}#1\par}\vspace{-6pt}%
+}
+
+% ====== BULLET STYLE (Tiny bullet like old version) ======
+\renewcommand\labelitemi{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+% ====== LIST ENVIRONMENTS ======
+% Top-level list (section items) with small indent and no bullet
+\newcommand{\resumeSubHeadingListStart}[1][]{%
+\begin{itemize}[leftmargin=0.15in, label={}, #1]%
+}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+
+% Bullet lists for Experience (with spacing controlled by \expItemSep)
+\newcommand{\resumeItemListStartExp}[1][]{%
+\begin{itemize}[leftmargin=0.3in, label=\raisebox{0.25ex}{\tiny$\bullet$}, itemsep=\expItemSep, #1]%
+}
+
+% Bullet lists for Projects (with spacing controlled by \projItemSep)
+\newcommand{\resumeItemListStartProj}[1][]{%
+\begin{itemize}[leftmargin=0.3in, label=\raisebox{0.25ex}{\tiny$\bullet$}, itemsep=\projItemSep, #1]%
+}
+
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+
+% ====== SECTION CONTROLS ======
+% Heading
+\newcommand{\headNameSize}{\Huge}
+\newcommand{\headRoleSize}{\normalsize}
+\newcommand{\headSpacingBefore}{0pt}
+\newcommand{\headSpacingAfter}{10pt}
+
+% Education (no lists inside, just spacing before/after)
+\newcommand{\eduBefore}{-35pt}
+\newcommand{\eduAfter}{-6pt}
+
+% Experience
+\newcommand{\expBefore}{-18pt}
+\newcommand{\expAfter}{-5pt}
+\newcommand{\expListAfter}{-5pt}
+\newcommand{\expTitleToListSpace}{-15pt} % Space between Experience project title and list
+\newcommand{\expItemSep}{1pt} % Space between bullet items in Experience lists
+
+% Projects
+\newcommand{\projBefore}{-15pt}
+\newcommand{\projAfter}{-5pt}
+\newcommand{\projListAfter}{-5pt}
+\newcommand{\projTitleToListSpace}{-16pt} % Space between Project title and list
+\newcommand{\projItemSep}{1pt} % Space between bullet items in Project lists
+
+% Technical Skills (no bullet lists)
+\newcommand{\techBefore}{-15pt}
+\newcommand{\techAfter}{-4pt}
+
+% Certifications
+\newcommand{\certBefore}{-20pt}
+\newcommand{\certAfter}{-5pt}
+\newcommand{\certItemSep}{3pt} % Space between bullet items if any
+
+% Extracurricular Activities
+\newcommand{\extraBefore}{-25pt}
+\newcommand{\extraAfter}{-10pt}
+\newcommand{\extraListAfter}{-5pt}
+\newcommand{\extraTitleToListSpace}{4pt} % Space between extracurricular title and list
+\newcommand{\extraItemSep}{3pt} % Space between bullet items
+
+
+% ====== DOCUMENT START ======
+\begin{document}
+
+% ------------------------------------------------
+% HEADING SECTION
+% ------------------------------------------------
+\vspace{\headSpacingBefore}
+\begin{center}
+{\headNameSize \scshape Islam Hesham} \\ \vspace{2pt}
+{\headRoleSize Final-Year Software Engineering Student $|$ Military Status: Exempted} \\ \vspace{2pt}
+\small
+\href{mailto:islamhk1234@gmail.com}{islamhk1234@gmail.com} $|$
++201013942424 $|$ Cairo, Egypt \\ \vspace{2pt}
+\textbf{\href{https://github.com/IslamHesham-Dev}{GitHub}} $|$
+\textbf{\href{https://eg.linkedin.com/in/islam-hesham-34680a201?trk=people-guest_people_search-card$0}{LinkedIn}}
+\end{center}
+\vspace{\headSpacingAfter}
+
+% ------------------------------------------------
+% EDUCATION SECTION
+% ------------------------------------------------
+\vspace{\eduBefore}
+\section{Education}
+\vspace{\eduAfter}
+\resumeSubHeadingListStart
+\resumeEducationSubheading
+{German International University}{New Capital, Egypt}
+{Bachelor of Science in Computer Science \textbar\ Graduation Project Grade: \textbf{A+}}{September 2022 -- September 2026}
+\par\vspace{2pt}
+\begin{itemize}[leftmargin=0.3in, label=\raisebox{0.25ex}{\tiny$\bullet$}, topsep=0pt, itemsep=0pt]
+\resumeItem{\textbf{Advanced Training (GIU Berlin)} \textbar\ ``Beyond Data: Agentic AI at Work'' (July 2026). Selected for an 11-day intensive engineering program focused on LLM agentic loops, Retrieval-Augmented Generation (RAG), and Model Context Protocol (MCP), culminating in a capstone AI hackathon.}
+\end{itemize}\vspace{-5pt}
+\vspace{-3pt}
+\resumeSubHeadingListEnd
+
+% ------------------------------------------------
+% EXPERIENCE SECTION
+% ------------------------------------------------
+\vspace{\expBefore}
+\section{Experience}
+\vspace{\expAfter}
+\resumeSubHeadingListStart
+
+\resumeProjectHeading
+{\textbf{e\& Egypt} $|$ Software Engineering Backend Intern}{\textit{February 2026 -- June 2026}}
+\vspace{\expTitleToListSpace}
+\resumeItemListStartExp
+\resumeItem{Built a prototype 3-tier e-coupons backend using Java, Spring Boot, REST APIs, and Flutter-facing JSON APIs for customer, merchant, and admin apps.}
+\resumeItem{Implemented Spring Security authentication with BCrypt, bearer tokens, role-based access control, and ownership checks.}
+\resumeItem{Developed checkout, order creation, coupon generation, merchant redemption, customer refund request, and admin refund workflows.}
+\resumeItem{Used Spring Data JPA/Hibernate, Flyway, and TiDB/MySQL to model and version relational backend data.}
+\resumeItem{Added validation, structured errors, H2 local testing, and automated tests across API, service, security, and persistence layers.}
+\resumeItemListEnd\vspace{\expListAfter}
+
+\resumeProjectHeading
+{\textbf{iScore} $|$ Software Engineering Intern}{\textit{August 2025 -- September 2025}}
+\vspace{\expTitleToListSpace}
+\resumeItemListStartExp
+\resumeItem{Architected scalable backend for Nadafa recycling platform and co-developed HRHelpDesk with an AI chatbot, reducing HR query response time by automating common requests.}
+\resumeItem{Implemented clean/N-tier architecture using ASP.NET Core MVC, Angular, and Identity Framework, rigorously applying SOLID principles and repository patterns across production applications.}
+\resumeItemListEnd\vspace{\expListAfter}
+
+\resumeProjectHeading
+{\textbf{Vodafone Egypt} $|$ AI \& Automation Intern}{\textit{July 2025 -- August 2025}}
+\vspace{\expTitleToListSpace}
+\resumeItemListStartExp
+\resumeItem{Developed classification, regression, and clustering models to analyze Vodafone Qatar's dataset of 1M+ records, identifying patterns that informed 3 targeted retention strategies.}
+\resumeItem{Built a role-based access automation workflow using n8n integrated with Google Sheets and Google Docs, reducing manual reporting time by 60\%.}
+\resumeItemListEnd\vspace{\expListAfter}
+
+\resumeSubHeadingListEnd
+
+
+% ------------------------------------------------
+% PROJECTS SECTION
+% ------------------------------------------------
+\vspace{\projBefore}
+\section{Projects}
+\vspace{\projAfter}
+\resumeSubHeadingListStart
+
+\resumeProjectHeading
+{\textbf{e\& Coupons Prototype} $|$ \href{https://github.com/IslamHesham-Dev/e-coupons-project.git}{Link}}{\textit{Java, Spring Boot, Spring Security, Spring Data JPA, Hibernate, Flyway}}
+\vspace{\projTitleToListSpace}
+\resumeItemListStartProj
+\resumeItem{Architected a 3-tier e-coupons backend delivering RESTful JSON APIs across controller, service, DTO, and repository layers for multi-role clients.}
+\resumeItem{Secured checkout, redemption, and refund workflows utilizing Spring Security, BCrypt, and stateless bearer-token role-based access control.}
+\resumeItem{Developed core business flows including catalog browsing, checkout, order creation, coupon issuance, customer refund requests, merchant coupon validation/redemption, and admin refund processing.}
+\resumeItem{Managed relational schema evolution using Flyway migrations over a TiDB/MySQL-compatible database, with H2 local testing, structured validation errors, health checks, and automated backend tests.}
+\resumeItemListEnd\vspace{\projListAfter}
+
+\resumeProjectHeading
+{\textbf{SafePlay (Graduation Project)} $|$ \href{https://github.com/IslamHesham-Dev/safeplay_mobile}{Link}}{\textit{Flutter, Dart, Firebase, OpenRouter API (DeepSeek V3.1), CI/CD}}
+\vspace{\projTitleToListSpace}
+\resumeItemListStartProj
+\resumeItem{Architected a multi-role digital ecosystem validated by a 26-family empirical study, achieving a 0.7 (A+) Highest Honors thesis grade.}
+\resumeItem{Integrated real-time AI text moderation and age-adaptive authentication, orchestrating CI/CD pipelines via GitHub Actions for automated deployment.}
+\resumeItemListEnd\vspace{\projListAfter}
+
+\resumeSubHeadingListEnd
+
+
+% ------------------------------------------------
+% TECHNICAL SKILLS SECTION
+% ------------------------------------------------
+\vspace{\techBefore}
+\section{Technical Skills}
+\vspace{\techAfter}
+\begin{itemize}[leftmargin=0.15in, label={}]
+\small{\item{
+\textbf{Languages \& Core CS}{: Java, C++, Python, TypeScript, Dart $|$ Data Structures, Object-Oriented Design (OOD), System Architecture} \\
+\textbf{Backend \& Data}{: Spring Framework (Boot/Core), Node.js, ASP.NET Core MVC, PostgreSQL, MongoDB, Firebase/Firestore} \\
+\textbf{DevOps \& Applied Tech}{: Git, Docker, CI/CD (GitHub Actions), Linux (Red Hat), OpenRouter/OpenAI APIs, Jest/Cypress}
+}}
+\end{itemize}
+
+% ------------------------------------------------
+% CERTIFICATIONS SECTION
+% ------------------------------------------------
+\vspace{\certBefore}
+\section{Certifications}
+\vspace{\certAfter}
+
+% Adjust itemize spacing locally for this section
+\setlist[itemize]{itemsep=3pt, parsep=0pt, topsep=2pt}
+
+\resumeSubHeadingListStart
+\resumeItem{\textbf{IBM}: Intro to Software Engineering (\href{https://www.coursera.org/account/accomplishments/verify/3YT6CCM23JZP?utm_source=ios&utm_medium=certificate&utm_content=cert_image&utm_campaign=sharing_cta&utm_product=course$0}{Certificate}) $|$ Java Programming (\href{https://www.coursera.org/account/accomplishments/verify/HVHDT9VL8ND8?utm_source=ios&utm_medium=certificate&utm_content=cert_image&utm_campaign=sharing_cta&utm_product=course$0}{Certificate}) $|$ Object-Oriented Programming in Java (\href{https://www.coursera.org/account/accomplishments/verify/Z2WBGOS9NPWS?utm_source=ios&utm_medium=certificate&utm_content=cert_image&utm_campaign=sharing_cta&utm_product=course$0}{Certificate}) $|$ Mastering Spring Framework (\href{}{In Progress}).}
+\resumeItem{\textbf{Meta}: Fundamentals of Red Hat Enterprise Linux (\href{https://www.coursera.org/account/accomplishments/verify/ZR3UJ45PMPB5?utm_source=ios&utm_medium=certificate&utm_content=cert_image&utm_campaign=sharing_cta&utm_product=course$0}{Certificate}) $|$ Version Control (\href{https://www.coursera.org/account/accomplishments/verify/MQPHERFUSWLG?utm_source=ios&utm_medium=certificate&utm_content=cert_image&utm_campaign=sharing_cta&utm_product=course$0}{Certificate}) $|$ React Basics (\href{https://www.coursera.org/account/accomplishments/verify/BVO3NU7GM7VQ?utm_source=ios&utm_medium=certificate&utm_content=cert_image&utm_campaign=sharing_cta&utm_product=course$0}{Certificate}).}
+\resumeSubHeadingListEnd
+
+
+% ------------------------------------------------
+% EXTRACURRICULAR ACTIVITIES SECTION
+% ------------------------------------------------
+%\vspace{\extraBefore}
+%\section{Extracurricular Activities}
+%\vspace{\extraAfter}
+%\resumeSubHeadingListStart
+
+%\resumeProjectHeading
+% {\textbf{Egyptian Collegiate Programming Contest (ECPC)} $|$ Contestant}{\textit{August 2023}}
+%\vspace{\extraTitleToListSpace}
+%\resumeItemListStart[itemsep=\extraItemSep]
+% \resumeItem{Participated in the Egyptian Collegiate Programming Contest (ECPC), applying algorithmic problem-solving skills in a competitive, timed environment.}
+% \resumeItem{Collaborated in a team to solve coding challenges involving data structures, algorithms, and problem analysis.}
+% \resumeItem{Gained practical experience under pressure, strengthening logical thinking, teamwork, and technical accuracy.}
+%\resumeItemListEnd\vspace{\extraListAfter}
+
+%\resumeSubHeadingListEnd
+
+\end{document}

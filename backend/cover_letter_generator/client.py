@@ -1,27 +1,58 @@
-"""Generate personalized cover letters using career data, job postings, and user input."""
+"""Generate grounded cover letters and compile the fixed LaTeX template."""
 
 from __future__ import annotations
 
-import io
-from datetime import datetime
+from dataclasses import dataclass
+from typing import Any
 
-from langchain_anthropic import ChatAnthropic
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, PageBreak
-from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
+from cv_generator.compile import compile_latex_to_pdf
+
+from .content import generate_cover_letter_content
+from .latex_template import render_cover_letter_latex
+from .models import CoverLetterContent
+
+
+@dataclass
+class CoverLetterGenerationResult:
+    content: CoverLetterContent
+    latex_source: str
+    pdf_bytes: bytes | None
 
 
 class CoverLetterGenerator:
     """Generates personalized cover letters based on career evidence and job requirements."""
 
-    def __init__(self, anthropic_api_key: str, model: str = "claude-3-5-sonnet-20241022") -> None:
-        self.model = ChatAnthropic(
-            model=model,
-            temperature=0.7,
-            api_key=anthropic_api_key,
+    def __init__(
+        self,
+        anthropic_api_key: str,
+        model: str = "claude-haiku-4-5",
+    ) -> None:
+        self.anthropic_api_key = anthropic_api_key
+        self.model = model
+
+    def generate(
+        self,
+        *,
+        career_context: dict[str, Any],
+        job_posting: dict[str, Any],
+        custom_input: str = "",
+        tone_reference: str = "",
+        compile_pdf: bool = True,
+    ) -> CoverLetterGenerationResult:
+        content = generate_cover_letter_content(
+            career_context=career_context,
+            job_posting=job_posting,
+            api_key=self.anthropic_api_key,
+            model=self.model,
+            custom_input=custom_input,
+            tone_reference=tone_reference,
+        )
+        latex_source = render_cover_letter_latex(content)
+        pdf_bytes = compile_latex_to_pdf(latex_source) if compile_pdf else None
+        return CoverLetterGenerationResult(
+            content=content,
+            latex_source=latex_source,
+            pdf_bytes=pdf_bytes,
         )
 
     def generate_cover_letter(
@@ -40,9 +71,23 @@ class CoverLetterGenerator:
         Returns:
             A formatted cover letter as a string
         """
-        prompt = self._build_prompt(career_data, job_posting, custom_input)
-        response = self.model.invoke(prompt)
-        return response.content
+        result = self.generate(
+            career_context={
+                "resume": career_data,
+                "sources_used": ["resume"],
+            },
+            job_posting=job_posting,
+            custom_input=custom_input,
+            compile_pdf=False,
+        )
+        return "\n\n".join(
+            [
+                result.content.greeting,
+                *result.content.paragraphs,
+                result.content.signoff,
+                result.content.candidate_name,
+            ]
+        )
 
     def _build_prompt(self, career_data: dict, job_posting: dict, custom_input: str) -> str:
         """Build the prompt for Claude to generate the cover letter."""
@@ -136,73 +181,19 @@ Generate only the cover letter text, without any additional commentary or metada
         Returns:
             PDF file as bytes
         """
-        # Generate the cover letter text first
-        cover_letter_text = self.generate_cover_letter(career_data, job_posting, custom_input)
-        
-        # Create PDF in memory
-        pdf_buffer = io.BytesIO()
-        doc = SimpleDocTemplate(
-            pdf_buffer,
-            pagesize=letter,
-            rightMargin=0.75 * inch,
-            leftMargin=0.75 * inch,
-            topMargin=0.75 * inch,
-            bottomMargin=0.75 * inch,
-            title=filename or "Cover Letter",
+        result = self.generate(
+            career_context={
+                "resume": career_data,
+                "sources_used": ["resume"],
+            },
+            job_posting=job_posting,
+            custom_input=custom_input,
         )
-        
-        # Build the PDF elements
-        elements = []
-        
-        # Get styles and create custom style for cover letter
-        styles = getSampleStyleSheet()
-        cover_letter_style = ParagraphStyle(
-            name='CoverLetter',
-            parent=styles['Normal'],
-            fontSize=11,
-            leading=16,
-            alignment=TA_JUSTIFY,
-            spaceAfter=12,
-            fontName='Helvetica',
-        )
-        
-        # Add candidate name and date at top (if available)
-        candidate_name = career_data.get("name", "")
-        if candidate_name:
-            name_style = ParagraphStyle(
-                name='CandidateName',
-                parent=styles['Heading1'],
-                fontSize=12,
-                textColor=colors.HexColor('#333333'),
-                spaceAfter=6,
-                alignment=TA_LEFT,
+        if result.pdf_bytes is None:
+            raise RuntimeError(
+                "No LaTeX engine is available to compile the cover letter."
             )
-            elements.append(Paragraph(candidate_name, name_style))
-            elements.append(Spacer(1, 0.1 * inch))
-        
-        # Add date
-        date_str = datetime.now().strftime("%B %d, %Y")
-        date_style = ParagraphStyle(
-            name='DateStyle',
-            parent=styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor('#666666'),
-            spaceAfter=12,
-            alignment=TA_LEFT,
-        )
-        elements.append(Paragraph(date_str, date_style))
-        elements.append(Spacer(1, 0.2 * inch))
-        
-        # Add the cover letter paragraphs
-        # Split by double newlines to preserve paragraph structure
-        paragraphs = cover_letter_text.split('\n\n')
-        for para_text in paragraphs:
-            if para_text.strip():
-                elements.append(Paragraph(para_text.strip(), cover_letter_style))
-        
-        # Build PDF
-        doc.build(elements)
-        return pdf_buffer.getvalue()
+        return result.pdf_bytes
 
 
 def generate_cover_letter(

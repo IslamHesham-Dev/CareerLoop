@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
+import '../../data/career_document_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
@@ -160,6 +161,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         final career = context.read<CareerProfileRepository>();
                         final github = context.read<GithubProfileRepository>();
                         final resume = context.read<CurrentCvRepository>();
+                        final documents =
+                            context.read<CareerDocumentRepository>();
                         await advisor.reset();
                         academic.clearLocal();
                         cms.clearLocal();
@@ -167,6 +170,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         career.markSessionChanged();
                         github.markSessionChanged();
                         resume.markSessionChanged();
+                        documents.clear();
                         await auth.logout();
                       },
                 icon: const Icon(Icons.logout_rounded),

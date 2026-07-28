@@ -36,6 +36,7 @@ class ContentAiOverlay extends StatefulWidget {
   final String contextInstruction;
   final List<ContentAiQuickAction> quickActions;
   final ContentAiOverlayController? controller;
+  final Future<ChatMessage?> Function(String prompt)? onSend;
 
   const ContentAiOverlay({
     super.key,
@@ -45,6 +46,7 @@ class ContentAiOverlay extends StatefulWidget {
     required this.contextInstruction,
     required this.quickActions,
     this.controller,
+    this.onSend,
   });
 
   @override
@@ -205,12 +207,26 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
     _scrollToEnd();
 
     final advisor = context.read<AdvisorRepository>();
-    final response = await advisor.sendContextual(
-      visibleText: trimmed,
-      agentText: '${widget.contextInstruction}\n\n'
-          'The student asks about the content currently open on screen:\n'
-          '$trimmed',
-    );
+    ChatMessage? response;
+    try {
+      if (widget.onSend != null) {
+        response = await widget.onSend!(trimmed);
+      } else {
+        response = await advisor.sendContextual(
+          visibleText: trimmed,
+          agentText: '${widget.contextInstruction}\n\n'
+              'The student asks about the content currently open on screen:\n'
+              '$trimmed',
+        );
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'The requested update could not be completed.';
+        _sending = false;
+      });
+      return;
+    }
     if (!mounted) return;
     setState(() {
       if (response != null) {
@@ -218,7 +234,9 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
         _messageToReveal = response;
         _messageToRevealKey = GlobalKey();
       } else {
-        _error = advisor.error ?? 'The assistant could not respond right now.';
+        _error = widget.onSend == null
+            ? advisor.error ?? 'The assistant could not respond right now.'
+            : 'The requested refinement could not be applied.';
       }
       _sending = false;
     });
