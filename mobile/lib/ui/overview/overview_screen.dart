@@ -6,6 +6,7 @@ import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
+import '../../data/opportunity_repository.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
 
@@ -29,14 +30,21 @@ class _OverviewScreenState extends State<OverviewScreen> {
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
     final session = context.watch<AuthRepository>().session;
-    final linkedInReady = context.watch<CareerProfileRepository>().hasProfile;
+    final careerProfile = context.watch<CareerProfileRepository>();
+    final linkedInReady = careerProfile.hasProfile;
     final githubReady = context.watch<GithubProfileRepository>().hasProfile;
-    final resumeReady = context.watch<CurrentCvRepository>().hasProfile;
+    final resume = context.watch<CurrentCvRepository>();
+    final resumeReady = resume.hasProfile;
+    final opportunities = context.watch<OpportunityRepository>();
     final professionalSources = [linkedInReady, githubReady, resumeReady]
         .where((ready) => ready)
         .length;
     final currentSeason =
         academic.context?.currentSeason ?? session?.currentSeason ?? 'Current';
+    final firstName = _firstName(
+      careerProfile.profile?.name ?? resume.profile?.name,
+    );
+    final matchCount = opportunities.result?.jobs.length;
 
     return SafeArea(
       bottom: false,
@@ -46,29 +54,41 @@ class _OverviewScreenState extends State<OverviewScreen> {
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 14, 12, 0),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
               sliver: SliverToBoxAdapter(
-                child: LensLogo(size: 36),
+                child: Row(
+                  children: [
+                    const Expanded(child: LensLogo(size: 34)),
+                    _SeasonChip(academic: academic, fallback: currentSeason),
+                  ],
+                ),
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
               sliver: SliverList.list(
                 children: [
                   Text(
-                    'Today',
+                    _greeting(firstName),
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
-                  const SizedBox(height: 20),
-                  _AdvisorySemesterPicker(
-                    academic: academic,
-                    fallbackSeason: currentSeason,
+                  const SizedBox(height: 7),
+                  Text(
+                    _insight(
+                      professionalSources: professionalSources,
+                      matchCount: matchCount,
+                      gpa: academic.transcript?.cumulativeGpaWithGrade,
+                    ),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: LensColors.muted,
+                          height: 1.4,
+                        ),
                   ),
                   if (session != null && !session.cmsConnected) ...[
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
                     CmsAccessNotice(message: session.cmsMessage),
                   ],
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 24),
                   if (academic.loadingDashboard &&
                       academic.context == null) ...[
                     const _Surface(child: LensLoading()),
@@ -81,76 +101,31 @@ class _OverviewScreenState extends State<OverviewScreen> {
                   ] else ...[
                     _Snapshot(
                       gpa: academic.transcript?.cumulativeGpaWithGrade ??
-                          'Not loaded',
+                          '—',
                       courseCount: academic.courses.length,
                       professionalSources: professionalSources,
                     ),
-                    const SizedBox(height: 26),
-                    const _SectionTitle(title: 'Next up'),
-                    const SizedBox(height: 10),
-                    _ActionRow(
-                      icon: Icons.menu_book_outlined,
-                      iconColor: LensColors.indigo,
-                      title: academic.courses.isEmpty
-                          ? 'Review your academic record'
-                          : 'Open your $currentSeason courses',
-                      subtitle: academic.courses.isEmpty
-                          ? 'Your transcript and course history are ready to review.'
-                          : '${academic.courses.length} current courses are available.',
-                      onTap: () => context.go('/courses'),
+                    const SizedBox(height: 16),
+                    _CopilotSpotlight(
+                      onTap: () => _askCopilot(context, currentSeason),
                     ),
+                    const SizedBox(height: 24),
+                    const _SectionTitle(title: 'Next step'),
                     const SizedBox(height: 10),
-                    _ActionRow(
-                      icon: professionalSources == 3
-                          ? Icons.work_outline_rounded
-                          : Icons.person_add_alt_1_outlined,
-                      iconColor: LensColors.aqua,
-                      title: professionalSources == 3
-                          ? 'Find roles matched to your profile'
-                          : 'Complete your career profile',
-                      subtitle: professionalSources == 3
-                          ? 'LinkedIn, GitHub, and your resume can support role matching.'
-                          : '$professionalSources of 3 professional sources are ready.',
-                      onTap: () => professionalSources == 3
-                          ? context.push('/opportunities')
-                          : context.go('/profile'),
-                    ),
-                    const SizedBox(height: 26),
-                    const _SectionTitle(title: 'Quick actions'),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: () => context.push('/transcript'),
-                            icon: const Icon(Icons.school_outlined),
-                            label: const Text('Transcript'),
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 48),
-                              side: const BorderSide(color: LensColors.line),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: FilledButton.icon(
-                            onPressed: () {
-                              context.read<AdvisorRepository>().send(
-                                    'Review my $currentSeason courses and '
-                                    'academic record. What is the single most '
-                                    'important action I should take next, and '
-                                    'why?',
-                                  );
-                              context.go('/advisor');
-                            },
-                            icon: const Icon(Icons.auto_awesome_outlined),
-                            label: const Text('Ask...'),
-                          ),
-                        ),
-                      ],
+                    Builder(
+                      builder: (context) {
+                        final step = _nextStep(
+                          professionalSources: professionalSources,
+                          matchCount: matchCount,
+                        );
+                        return _ActionRow(
+                          icon: step.icon,
+                          iconColor: step.color,
+                          title: step.title,
+                          subtitle: step.subtitle,
+                          onTap: () => step.onTap(context),
+                        );
+                      },
                     ),
                   ],
                 ],
@@ -161,82 +136,305 @@ class _OverviewScreenState extends State<OverviewScreen> {
       ),
     );
   }
+
+  void _askCopilot(BuildContext context, String season) {
+    context.read<AdvisorRepository>().send(
+          'Review my $season courses and academic record. What is the '
+          'single most important action I should take next, and why?',
+        );
+    context.go('/advisor');
+  }
+
+  static String? _firstName(String? fullName) {
+    final trimmed = fullName?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed.split(RegExp(r'\s+')).first;
+  }
+
+  static String _greeting(String? firstName) {
+    final hour = DateTime.now().hour;
+    final timeOfDay = hour < 12
+        ? 'morning'
+        : hour < 17
+            ? 'afternoon'
+            : 'evening';
+    return firstName == null
+        ? 'Good $timeOfDay'
+        : 'Good $timeOfDay, $firstName';
+  }
+
+  static String _insight({
+    required int professionalSources,
+    required int? matchCount,
+    required String? gpa,
+  }) {
+    if (professionalSources < 3) {
+      final remaining = 3 - professionalSources;
+      return "You're $remaining ${remaining == 1 ? 'source' : 'sources'} "
+          'away from stronger role matches.';
+    }
+    if (matchCount != null) {
+      return matchCount == 0
+          ? 'No roles matched your last search — try widening your filters.'
+          : '$matchCount role${matchCount == 1 ? '' : 's'} matched your '
+              'profile — review them when ready.';
+    }
+    final gpaPrefix = gpa == null ? '' : 'GPA $gpa, ';
+    return '${gpaPrefix}all evidence is ready — time to find your next role.';
+  }
+
+  static ({
+    IconData icon,
+    Color color,
+    String title,
+    String subtitle,
+    void Function(BuildContext) onTap,
+  }) _nextStep({
+    required int professionalSources,
+    required int? matchCount,
+  }) {
+    if (professionalSources < 3) {
+      return (
+        icon: Icons.person_add_alt_1_outlined,
+        color: LensColors.aqua,
+        title: 'Complete your career profile',
+        subtitle: '$professionalSources of 3 professional sources are ready.',
+        onTap: (context) => context.go('/profile'),
+      );
+    }
+    if (matchCount != null) {
+      return (
+        icon: Icons.work_outline_rounded,
+        color: LensColors.aqua,
+        title: 'Review your matched roles',
+        subtitle: matchCount == 0
+            ? 'No roles matched last time — adjust your filters.'
+            : '$matchCount role${matchCount == 1 ? '' : 's'} ready to review.',
+        onTap: (context) => context.push('/opportunities'),
+      );
+    }
+    return (
+      icon: Icons.search_rounded,
+      color: LensColors.aqua,
+      title: 'Find roles matched to your profile',
+      subtitle: 'LinkedIn, GitHub, and your resume are ready for matching.',
+      onTap: (context) => context.push('/opportunities'),
+    );
+  }
 }
 
-class _AdvisorySemesterPicker extends StatelessWidget {
+class _SeasonChip extends StatelessWidget {
   final AcademicRepository academic;
-  final String fallbackSeason;
+  final String fallback;
 
-  const _AdvisorySemesterPicker({
-    required this.academic,
-    required this.fallbackSeason,
-  });
+  const _SeasonChip({required this.academic, required this.fallback});
 
   @override
   Widget build(BuildContext context) {
-    final current = academic.context?.currentSeason ?? fallbackSeason;
-    final options = <String>{current, ...academic.seasons}.toList();
-    return DropdownButtonFormField<String>(
-      key: ValueKey(current),
-      value: current,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: 'Advisory semester',
-        prefixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
-        suffixIcon: academic.updatingAdvisorySemester
-            ? const Padding(
-                padding: EdgeInsets.all(15),
-                child: SizedBox.square(
-                  dimension: 17,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              )
-            : null,
+    final current = academic.context?.currentSeason ?? fallback;
+    return Material(
+      color: LensColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(999),
+        side: const BorderSide(color: LensColors.line),
       ),
-      items: options
-          .map(
-            (season) => DropdownMenuItem(
-              value: season,
-              child: Text(season, overflow: TextOverflow.ellipsis),
-            ),
-          )
-          .toList(),
-      onChanged: academic.updatingAdvisorySemester
-          ? null
-          : (season) async {
-              if (season == null || season == current) return;
-              final changed = await academic.selectAdvisorySemester(season);
-              if (!context.mounted) return;
-              if (changed) {
-                context.read<AdvisorRepository>().clearLocal();
-                final cmsConnected =
-                    context.read<AuthRepository>().session?.cmsConnected ??
-                        false;
-                if (cmsConnected) {
-                  await context.read<CmsRepository>().loadCourses(
-                        force: true,
-                        season: season,
-                      );
-                }
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      academic.error ??
-                          (cmsConnected
-                              ? 'Now advising from $season. Courses and '
-                                  'Copilot context were refreshed.'
-                              : 'Now advising from $season. Portal records '
-                                  'and Copilot context were refreshed.'),
-                    ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: academic.updatingAdvisorySemester
+            ? null
+            : () => _pickSeason(context, current),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (academic.updatingAdvisorySemester)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              else
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 14,
+                  color: LensColors.indigo,
+                ),
+              const SizedBox(width: 7),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 96),
+                child: Text(
+                  current,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
                   ),
-                );
-              } else if (academic.error != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(academic.error!)),
-                );
-              }
-            },
+                ),
+              ),
+              const Icon(
+                Icons.expand_more_rounded,
+                size: 16,
+                color: LensColors.muted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickSeason(BuildContext context, String current) async {
+    final options = <String>{current, ...academic.seasons}.toList();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: Colors.white,
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Advisory semester',
+                style: Theme.of(sheetContext).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              ...options.map(
+                (season) => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(season),
+                  trailing: season == current
+                      ? const Icon(
+                          Icons.check_circle_rounded,
+                          color: LensColors.aqua,
+                        )
+                      : null,
+                  onTap: () => Navigator.pop(sheetContext, season),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected == null || selected == current || !context.mounted) return;
+    final changed = await academic.selectAdvisorySemester(selected);
+    if (!context.mounted) return;
+    if (changed) {
+      context.read<AdvisorRepository>().clearLocal();
+      final cmsConnected =
+          context.read<AuthRepository>().session?.cmsConnected ?? false;
+      if (cmsConnected) {
+        await context.read<CmsRepository>().loadCourses(
+              force: true,
+              season: selected,
+            );
+      }
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            academic.error ??
+                (cmsConnected
+                    ? 'Now advising from $selected. Courses and Copilot '
+                        'context were refreshed.'
+                    : 'Now advising from $selected. Portal records and '
+                        'Copilot context were refreshed.'),
+          ),
+        ),
+      );
+    } else if (academic.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(academic.error!)),
+      );
+    }
+  }
+}
+
+class _CopilotSpotlight extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _CopilotSpotlight({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.all(19),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [LensColors.indigo, LensColors.violet],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: LensColors.indigo.withValues(alpha: .28),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .16),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ask Copilot',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'What should I focus on next?',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
