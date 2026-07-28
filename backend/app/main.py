@@ -12,6 +12,7 @@ from app.api.routes import (
     career,
     chat,
     cms,
+    emails,
     health,
     integrations,
 )
@@ -53,3 +54,4 @@ app.include_router(chat.router, prefix="/v1")
 app.include_router(integrations.router, prefix="/v1")
 app.include_router(career.router, prefix="/v1")
 app.include_router(applications.router, prefix="/v1")
+app.include_router(emails.router, prefix="/v1")

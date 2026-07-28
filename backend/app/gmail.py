@@ -121,6 +121,38 @@ class GmailClient:
             subtype="pdf",
             filename=attachment_name,
         )
+        return GmailClient._send(message, access_token=access_token, timeout=timeout)
+
+    @staticmethod
+    def send(
+        *,
+        access_token: str,
+        sender: str,
+        recipient: str,
+        subject: str,
+        body: str,
+        timeout: float = 45,
+    ) -> dict[str, Any]:
+        """Send a plain-text email with no attachment.
+
+        Not every career email needs a CV attached (asking a professor a
+        question, a short recruiter introduction); `send_pdf` forces one, so
+        this is the version for everything else.
+        """
+        message = EmailMessage()
+        message["To"] = recipient
+        message["From"] = sender
+        message["Subject"] = subject
+        message.set_content(body)
+        return GmailClient._send(message, access_token=access_token, timeout=timeout)
+
+    @staticmethod
+    def _send(
+        message: EmailMessage,
+        *,
+        access_token: str,
+        timeout: float,
+    ) -> dict[str, Any]:
         raw = base64.urlsafe_b64encode(message.as_bytes()).decode("ascii")
         response = requests.post(
             SEND_URL,
@@ -141,12 +173,12 @@ class GmailClient:
                 else None
             )
             raise GmailIntegrationError(
-                str(message_text or "Gmail could not send the application.")
+                str(message_text or "Gmail could not send the email.")
             )
         message_id = data.get("id")
         if not isinstance(message_id, str) or not message_id:
             raise GmailIntegrationError(
-                "Gmail accepted the application but returned no message ID."
+                "Gmail accepted the email but returned no message ID."
             )
         return data
 

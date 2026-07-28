@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from cv_generator.aggregate import build_career_context
+from app.career_context import build_career_context
 from cv_generator.compile import _command_for, _find_engine, compile_latex_to_pdf
 from cv_generator.latex_template import escape_latex, render_latex
 from cv_generator.models import (

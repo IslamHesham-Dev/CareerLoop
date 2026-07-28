@@ -11,7 +11,7 @@ from app.agent.factory import (
 )
 from app.config import get_settings
 from app.schemas.auth import MessageResponse
-from app.schemas.chat import ChatRequest, ChatResponse
+from app.schemas.chat import ChatRequest, ChatResponse, EmailDraft
 from app.sessions.models import StudentSession
 from app.dependencies import get_student_session
 
@@ -76,6 +76,7 @@ async def chat(
             if student.agent is None:
                 student.agent = build_agent(student, settings)
             student.pending_practice_set = None
+            student.last_email_draft_id = None
             start = len(student.conversation)
             user_message = payload.message.strip()
             needs_practice = requires_practice_set(user_message)
@@ -119,11 +120,19 @@ async def chat(
                     f"{notes}\n\n"
                     "Your interactive practice set is ready below."
                 )
+            email_draft = None
+            if student.last_email_draft_id:
+                stored_draft = student.pending_email_drafts.get(
+                    student.last_email_draft_id
+                )
+                if stored_draft is not None:
+                    email_draft = EmailDraft(**stored_draft)
             return ChatResponse(
                 answer=answer,
                 tools=events,
                 sources=sources,
                 practice_set=student.pending_practice_set,
+                email_draft=email_draft,
             )
 
     try:

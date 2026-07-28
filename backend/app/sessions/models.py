@@ -45,6 +45,8 @@ class StudentSession:
     pending_application_drafts: dict[str, dict[str, Any]] = field(
         default_factory=dict
     )
+    pending_email_drafts: dict[str, dict[str, Any]] = field(default_factory=dict)
+    last_email_draft_id: str | None = None
     career_preferences: dict[str, Any] | None = None
     chat_lock: threading.RLock = field(default_factory=threading.RLock)
 
@@ -80,6 +82,8 @@ class StudentSession:
         self.gmail_oauth_state = None
         self.gmail_oauth_expires_at = None
         self.pending_application_drafts.clear()
+        self.pending_email_drafts.clear()
+        self.last_email_draft_id = None
         self.career_preferences = None
         self.academic.clear_cache()
         self.cms.close()
