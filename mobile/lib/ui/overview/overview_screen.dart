@@ -147,7 +147,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                               context.go('/advisor');
                             },
                             icon: const Icon(Icons.auto_awesome_outlined),
-                            label: const Text('Ask Copilot'),
+                            label: const Text('Ask...'),
                           ),
                         ),
                       ],

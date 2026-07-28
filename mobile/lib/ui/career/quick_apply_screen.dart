@@ -146,11 +146,6 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
               'Apply from a LinkedIn post',
               style: Theme.of(context).textTheme.headlineSmall,
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'Paste the opportunity, review the email and documents, then approve the Gmail send.',
-              style: TextStyle(color: LensColors.muted, height: 1.45),
-            ),
             const SizedBox(height: 16),
             _ReadinessCard(
               gmailConnected: repository.gmailConnected,

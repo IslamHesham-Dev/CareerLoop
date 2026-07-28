@@ -109,7 +109,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
                 const SizedBox(width: 13),
                 Expanded(
                   child: Text(
-                    'Ask CareerLoop',
+                    'Copilot',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),

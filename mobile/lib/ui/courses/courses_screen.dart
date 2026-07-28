@@ -81,6 +81,30 @@ class _CoursesScreenState extends State<CoursesScreen> {
               course.title.toLowerCase().contains(needle),
         )
         .toList();
+    final mergedCourses = <String, _CourseEntry>{};
+    for (final course in semesterCourses) {
+      mergedCourses
+          .putIfAbsent(
+            course.code.toUpperCase(),
+            () => _CourseEntry(code: course.code, title: course.title),
+          )
+          .academic = course;
+    }
+    if (cmsConnected) {
+      for (final course in cmsCourses) {
+        mergedCourses
+            .putIfAbsent(
+              course.code.toUpperCase(),
+              () => _CourseEntry(code: course.code, title: course.title),
+            )
+            .cms = course;
+      }
+    }
+    final courseEntries = mergedCourses.values.toList()
+      ..sort((a, b) => a.code.compareTo(b.code));
+    final coursesLoading = (academic.loadingDashboard &&
+            academic.courses.isEmpty) ||
+        (cmsConnected && cms.loadingCourses && cms.courses.isEmpty);
 
     return SafeArea(
       bottom: false,
@@ -117,10 +141,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   onPressed: () => context.push('/practice'),
                   icon: const Icon(Icons.quiz_outlined),
                 ),
-                IconButton.filledTonal(
-                  tooltip: 'Ask CareerLoop',
+                FilledButton.tonalIcon(
                   onPressed: () => context.go('/advisor'),
-                  icon: const Icon(Icons.auto_awesome_rounded),
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  label: const Text('Prep'),
                 ),
               ],
             ),
@@ -156,83 +180,39 @@ class _CoursesScreenState extends State<CoursesScreen> {
             ),
             const SizedBox(height: 26),
             _SectionHeading(
-              title: 'Semester courses',
+              title: 'Courses',
               detail: academic.context?.currentSeason ?? 'Portal',
             ),
             const SizedBox(height: 11),
-            if (academic.loadingDashboard && academic.courses.isEmpty)
+            if (coursesLoading)
               const LensCard(
-                child: LensLoading(label: 'Loading semester courses...'),
+                child: LensLoading(label: 'Loading your courses...'),
               )
-            else if (semesterCourses.isEmpty)
+            else if (cmsConnected &&
+                cms.error != null &&
+                cms.courses.isEmpty &&
+                academic.courses.isEmpty)
+              LensError(
+                message: cms.error!,
+                onRetry: () => cms.loadCourses(
+                  force: true,
+                  season: academic.context?.currentSeason,
+                ),
+              )
+            else if (courseEntries.isEmpty)
               const LensCard(
                 child: Text(
-                  'No advisory-semester course matches this search.',
+                  'No course matches this search.',
                   textAlign: TextAlign.center,
                 ),
               )
             else
-              LensCard(
-                padding: const EdgeInsets.all(14),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: semesterCourses
-                      .map(
-                        (course) => ActionChip(
-                          avatar: const Icon(
-                            Icons.analytics_outlined,
-                            size: 17,
-                          ),
-                          label: Text(course.code),
-                          tooltip: course.title,
-                          onPressed: () => context.push(
-                            '/courses/${course.code}',
-                            extra: course,
-                          ),
-                        ),
-                      )
-                      .toList(),
+              ...courseEntries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: 11),
+                  child: _CourseRow(entry: entry),
                 ),
               ),
-            if (cmsConnected) ...[
-              const SizedBox(height: 28),
-              _SectionHeading(
-                title: 'Course materials',
-                detail: cms.courses.isEmpty
-                    ? cms.season
-                    : '${cms.courses.length} · ${cms.season ?? ''}',
-              ),
-              const SizedBox(height: 11),
-              if (cms.loadingCourses && cms.courses.isEmpty)
-                LensCard(
-                  child: LensLoading(
-                    label: 'Connecting to $university CMS...',
-                  ),
-                )
-              else if (cms.error != null && cms.courses.isEmpty)
-                LensError(
-                  message: cms.error!,
-                  onRetry: () => cms.loadCourses(
-                    force: true,
-                    season: academic.context?.currentSeason,
-                  ),
-                )
-              else if (cmsCourses.isEmpty)
-                const LensCard(
-                  child: Text(
-                    'No CMS course matches this search.',
-                    textAlign: TextAlign.center,
-                  ),
-                )
-              else
-                ...cmsCourses.map(
-                  (course) => Padding(
-                    padding: const EdgeInsets.only(bottom: 11),
-                    child: _CmsCourseCard(course: course),
-                  ),
-                ),
-            ],
           ],
         ),
       ),
@@ -320,34 +300,41 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
-class _CmsCourseCard extends StatelessWidget {
-  final CmsCourse course;
+class _CourseEntry {
+  final String code;
+  final String title;
+  CourseSummary? academic;
+  CmsCourse? cms;
 
-  const _CmsCourseCard({required this.course});
+  _CourseEntry({required this.code, required this.title});
+}
+
+class _CourseRow extends StatelessWidget {
+  final _CourseEntry entry;
+
+  const _CourseRow({required this.entry});
 
   @override
   Widget build(BuildContext context) {
-    final resourceLabel = course.resourceCount == null
-        ? 'Open course resources'
-        : '${course.resourceCount} CMS resources';
+    final academic = entry.academic;
+    final cms = entry.cms;
     return LensCard(
-      onTap: () => context.push('/courses/cms/${course.id}', extra: course),
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(15),
       child: Row(
         children: [
           Container(
-            width: 52,
-            height: 58,
+            width: 50,
+            height: 54,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: LensColors.indigo.withValues(alpha: .09),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(15),
               border: Border.all(
                 color: LensColors.indigo.withValues(alpha: .12),
               ),
             ),
             child: Text(
-              course.code,
+              entry.code,
               textAlign: TextAlign.center,
               maxLines: 2,
               style: const TextStyle(
@@ -357,93 +344,36 @@ class _CmsCourseCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 13),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  course.title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    height: 1.25,
-                  ),
-                ),
-                const SizedBox(height: 7),
-                Wrap(
-                  spacing: 7,
-                  runSpacing: 6,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      resourceLabel,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyMedium
-                          ?.copyWith(fontSize: 11),
-                    ),
-                    if (course.hasSupplementalVideos)
-                      _VideoBadge(count: course.videoCount),
-                  ],
-                ),
-              ],
+            child: Text(
+              entry.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                height: 1.25,
+              ),
             ),
           ),
           const SizedBox(width: 8),
-          IconButton(
-            tooltip: 'Ask AI about ${course.code}',
-            onPressed: () {
-              context.read<AdvisorRepository>().send(
-                    'Help me study ${course.code} ${course.title} in '
-                    '${course.season}. Use the live CMS course tools first and '
-                    'base suggestions only on resources you can verify.',
-                  );
-              context.go('/advisor');
-            },
-            icon: const Icon(
-              Icons.auto_awesome_outlined,
-              color: LensColors.violet,
-              size: 20,
-            ),
+          IconButton.filledTonal(
+            tooltip: 'Grades',
+            onPressed: academic == null
+                ? null
+                : () => context.push(
+                      '/courses/${academic.code}',
+                      extra: academic,
+                    ),
+            icon: const Icon(Icons.analytics_outlined, size: 19),
           ),
-          const Icon(Icons.chevron_right_rounded, color: LensColors.muted),
-        ],
-      ),
-    );
-  }
-}
-
-class _VideoBadge extends StatelessWidget {
-  final int count;
-
-  const _VideoBadge({required this.count});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: LensColors.violet.withValues(alpha: .09),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.play_circle_outline_rounded,
-            size: 13,
-            color: LensColors.violet,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '$count videos',
-            style: const TextStyle(
-              color: LensColors.violet,
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
+          const SizedBox(width: 6),
+          IconButton.filledTonal(
+            tooltip: 'Materials',
+            onPressed: cms == null
+                ? null
+                : () => context.push('/courses/cms/${cms.id}', extra: cms),
+            icon: const Icon(Icons.folder_copy_outlined, size: 19),
           ),
         ],
       ),

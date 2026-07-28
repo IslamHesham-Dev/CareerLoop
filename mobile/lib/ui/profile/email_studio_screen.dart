@@ -253,7 +253,6 @@ class _EmailReadiness extends StatelessWidget {
             title: gmail.gmailConnected
                 ? gmail.gmailEmail ?? 'Gmail connected'
                 : 'Connect Gmail',
-            detail: 'Send-only OAuth permission',
             ready: gmail.gmailConnected,
             action: onConnect,
             actionLabel: gmail.gmailConnected ? 'Change' : 'Connect',
@@ -283,7 +282,7 @@ class _EmailReadiness extends StatelessWidget {
 class _ReadyRow extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String detail;
+  final String? detail;
   final bool ready;
   final VoidCallback? action;
   final String? actionLabel;
@@ -291,7 +290,7 @@ class _ReadyRow extends StatelessWidget {
   const _ReadyRow({
     required this.icon,
     required this.title,
-    required this.detail,
+    this.detail,
     required this.ready,
     this.action,
     this.actionLabel,
@@ -316,13 +315,14 @@ class _ReadyRow extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              Text(
-                detail,
-                style: const TextStyle(
-                  color: LensColors.muted,
-                  fontSize: 12,
+              if (detail != null)
+                Text(
+                  detail!,
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 12,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
