@@ -14,7 +14,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
+from app.llm import build_chat_model_for
 
 from .models import EmailDraftContent
 
@@ -48,6 +48,7 @@ def generate_email_content(
     career_context: dict[str, Any],
     api_key: str,
     model: str,
+    provider: str = "anthropic",
     custom_input: str = "",
     tone_reference: str = "",
 ) -> EmailDraftContent:
@@ -78,7 +79,12 @@ def generate_email_content(
 
     prompt = "\n\n".join(sections)
 
-    llm = ChatAnthropic(model=model, temperature=0.4, api_key=api_key)
+    llm = build_chat_model_for(
+        provider=provider,
+        model=model,
+        temperature=0.4,
+        api_key=api_key,
+    )
     result = llm.with_structured_output(EmailDraftContent).invoke(prompt)
     if isinstance(result, EmailDraftContent):
         return result

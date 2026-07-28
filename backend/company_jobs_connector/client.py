@@ -4,7 +4,7 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
-from langchain_anthropic import ChatAnthropic
+from app.llm import build_chat_model_for
 
 from .models import CompanyJob, LLMJobExtraction
 
@@ -17,6 +17,7 @@ class CompanyJobsConnector:
         anthropic_api_key: str,
         serper_api_key: str | None = None,
         model: str = "claude-haiku-4-5",
+        provider: str = "anthropic",
         timeout: int = 15,
     ) -> None:
         self.timeout = timeout
@@ -26,7 +27,8 @@ class CompanyJobsConnector:
         # should be getting this from - see app.agent.factory.get_company_jobs.
         self.serper_api_key = serper_api_key or os.getenv("SERPER_API_KEY")
 
-        self.llm = ChatAnthropic(
+        self.llm = build_chat_model_for(
+            provider=provider,
             model=model,
             temperature=0,
             api_key=anthropic_api_key,

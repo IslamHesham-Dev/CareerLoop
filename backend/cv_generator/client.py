@@ -33,9 +33,16 @@ class CVGenerationResult:
 class CVGenerator:
     """Ties the three-stage pipeline together: content -> LaTeX -> (maybe) PDF."""
 
-    def __init__(self, *, anthropic_api_key: str, model: str) -> None:
+    def __init__(
+        self,
+        *,
+        anthropic_api_key: str,
+        model: str,
+        provider: str = "anthropic",
+    ) -> None:
         self.anthropic_api_key = anthropic_api_key
         self.model = model
+        self.provider = provider
 
     def generate(
         self,
@@ -51,6 +58,7 @@ class CVGenerator:
             career_context=career_context,
             api_key=self.anthropic_api_key,
             model=self.model,
+            provider=self.provider,
             target_position=target_position,
             target_company=target_company,
             custom_input=custom_input,

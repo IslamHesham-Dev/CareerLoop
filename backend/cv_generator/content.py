@@ -12,7 +12,7 @@ import json
 from typing import Any
 
 from github_connector import SKILL_EXTRACTION_GUIDANCE
-from langchain_anthropic import ChatAnthropic
+from app.llm import build_chat_model_for
 
 from .models import CVContent
 
@@ -57,6 +57,7 @@ def generate_cv_content(
     career_context: dict[str, Any],
     api_key: str,
     model: str,
+    provider: str = "anthropic",
     target_position: str = "",
     target_company: str = "",
     custom_input: str = "",
@@ -100,7 +101,12 @@ def generate_cv_content(
 
     prompt = "\n\n".join(sections)
 
-    llm = ChatAnthropic(model=model, temperature=0.3, api_key=api_key)
+    llm = build_chat_model_for(
+        provider=provider,
+        model=model,
+        temperature=0.3,
+        api_key=api_key,
+    )
     result = llm.with_structured_output(CVContent).invoke(prompt)
     if isinstance(result, CVContent):
         return result

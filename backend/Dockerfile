@@ -41,6 +41,7 @@ COPY github_connector ./github_connector
 COPY cv_connector ./cv_connector
 COPY cv_generator ./cv_generator
 COPY cover_letter_generator ./cover_letter_generator
+COPY email_generator ./email_generator
 COPY content ./content
 
 EXPOSE 8000

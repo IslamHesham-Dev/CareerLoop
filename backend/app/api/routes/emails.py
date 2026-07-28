@@ -28,6 +28,7 @@ from fastapi.concurrency import run_in_threadpool
 from app.config import Settings, get_settings
 from app.career_context import build_career_context
 from app.dependencies import get_student_session
+from app.llm import resolve_llm
 from app.gmail import GmailClient, GmailIntegrationError
 from app.schemas.emails import (
     EmailDraftRequest,
@@ -57,12 +58,13 @@ async def preview_career_email(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Enter a valid recipient email address.",
         )
-    api_key = settings.anthropic_api_key.get_secret_value().strip()
-    if not api_key:
+    try:
+        runtime = resolve_llm(settings)
+    except RuntimeError as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="ANTHROPIC_API_KEY is not configured on the backend.",
-        )
+            detail=str(exc),
+        ) from None
 
     def generate() -> EmailDraftResponse:
         transcript = student.academic.full_transcript()
@@ -98,8 +100,9 @@ async def preview_career_email(
             recipient_email=recipient,
             candidate_name=payload.sender_name.strip(),
             career_context=career_context,
-            api_key=api_key,
-            model=settings.anthropic_model,
+            api_key=runtime.api_key,
+            model=runtime.model,
+            provider=runtime.provider,
             custom_input=payload.custom_input.strip(),
             tone_reference=tone_reference,
         )

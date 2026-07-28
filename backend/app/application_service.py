@@ -6,11 +6,11 @@ from urllib.parse import urlparse
 
 import requests
 from bs4 import BeautifulSoup
-from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
 from app.config import Settings
+from app.llm import LlmConfigurationError, build_chat_model
 
 
 MAX_POST_HTML_BYTES = 1_000_000
@@ -86,14 +86,12 @@ def generate_application_draft(
     settings: Settings,
     resume_profile: dict[str, Any] | None = None,
 ) -> GeneratedApplicationDraft:
-    api_key = settings.anthropic_api_key.get_secret_value().strip()
-    if api_key:
+    try:
+        model = build_chat_model(
+            settings,
+            temperature=0,
+        ).with_structured_output(GeneratedApplicationDraft)
         try:
-            model = ChatAnthropic(
-                model=settings.anthropic_model,
-                temperature=0,
-                api_key=api_key,
-            ).with_structured_output(GeneratedApplicationDraft)
             profile_context = _candidate_context(
                 linkedin_profile,
                 github_profile,
@@ -129,6 +127,8 @@ def generate_application_draft(
             # A deterministic draft is preferable to blocking the reviewed
             # human-in-the-loop flow when the model is unavailable.
             pass
+    except LlmConfigurationError:
+        pass
     return _fallback_draft(post_text, candidate_name)
 
 

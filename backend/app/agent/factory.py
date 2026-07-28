@@ -9,10 +9,10 @@ from uuid import uuid4
 
 from langchain.agents import create_agent
 from langchain.tools import tool
-from langchain_anthropic import ChatAnthropic
 from pydantic import BaseModel, Field
 
 from app.config import Settings
+from app.llm import build_chat_model, resolve_llm
 from app.opportunities import OpportunityService
 from app.sessions.models import StudentSession
 
@@ -49,6 +49,7 @@ def _safe(callable_) -> dict[str, Any] | list[str]:
 
 
 def build_agent(student: StudentSession, settings: Settings):
+    runtime = resolve_llm(settings)
     academic = student.academic
     cms = student.cms
     university = student.university_label
@@ -307,17 +308,14 @@ def build_agent(student: StudentSession, settings: Settings):
         import dataclasses
         from company_jobs_connector import CompanyJobsConnector
 
-        api_key = settings.anthropic_api_key.get_secret_value()
-        if not api_key:
-            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
-            
         try:
             connector = CompanyJobsConnector(
-                anthropic_api_key=api_key,
+                anthropic_api_key=runtime.api_key,
                 serper_api_key=(
                     settings.serper_api_key.get_secret_value() or None
                 ),
-                model=settings.anthropic_model,
+                model=runtime.model,
+                provider=runtime.provider,
             )
             jobs = connector.get_company_jobs(company_name)
             if not jobs:
@@ -345,10 +343,6 @@ def build_agent(student: StudentSession, settings: Settings):
         Combines extracted CV/LinkedIn data with job posting details."""
         from cover_letter_generator import CoverLetterGenerator
 
-        api_key = settings.anthropic_api_key.get_secret_value()
-        if not api_key:
-            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
-
         try:
             career_data = student.linkedin_profile or {}
             if not career_data and student.resume_profile:
@@ -365,7 +359,11 @@ def build_agent(student: StudentSession, settings: Settings):
                 "company": company_name,
             }
 
-            generator = CoverLetterGenerator(anthropic_api_key=api_key)
+            generator = CoverLetterGenerator(
+                anthropic_api_key=runtime.api_key,
+                model=runtime.model,
+                provider=runtime.provider,
+            )
             cover_letter = generator.generate_cover_letter(
                 career_data=career_data,
                 job_posting=job_posting,
@@ -396,10 +394,6 @@ def build_agent(student: StudentSession, settings: Settings):
         from cover_letter_generator import CoverLetterGenerator
         import base64
 
-        api_key = settings.anthropic_api_key.get_secret_value()
-        if not api_key:
-            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
-
         try:
             career_data = student.linkedin_profile or {}
             if not career_data and student.resume_profile:
@@ -415,7 +409,11 @@ def build_agent(student: StudentSession, settings: Settings):
             candidate_name = career_data.get("name", "Candidate")
             filename = f"{candidate_name.replace(' ', '_')}_Cover_Letter.pdf"
 
-            generator = CoverLetterGenerator(anthropic_api_key=api_key)
+            generator = CoverLetterGenerator(
+                anthropic_api_key=runtime.api_key,
+                model=runtime.model,
+                provider=runtime.provider,
+            )
             pdf_bytes = generator.generate_cover_letter_pdf(
                 career_data=career_data,
                 job_posting={
@@ -458,10 +456,6 @@ def build_agent(student: StudentSession, settings: Settings):
         from app.career_context import build_career_context
         from app.tone import ToneProfile, build_tone_reference
         from cv_generator import CVGenerator
-
-        api_key = settings.anthropic_api_key.get_secret_value()
-        if not api_key:
-            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
 
         if not (
             student.resume_profile
@@ -509,7 +503,9 @@ def build_agent(student: StudentSession, settings: Settings):
 
         try:
             generator = CVGenerator(
-                anthropic_api_key=api_key, model=settings.anthropic_model
+                anthropic_api_key=runtime.api_key,
+                model=runtime.model,
+                provider=runtime.provider,
             )
             result = generator.generate(
                 career_context=career_context,
@@ -574,10 +570,6 @@ def build_agent(student: StudentSession, settings: Settings):
                 "message": f"{recipient_email!r} is not a valid email address.",
             }
 
-        api_key = settings.anthropic_api_key.get_secret_value()
-        if not api_key:
-            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
-
         candidate_name = "Candidate"
         for profile in (
             student.resume_profile,
@@ -627,8 +619,9 @@ def build_agent(student: StudentSession, settings: Settings):
                 recipient_email=recipient_clean,
                 candidate_name=candidate_name,
                 career_context=career_context,
-                api_key=api_key,
-                model=settings.anthropic_model,
+                api_key=runtime.api_key,
+                model=runtime.model,
+                provider=runtime.provider,
                 custom_input=custom_input,
                 tone_reference=tone_reference,
             )
@@ -669,15 +662,7 @@ def build_agent(student: StudentSession, settings: Settings):
             ),
         }
 
-    api_key = settings.anthropic_api_key.get_secret_value()
-    if not api_key:
-        raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
-
-    model = ChatAnthropic(
-        model=settings.anthropic_model,
-        temperature=0,
-        api_key=api_key,
-    )
+    model = build_chat_model(settings, temperature=0)
     tools = [
         get_advisory_context,
         list_advisory_courses,

@@ -1,8 +1,21 @@
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
+
 from app.config import Settings
+from app.llm import LlmConfigurationError, resolve_llm
 from company_jobs_connector import CompanyJobsConnector
 
+
+def load_env_file(path: str | Path = ".env") -> Path:
+    """Load a local env file for the standalone connector demo."""
+    env_path = Path(path)
+    load_dotenv(env_path, override=False)
+    return env_path
+
 def main():
+    load_env_file()
     company = input("Enter a company name (e.g. anthropic, stripe): ").strip()
     if not company:
         print("Company name cannot be empty.")
@@ -10,14 +23,22 @@ def main():
 
     print("Initializing CompanyJobsConnector...")
     settings = Settings()
-    api_key = settings.anthropic_api_key.get_secret_value()
-    if not api_key:
-        print("Error: ANTHROPIC_API_KEY is not configured in your environment/settings.")
+    try:
+        runtime = resolve_llm(settings)
+    except LlmConfigurationError as exc:
+        print(f"Error: {exc}")
         return
         
-    connector = CompanyJobsConnector(anthropic_api_key=api_key)
+    connector = CompanyJobsConnector(
+        anthropic_api_key=runtime.api_key,
+        model=runtime.model,
+        provider=runtime.provider,
+    )
     
-    print(f"Searching ATS pages for '{company}' and extracting with Claude (this might take a few seconds)...\n")
+    print(
+        f"Searching ATS pages for '{company}' and extracting with "
+        f"{runtime.model} (this might take a few seconds)...\n"
+    )
     try:
         jobs = connector.get_company_jobs(company)
     except Exception as e:

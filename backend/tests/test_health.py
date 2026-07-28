@@ -8,3 +8,5 @@ def test_health() -> None:
         response = client.get("/health")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+    assert response.json()["llm_provider"] in {"anthropic", "openrouter"}
+    assert response.json()["llm_model"]

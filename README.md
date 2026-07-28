@@ -24,13 +24,23 @@ scripts/      Local development helpers
 Create `backend/.env` from `backend/.env.example` and set:
 
 ```env
-ANTHROPIC_API_KEY=your-real-key
-ANTHROPIC_MODEL=claude-haiku-4-5
+LLM_PROVIDER=openrouter
+OPENROUTER_API_KEY=your-server-side-openrouter-key
+OPENROUTER_MODEL=google/gemma-4-31b-it:free
+OPENROUTER_APP_URL=https://careerloop.onrender.com
+OPENROUTER_APP_TITLE=CareerLoop
 DEGREELENS_ENVIRONMENT=development
 DEGREELENS_SESSION_TTL_MINUTES=45
 DEGREELENS_CURRENT_SEASON=Winter 2024
 DEGREELENS_ADVISORY_YEAR=2024-2025
 ```
+
+The OpenRouter key belongs only in `backend/.env` locally and in the Render
+web service environment when deployed. It must never be compiled into Flutter
+or stored in GitHub Actions. To switch back later, set
+`LLM_PROVIDER=anthropic`, `ANTHROPIC_API_KEY`, and `ANTHROPIC_MODEL`; the agent,
+structured document generators, career email writer, and job extraction all
+use the same provider selection.
 
 Do not add GUC/GIU usernames or passwords to the backend environment. The login
 screen sends credentials over HTTPS to establish a short-lived, isolated portal

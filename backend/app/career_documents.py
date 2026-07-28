@@ -10,6 +10,7 @@ from typing import Any, Literal
 
 from app.career_context import build_career_context
 from app.config import Settings
+from app.llm import LlmConfigurationError, resolve_llm
 from app.schemas.career import JobDocumentTarget
 from app.sessions.models import StudentSession
 from app.tone import ToneProfile, build_tone_reference
@@ -33,11 +34,10 @@ def generate_document(
     instructions: str = "",
     existing: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    api_key = settings.anthropic_api_key.get_secret_value()
-    if not api_key:
-        raise CareerDocumentError(
-            "ANTHROPIC_API_KEY is not configured on the backend."
-        )
+    try:
+        runtime = resolve_llm(settings)
+    except LlmConfigurationError as exc:
+        raise CareerDocumentError(str(exc)) from None
     context = _career_context(student)
     if not context.get("sources_used"):
         raise CareerDocumentError(
@@ -62,8 +62,9 @@ def generate_document(
     job_payload = job.model_dump()
     if kind == "resume":
         result = CVGenerator(
-            anthropic_api_key=api_key,
-            model=settings.anthropic_model,
+            anthropic_api_key=runtime.api_key,
+            model=runtime.model,
+            provider=runtime.provider,
         ).generate(
             career_context=context,
             target_position=job.title,
@@ -78,8 +79,9 @@ def generate_document(
         candidate_name = result.content.full_name
     else:
         result = CoverLetterGenerator(
-            anthropic_api_key=api_key,
-            model=settings.anthropic_model,
+            anthropic_api_key=runtime.api_key,
+            model=runtime.model,
+            provider=runtime.provider,
         ).generate(
             career_context=context,
             job_posting=job_payload,

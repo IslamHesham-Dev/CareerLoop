@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     app_name: str = "CareerLoop API"
     environment: str = "development"
     debug: bool = False
+    llm_provider: str = Field(
+        default="anthropic",
+        validation_alias="LLM_PROVIDER",
+    )
     anthropic_api_key: SecretStr = Field(
         default=SecretStr(""),
         validation_alias="ANTHROPIC_API_KEY",
@@ -27,6 +31,22 @@ class Settings(BaseSettings):
     anthropic_model: str = Field(
         default="claude-haiku-4-5",
         validation_alias="ANTHROPIC_MODEL",
+    )
+    openrouter_api_key: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias="OPENROUTER_API_KEY",
+    )
+    openrouter_model: str = Field(
+        default="google/gemma-4-31b-it:free",
+        validation_alias="OPENROUTER_MODEL",
+    )
+    openrouter_app_url: str = Field(
+        default="https://careerloop.onrender.com",
+        validation_alias="OPENROUTER_APP_URL",
+    )
+    openrouter_app_title: str = Field(
+        default="CareerLoop",
+        validation_alias="OPENROUTER_APP_TITLE",
     )
     serper_api_key: SecretStr = Field(
         default=SecretStr(""),

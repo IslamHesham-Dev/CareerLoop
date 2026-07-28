@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from langchain_anthropic import ChatAnthropic
+from app.llm import build_chat_model_for
 
 from .models import CoverLetterContent
 
@@ -16,6 +16,7 @@ def generate_cover_letter_content(
     job_posting: dict[str, Any],
     api_key: str,
     model: str,
+    provider: str = "anthropic",
     custom_input: str = "",
     tone_reference: str = "",
 ) -> CoverLetterContent:
@@ -53,9 +54,13 @@ TONE REFERENCE:
 {tone_reference or "(no saved tone profile)"}
 """.strip()
 
-    llm = ChatAnthropic(model=model, temperature=0.35, api_key=api_key)
+    llm = build_chat_model_for(
+        provider=provider,
+        model=model,
+        temperature=0.35,
+        api_key=api_key,
+    )
     result = llm.with_structured_output(CoverLetterContent).invoke(prompt)
     if isinstance(result, CoverLetterContent):
         return result
     return CoverLetterContent.model_validate(result)
-

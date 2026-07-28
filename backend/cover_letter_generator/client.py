@@ -26,9 +26,11 @@ class CoverLetterGenerator:
         self,
         anthropic_api_key: str,
         model: str = "claude-haiku-4-5",
+        provider: str = "anthropic",
     ) -> None:
         self.anthropic_api_key = anthropic_api_key
         self.model = model
+        self.provider = provider
 
     def generate(
         self,
@@ -44,6 +46,7 @@ class CoverLetterGenerator:
             job_posting=job_posting,
             api_key=self.anthropic_api_key,
             model=self.model,
+            provider=self.provider,
             custom_input=custom_input,
             tone_reference=tone_reference,
         )
