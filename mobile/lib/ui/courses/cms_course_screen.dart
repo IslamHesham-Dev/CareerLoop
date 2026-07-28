@@ -316,7 +316,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
         }
         if (leftWeek == null) return 1;
         if (rightWeek == null) return -1;
-        return leftWeek.compareTo(rightWeek);
+        return rightWeek.compareTo(leftWeek);
       });
     return Map.fromEntries(entries);
   }
