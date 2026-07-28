@@ -119,6 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  String _subtitleFor(String university) {
+    return 'Every $university course and career move you add builds toward the same private profile.';
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthRepository>();
@@ -139,18 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Positioned(top: -120, left: -80, child: _glow(_accentA, 320)),
               Positioned(bottom: -140, right: -100, child: _glow(_accentB, 360)),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: IconButton(
-                  tooltip: _isDark ? 'Switch to light mode' : 'Switch to dark mode',
-                  onPressed: () => setState(() => _isDark = !_isDark),
-                  icon: Icon(
-                    _isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                    color: _textPrimary,
-                  ),
-                ),
-              ),
               LayoutBuilder(
                 builder: (context, constraints) {
                   return SingleChildScrollView(
@@ -171,7 +163,21 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    const LensLogo(size: 52),
+                                    // Crop LensLogo down to just its icon
+                                    // mark — its built-in wordmark text is
+                                    // hardcoded and doesn't adapt to dark
+                                    // mode, so we hide it and use our own
+                                    // theme-aware label instead.
+                                    ClipRect(
+                                      child: SizedBox(
+                                        width: 52,
+                                        height: 52,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: LensLogo(size: 52),
+                                        ),
+                                      ),
+                                    ),
                                     const SizedBox(width: 12),
                                     Text(
                                       'Career Loop',
@@ -199,13 +205,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 16),
                               Text(
-                                'Connect verified $university academic evidence now. Career signals join the same private profile as you add them.',
+                                _subtitleFor(university),
                                 style: TextStyle(
                                   color: _textMuted,
                                   fontSize: 15,
-                                  height: 1.5,
+                                  height: 1.6,
+                                  letterSpacing: 0.1,
                                 ),
                               ),
                               const SizedBox(height: 28),
@@ -272,6 +279,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   );
                 },
+              ),
+              // Kept as the LAST Stack child so it renders on top and
+              // actually receives taps — it was being covered by the
+              // scroll view before.
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  tooltip: _isDark ? 'Switch to light mode' : 'Switch to dark mode',
+                  onPressed: () => setState(() => _isDark = !_isDark),
+                  icon: Icon(
+                    _isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                    color: _textPrimary,
+                  ),
+                ),
               ),
             ],
           ),
