@@ -121,9 +121,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  String _subtitleFor(String university) {
-    return 'Every $university course and career move you add builds toward the same private profile.';
-  }
+  // String _subtitleFor(String university) {
+  //   return 'Every $university course and career move you add builds toward the same private profile.';
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -198,7 +198,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   colors: [_accentA, _accentB],
                                 ).createShader(rect),
                                 child: const Text(
-                                  'Turn your work\ninto your next\nopportunity.',
+                                  'Your work \n tells your story.',
                                   style: TextStyle(
                                     fontSize: 34,
                                     fontWeight: FontWeight.w800,
@@ -207,16 +207,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 16),
-                              Text(
-                                _subtitleFor(university),
-                                style: TextStyle(
-                                  color: _textMuted,
-                                  fontSize: 15,
-                                  height: 1.6,
-                                  letterSpacing: 0.1,
-                                ),
-                              ),
+                              // const SizedBox(height: 16),
+                              // Text(
+                              //   _subtitleFor(university),
+                              //   style: TextStyle(
+                              //     color: _textMuted,
+                              //     fontSize: 15,
+                              //     height: 1.6,
+                              //     letterSpacing: 0.1,
+                              //   ),
+                              // ),
                               const SizedBox(height: 28),
                               Container(
                                 padding: const EdgeInsets.all(24),
@@ -256,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
-                                      'Your credentials are used only to start a short-lived, read-only portal session. Career Loop does not store your password.',
+                                      'Your credentials are used only to start a read only portal session. Career Loop does not store your password.',
                                       style: TextStyle(
                                         color: _textMuted,
                                         fontSize: 12.5,
@@ -270,7 +270,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               Divider(color: _cardBorder),
                               const SizedBox(height: 14),
                               Text(
-                                'Your first Career Loop evidence source is the $university Student Portal.',
+                                'Your Career Loop journey begins with your university Student Portal.',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: _textMuted, fontSize: 12),
                               ),
@@ -330,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'University connection',
+              'University login',
               style: TextStyle(
                 color: _textPrimary,
                 fontSize: 16,
