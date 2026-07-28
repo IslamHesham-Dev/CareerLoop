@@ -1,6 +1,7 @@
 """cv_generator: turn merged career evidence into a compilable LaTeX CV.
 
-    from cv_generator import CVGenerator, build_career_context
+    from app.career_context import build_career_context
+    from cv_generator import CVGenerator
 
     context = build_career_context(
         resume_profile=student.resume_profile,
@@ -15,14 +16,13 @@
     result.latex_source   # always present; paste into Overleaf if pdf_bytes is None
     result.pdf_bytes      # present only when a LaTeX engine (tectonic/pdflatex) was found
 
-Four independently testable stages:
-    aggregate.build_career_context   -> merge evidence (pure, no network)
+Three independently testable stages (evidence merging lives one level up, in
+app/career_context.py, since email_generator needs the exact same merge):
     content.generate_cv_content      -> one LLM call -> validated CVContent
     latex_template.render_latex      -> CVContent -> .tex source (pure)
     compile.compile_latex_to_pdf     -> .tex source -> PDF bytes or None (best-effort)
 """
 
-from .aggregate import build_career_context
 from .client import CVGenerationResult, CVGenerator
 from .compile import compile_latex_to_pdf
 from .content import generate_cv_content
@@ -33,7 +33,6 @@ __all__ = [
     "CVGenerator",
     "CVGenerationResult",
     "CVContent",
-    "build_career_context",
     "generate_cv_content",
     "render_latex",
     "escape_latex",

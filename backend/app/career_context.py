@@ -5,7 +5,14 @@ Pure and network-free: every argument is data the caller already has on hand
 titles) — nothing here fetches anything itself. Tolerant of any source being
 missing, mirroring the "not_connected" tolerance already used by the
 get_*_profile agent tools in app/agent/factory.py: a student with only a
-GitHub profile connected should still get a CV, just a thinner one.
+GitHub profile connected should still get a usable context, just a thinner
+one.
+
+Shared by every feature that needs "what do we know about this student":
+`cv_generator` (CV content) and `email_generator` (career emails) both build
+their prompts from this same merge, so evidence handling only lives in one
+place. Deliberately lives at the `app/` level rather than inside either
+generator package, since neither should depend on the other.
 """
 
 from __future__ import annotations
@@ -41,11 +48,11 @@ def build_career_context(
     transcript: dict[str, Any] | None = None,
     cms_course_titles: list[str] | None = None,
 ) -> dict[str, Any]:
-    """One merged dict for `content.generate_cv_content` to prompt from.
+    """One merged dict for a generator's LLM prompt to be built from.
 
     `sources_used` tells the caller (and can tell the model) which evidence
-    actually went in, so a CV generated from GitHub alone can be honest about
-    that rather than silently thin.
+    actually went in, so output generated from GitHub alone can be honest
+    about that rather than silently thin.
     """
     sources_used: list[str] = []
     context: dict[str, Any] = {}

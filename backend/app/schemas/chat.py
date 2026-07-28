@@ -31,8 +31,23 @@ class PracticeSet(BaseModel):
     questions: list[PracticeQuestion]
 
 
+class EmailDraft(BaseModel):
+    """A pending, human-reviewable email draft. Never sent by the tool that
+    created it - see POST /v1/career/emails/{id}/send for the explicit,
+    separately-confirmed send action."""
+
+    id: str
+    recipient_email: str
+    purpose: str
+    subject: str
+    body: str
+    sources_used: list[str] = Field(default_factory=list)
+    created_at: str
+
+
 class ChatResponse(BaseModel):
     answer: str
     tools: list[ToolEvent]
     sources: list[str]
     practice_set: PracticeSet | None = None
+    email_draft: EmailDraft | None = None

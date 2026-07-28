@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from typing import Literal
 from typing import Any
@@ -448,8 +449,9 @@ def build_agent(student: StudentSession, settings: Settings):
         student asks to generate, build, tailor, or update their CV or
         resume. Requires at least one of a resume, LinkedIn PDF, or GitHub
         profile to already be connected."""
+        from app.career_context import build_career_context
         from app.tone import ToneProfile, build_tone_reference
-        from cv_generator import CVGenerator, build_career_context
+        from cv_generator import CVGenerator
 
         api_key = settings.anthropic_api_key.get_secret_value()
         if not api_key:
@@ -537,6 +539,130 @@ def build_agent(student: StudentSession, settings: Settings):
             )
         return response
 
+    _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    MAX_PENDING_EMAIL_DRAFTS = 5
+
+    @tool
+    def draft_career_email(
+        recipient_email: str,
+        purpose: str,
+        custom_input: str = "",
+    ) -> dict:
+        """Draft a short, professional email for a stated purpose (e.g.
+        asking a professor for a recommendation letter, following up on an
+        internship application, introducing yourself to a recruiter),
+        grounded in the student's transcript, imported resume, imported
+        LinkedIn PDF, and connected GitHub evidence, in the student's tone
+        when a tone profile exists. This ONLY creates a draft for the
+        student to review in the app - it never sends anything. Sending
+        requires a separate, explicit confirmation from the student in the
+        app after they review (and can edit) the draft."""
+        from app.career_context import build_career_context
+        from app.tone import ToneProfile, build_tone_reference
+        from email_generator import generate_email_content
+
+        recipient_clean = recipient_email.strip()
+        if not _EMAIL_RE.match(recipient_clean):
+            return {
+                "status": "error",
+                "message": f"{recipient_email!r} is not a valid email address.",
+            }
+
+        api_key = settings.anthropic_api_key.get_secret_value()
+        if not api_key:
+            return {"error": "ANTHROPIC_API_KEY is not configured on the backend."}
+
+        candidate_name = "Candidate"
+        for profile in (
+            student.resume_profile,
+            student.linkedin_profile,
+            student.github_profile,
+        ):
+            if profile:
+                name = profile.get("name")
+                if isinstance(name, str) and 2 <= len(name.strip()) <= 100:
+                    candidate_name = name.strip()
+                    break
+
+        try:
+            transcript = academic.full_transcript()
+        except Exception:
+            transcript = None
+
+        cms_course_titles = None
+        if cms.connected:
+            try:
+                cms_courses = cms.list_courses(season=academic.current_season)
+                cms_course_titles = [
+                    course.get("title") or course.get("code") or ""
+                    for course in cms_courses.get("courses", [])
+                ]
+                cms_course_titles = [title for title in cms_course_titles if title]
+            except Exception:
+                cms_course_titles = None
+
+        career_context = build_career_context(
+            resume_profile=student.resume_profile,
+            linkedin_profile=student.linkedin_profile,
+            github_profile=student.github_profile,
+            transcript=transcript,
+            cms_course_titles=cms_course_titles,
+        )
+
+        tone_reference = ""
+        if student.tone_profile:
+            tone_reference = build_tone_reference(
+                ToneProfile(answers=student.tone_profile)
+            )
+
+        try:
+            draft_content = generate_email_content(
+                purpose=purpose,
+                recipient_email=recipient_clean,
+                candidate_name=candidate_name,
+                career_context=career_context,
+                api_key=api_key,
+                model=settings.anthropic_model,
+                custom_input=custom_input,
+                tone_reference=tone_reference,
+            )
+        except Exception as exc:
+            return {"status": "error", "message": str(exc)}
+
+        draft_id = str(uuid4())
+        stored = {
+            "id": draft_id,
+            "recipient_email": recipient_clean,
+            "purpose": purpose,
+            "subject": draft_content.subject,
+            "body": draft_content.body,
+            "sources_used": career_context.get("sources_used", []),
+            "created_at": datetime.now(UTC).isoformat(),
+        }
+        student.pending_email_drafts[draft_id] = stored
+        student.last_email_draft_id = draft_id
+        if len(student.pending_email_drafts) > MAX_PENDING_EMAIL_DRAFTS:
+            oldest_first = sorted(
+                student.pending_email_drafts.items(),
+                key=lambda item: item[1].get("created_at", ""),
+            )
+            for stale_id, _ in oldest_first[:-MAX_PENDING_EMAIL_DRAFTS]:
+                student.pending_email_drafts.pop(stale_id, None)
+
+        return {
+            "status": "draft_ready",
+            "draft_id": draft_id,
+            "recipient_email": recipient_clean,
+            "subject": draft_content.subject,
+            "body": draft_content.body,
+            "sources_used": stored["sources_used"],
+            "note": (
+                "This is a draft only. Show it to the student and tell them "
+                "to review and confirm sending in the app - it has not been "
+                "sent."
+            ),
+        }
+
     api_key = settings.anthropic_api_key.get_secret_value()
     if not api_key:
         raise RuntimeError("ANTHROPIC_API_KEY is not configured on the backend.")
@@ -571,6 +697,7 @@ def build_agent(student: StudentSession, settings: Settings):
         generate_cover_letter_for_job,
         export_cover_letter_as_pdf,
         generate_cv,
+        draft_career_email,
     ]
     if cms.connected:
         cms_context = (
@@ -759,6 +886,7 @@ def tool_events(
         "generate_cover_letter_for_job": "Generated cover letter (AI)",
         "export_cover_letter_as_pdf": "Cover letter PDF export",
         "generate_cv": "Generated CV (AI, LaTeX)",
+        "draft_career_email": "Drafted career email (AI, unsent)",
     }
     seen_events: set[tuple[str, str]] = set()
     for message in messages:
