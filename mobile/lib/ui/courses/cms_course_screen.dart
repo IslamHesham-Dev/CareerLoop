@@ -47,9 +47,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
   @override
   Widget build(BuildContext context) {
     final cms = context.watch<CmsRepository>();
-    final university =
-        context.watch<AuthRepository>().session?.universityLabel ??
-            'University';
     final content = cms.content[widget.course.id];
     final course = content?.course ?? widget.course;
     final loading = cms.loadingContent.contains(widget.course.id);
@@ -111,25 +108,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.lock_outline_rounded,
-                          size: 15,
-                          color: LensColors.muted,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '$university CMS · ${course.season}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
                     Text(
                       course.title,
                       style:
@@ -188,10 +166,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(22, 0, 22, 12),
                 sliver: SliverToBoxAdapter(
-                  child: _SectionTitle(
-                    title: 'CMS resources',
-                    detail: '${resources.length} files · newest first',
-                  ),
+                  child: _SectionTitle(title: 'CMS resources'),
                 ),
               ),
               if (resources.isEmpty)
@@ -229,8 +204,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                             resources: entry.value,
                             downloading: _downloading,
                             onOpen: _openResource,
-                            onAskAi: (resource) =>
-                                _askResourceAi(course, resource),
                             onAssistWeek: () => _assistWeek(
                               course,
                               entry.key,
@@ -343,7 +316,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
         }
         if (leftWeek == null) return 1;
         if (rightWeek == null) return -1;
-        return rightWeek.compareTo(leftWeek);
+        return leftWeek.compareTo(rightWeek);
       });
     return Map.fromEntries(entries);
   }
@@ -624,51 +597,6 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
     if (prompt == null || !mounted) return;
     context.read<AdvisorRepository>().send(prompt);
     context.go('/advisor');
-  }
-
-  void _askResourceAi(CmsCourse course, CmsResource resource) {
-    final isPdf = resource.fileExtension.toLowerCase() == 'pdf';
-    final evidence = 'First call read_cms_pdf with resource_id '
-        '"${resource.id}". Base the response only on the extracted PDF and '
-        'say clearly if it cannot be read.';
-    showAiAssistSheet(
-      context,
-      title: 'Assist with this document',
-      subtitle: resource.title,
-      icon: Icons.description_outlined,
-      actions: [
-        AiAssistAction(
-          icon: Icons.summarize_outlined,
-          title: 'Summarize',
-          subtitle: isPdf
-              ? 'Key concepts and a revision checklist'
-              : 'AI reading is currently available for PDFs',
-          enabled: isPdf,
-          prompt: '$evidence Summarize this ${course.code} document into key '
-              'concepts, important details, and a revision checklist.',
-        ),
-        AiAssistAction(
-          icon: Icons.lightbulb_outline_rounded,
-          title: 'Explain it',
-          subtitle: isPdf
-              ? 'Simple teaching, technical detail, and examples'
-              : 'AI reading is currently available for PDFs',
-          enabled: isPdf,
-          prompt: '$evidence Teach me the difficult concepts in this '
-              '${course.code} document step by step, with examples.',
-        ),
-        AiAssistAction(
-          icon: Icons.quiz_outlined,
-          title: 'Quiz me',
-          subtitle: isPdf
-              ? 'Active-recall questions with hidden answers'
-              : 'AI reading is currently available for PDFs',
-          enabled: isPdf,
-          prompt: '$evidence Create a 10-question active-recall quiz from '
-              'this document. Do not show answers until I attempt it.',
-        ),
-      ],
-    );
   }
 
   void _askVideoAi(CmsCourse course, CmsVideo video) {
@@ -1009,20 +937,12 @@ class _SummaryMetric extends StatelessWidget {
 
 class _SectionTitle extends StatelessWidget {
   final String title;
-  final String detail;
 
-  const _SectionTitle({required this.title, required this.detail});
+  const _SectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-        ),
-        Text(detail, style: Theme.of(context).textTheme.bodyMedium),
-      ],
-    );
+    return Text(title, style: Theme.of(context).textTheme.titleLarge);
   }
 }
 
@@ -1040,10 +960,12 @@ class _WeekNavigator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String? newestWeek;
+    int? highestWeek;
     for (final label in labels) {
-      if (label.startsWith('Week ')) {
+      final weekNumber = _CmsCourseScreenState._weekNumber(label);
+      if (weekNumber != null && (highestWeek == null || weekNumber > highestWeek)) {
+        highestWeek = weekNumber;
         newestWeek = label;
-        break;
       }
     }
     final options = <String?>[null, ...labels];
@@ -1093,7 +1015,6 @@ class _WeekGroup extends StatelessWidget {
   final List<CmsResource> resources;
   final Set<String> downloading;
   final ValueChanged<CmsResource> onOpen;
-  final ValueChanged<CmsResource> onAskAi;
   final VoidCallback onAssistWeek;
 
   const _WeekGroup({
@@ -1101,7 +1022,6 @@ class _WeekGroup extends StatelessWidget {
     required this.resources,
     required this.downloading,
     required this.onOpen,
-    required this.onAskAi,
     required this.onAssistWeek,
   });
 
@@ -1142,7 +1062,6 @@ class _WeekGroup extends StatelessWidget {
                 resource: resource,
                 downloading: downloading.contains(resource.id),
                 onOpen: () => onOpen(resource),
-                onAskAi: () => onAskAi(resource),
               ),
             ),
           ),
@@ -1156,13 +1075,11 @@ class _ResourceCard extends StatelessWidget {
   final CmsResource resource;
   final bool downloading;
   final VoidCallback onOpen;
-  final VoidCallback onAskAi;
 
   const _ResourceCard({
     required this.resource,
     required this.downloading,
     required this.onOpen,
-    required this.onAskAi,
   });
 
   @override
@@ -1204,12 +1121,9 @@ class _ResourceCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 Text(
-                  [
-                    resource.contentType,
-                    if (resource.fileExtension.isNotEmpty)
-                      resource.fileExtension.toUpperCase(),
-                    if (resource.subtitle.isNotEmpty) resource.subtitle,
-                  ].join('  ·  '),
+                  resource.fileExtension.isEmpty
+                      ? 'File'
+                      : resource.fileExtension.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context)
@@ -1221,16 +1135,6 @@ class _ResourceCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          IconButton.filledTonal(
-            tooltip: 'Assist with this document',
-            onPressed: onAskAi,
-            icon: const Icon(
-              Icons.auto_awesome_rounded,
-              color: LensColors.violet,
-              size: 18,
-            ),
-          ),
-          const SizedBox(width: 4),
           IconButton.filledTonal(
             tooltip: 'Download and open',
             onPressed: downloading ? null : onOpen,

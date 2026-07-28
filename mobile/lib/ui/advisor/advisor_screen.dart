@@ -95,7 +95,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
               children: [
                 Expanded(
                   child: Text(
-                    'Ask CareerLoop',
+                    'Copilot',
                     style: Theme.of(context).textTheme.headlineMedium,
                   ),
                 ),
