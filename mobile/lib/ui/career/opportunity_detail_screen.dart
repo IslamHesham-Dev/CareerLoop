@@ -8,6 +8,7 @@ import '../../app/theme.dart';
 import '../../data/api_client.dart';
 import '../../data/career_document_repository.dart';
 import '../../data/models.dart';
+import '../core/brand_marks.dart';
 import '../core/content_ai_overlay.dart';
 import '../core/lens_components.dart';
 import 'career_document_viewer_screen.dart';
@@ -64,6 +65,15 @@ class CompanyLogo extends StatelessWidget {
             ),
     );
   }
+}
+
+String _evidenceVerdict(JobOpportunity job) {
+  final citations = job.evidenceCitations.length;
+  final gaps = job.inferredSkillGaps.length;
+  if (citations >= 4 && gaps <= 2) return 'Strong evidence';
+  if (citations >= 2) return 'Mixed evidence';
+  if (citations == 1) return 'Limited evidence';
+  return 'Unverified match';
 }
 
 class OpportunityDetailScreen extends StatefulWidget {
@@ -156,13 +166,15 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
             const SizedBox(height: 11),
             _FitCard(
               job: job,
-              evidence: args.evidence,
               limitations: args.limitations,
             ),
             const SizedBox(height: 24),
             _ApplicationDocuments(job: job),
             const SizedBox(height: 24),
-            _QualificationPath(courses: courses),
+            _QualificationPath(
+              courses: courses,
+              gaps: job.inferredSkillGaps,
+            ),
           ],
         ),
       ),
@@ -187,6 +199,14 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
                   '${course.addressesSkills.join(', ')}; URL ${course.url}',
             )
             .join('\n- ');
+    final citationContext = job.evidenceCitations.isEmpty
+        ? 'No source-level citation is currently available.'
+        : job.evidenceCitations
+            .map(
+              (citation) => '${citation.skill}: ${citation.title} '
+                  '[${citation.sourceLabel}] — ${citation.detail}',
+            )
+            .join('\n- ');
     return '''
 You are the in-page CareerLoop job copilot for one specific opening. Keep every
 answer anchored to this opening and the student's verified evidence.
@@ -207,6 +227,9 @@ OPENING
 
 AVAILABLE PROFILE EVIDENCE
 ${evidence.isEmpty ? 'No profile source is marked available.' : evidence.join(', ')}
+
+VERIFIED SOURCE CITATIONS
+- $citationContext
 
 SUGGESTED COURSES ON THIS PAGE
 - $courseContext
@@ -309,7 +332,7 @@ class _PositionHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${job.matchScore}% profile fit',
+                  _evidenceVerdict(job),
                   style: const TextStyle(
                     color: LensColors.indigo,
                     fontSize: 11,
@@ -444,12 +467,10 @@ class _ListingFacts extends StatelessWidget {
 
 class _FitCard extends StatelessWidget {
   final JobOpportunity job;
-  final OpportunityEvidence evidence;
   final List<String> limitations;
 
   const _FitCard({
     required this.job,
-    required this.evidence,
     required this.limitations,
   });
 
@@ -460,80 +481,198 @@ class _FitCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (job.matchReasons.isEmpty)
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'No specific match reasons were returned for this role.',
-                style: TextStyle(color: LensColors.muted, fontSize: 12),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Verified evidence',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                decoration: BoxDecoration(
+                  color: LensColors.indigo.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  _evidenceVerdict(job),
+                  style: const TextStyle(
+                    color: LensColors.indigo,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (job.evidenceCitations.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(13),
+              decoration: BoxDecoration(
+                color: LensColors.amber.withValues(alpha: .08),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(
+                  color: LensColors.amber.withValues(alpha: .22),
+                ),
+              ),
+              child: const Text(
+                'CareerLoop found no source-level proof for this match. Treat '
+                'the role as a discovery result, not evidence that you are '
+                'qualified.',
+                style: TextStyle(fontSize: 12, height: 1.4),
               ),
             )
           else
-            ...job.matchReasons.map(
-              (reason) => _ReasonRow(
-                icon: Icons.check_circle_rounded,
-                color: LensColors.aqua,
-                text: reason,
+            ...job.evidenceCitations.map(
+              (citation) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _EvidenceCitationCard(citation: citation),
               ),
             ),
-          const SizedBox(height: 4),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: () => _showEvidenceUsed(context),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                visualDensity: VisualDensity.compact,
+          if (job.inferredSkillGaps.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            const Divider(height: 1),
+            const SizedBox(height: 13),
+            const Text(
+              'What weakens the match',
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 9),
+            ...job.inferredSkillGaps.take(4).map(
+                  (gap) => _ReasonRow(
+                    icon: Icons.remove_circle_outline_rounded,
+                    color: LensColors.rose,
+                    text: 'No verified evidence found for $gap.',
+                  ),
+                ),
+          ],
+          if (limitations.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              limitations.first,
+              style: const TextStyle(
+                color: LensColors.muted,
+                fontSize: 10.5,
+                height: 1.35,
               ),
-              icon: const Icon(Icons.fact_check_outlined, size: 16),
-              label: const Text('Evidence used'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _EvidenceCitationCard extends StatelessWidget {
+  final JobEvidenceCitation citation;
+
+  const _EvidenceCitationCard({required this.citation});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: LensColors.canvas,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: LensColors.line),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _EvidenceSourceMark(source: citation.source),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        citation.sourceLabel,
+                        style: const TextStyle(
+                          color: LensColors.muted,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: LensColors.aqua.withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        citation.skill,
+                        style: const TextStyle(
+                          color: LensColors.aqua,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  citation.title,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    height: 1.3,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (citation.detail.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    citation.detail,
+                    style: const TextStyle(
+                      color: LensColors.muted,
+                      fontSize: 10.5,
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  void _showEvidenceUsed(BuildContext context) {
-    final used = <String>[
-      if (evidence.academicTranscript) 'Academic transcript',
-      if (evidence.linkedInPdf) 'LinkedIn profile PDF',
-      if (evidence.github) 'GitHub',
-      if (evidence.resume) 'Resume',
-    ];
-    showDialog<void>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Evidence used'),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                used.isEmpty ? 'Preference signals only' : used.join(' · '),
-                style: const TextStyle(color: LensColors.muted, fontSize: 12),
-              ),
-              if (limitations.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                ...limitations.map(
-                  (item) => _ReasonRow(
-                    icon: Icons.info_outline_rounded,
-                    color: LensColors.muted,
-                    text: item,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
-          ),
-        ],
+class _EvidenceSourceMark extends StatelessWidget {
+  final String source;
+
+  const _EvidenceSourceMark({required this.source});
+
+  @override
+  Widget build(BuildContext context) {
+    if (source == 'linkedin') {
+      return const LinkedInBrandMark(size: 30);
+    }
+    final (icon, color) = switch (source) {
+      'github' => (SimpleIcons.github, LensColors.ink),
+      'academic' => (Icons.school_rounded, LensColors.indigo),
+      _ => (Icons.description_outlined, LensColors.violet),
+    };
+    return Container(
+      width: 30,
+      height: 30,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(9),
       ),
+      child: Icon(icon, color: color, size: 16),
     );
   }
 }
@@ -780,8 +919,9 @@ class _DocumentRow extends StatelessWidget {
 
 class _QualificationPath extends StatelessWidget {
   final List<CareerCourseRecommendation> courses;
+  final List<String> gaps;
 
-  const _QualificationPath({required this.courses});
+  const _QualificationPath({required this.courses, required this.gaps});
 
   @override
   Widget build(BuildContext context) {
@@ -804,6 +944,7 @@ class _QualificationPath extends StatelessWidget {
                   child: _CourseStep(
                     number: entry.key + 1,
                     course: entry.value,
+                    gaps: gaps,
                   ),
                 ),
               ),
@@ -815,11 +956,23 @@ class _QualificationPath extends StatelessWidget {
 class _CourseStep extends StatelessWidget {
   final int number;
   final CareerCourseRecommendation course;
+  final List<String> gaps;
 
-  const _CourseStep({required this.number, required this.course});
+  const _CourseStep({
+    required this.number,
+    required this.course,
+    required this.gaps,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final gapSkills = course.addressesSkills
+        .where(
+          (skill) => gaps.any(
+            (gap) => gap.toLowerCase() == skill.toLowerCase(),
+          ),
+        )
+        .toList();
     return LensCard(
       onTap: () => launchUrl(
         course.url,
@@ -869,13 +1022,38 @@ class _CourseStep extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  course.provider,
-                  style: const TextStyle(
-                    color: LensColors.indigo,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        course.provider,
+                        style: const TextStyle(
+                          color: LensColors.indigo,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (gapSkills.isNotEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: LensColors.rose.withValues(alpha: .08),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: const Text(
+                          'Bridges your gap',
+                          style: TextStyle(
+                            color: LensColors.rose,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 3),
                 Text(
@@ -897,7 +1075,9 @@ class _CourseStep extends StatelessWidget {
                 if (course.addressesSkills.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(
-                    'Addresses ${course.addressesSkills.join(', ')}',
+                    gapSkills.isEmpty
+                        ? 'Builds ${course.addressesSkills.join(', ')}'
+                        : 'Targets ${gapSkills.join(', ')}',
                     style: const TextStyle(
                       color: LensColors.aqua,
                       fontSize: 11,

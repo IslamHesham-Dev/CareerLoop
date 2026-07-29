@@ -60,8 +60,13 @@ def test_profile_aware_swelist_search_returns_gaps_and_courses() -> None:
         work_modes=["remote"],
         transcript={
             "courses": [
-                {"course": "Data Structures and Algorithms"},
-                {"course": "Software Engineering"},
+                {
+                    "course": "Data Structures and Algorithms",
+                    "grade": "A",
+                    "numeric": "1.2",
+                    "semester": "Winter 2023",
+                },
+                {"course": "Software Engineering", "grade": "A-"},
             ]
         },
         linkedin_profile={"skills": ["Python", "Git"]},
@@ -105,6 +110,18 @@ def test_profile_aware_swelist_search_returns_gaps_and_courses() -> None:
     }
     assert result["recommended_courses"]
     assert "docker" in job["profile_skill_matches"]
+    assert job["match_score"] <= 92
+    assert any(
+        citation["source"] == "academic"
+        and citation["title"] == "Data Structures and Algorithms"
+        and "Grade A" in citation["detail"]
+        for citation in job["evidence_citations"]
+    )
+    assert any(
+        citation["source"] == "github"
+        and citation["title"] == "careerloop"
+        for citation in job["evidence_citations"]
+    )
     assert all(
         course["platform"] == "Coursera"
         for course in result["recommended_courses"]

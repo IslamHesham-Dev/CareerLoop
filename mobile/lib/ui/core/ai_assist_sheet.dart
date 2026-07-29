@@ -156,6 +156,6 @@ Future<void> showAiAssistSheet(
     ),
   );
   if (prompt == null || !context.mounted) return;
-  context.read<AdvisorRepository>().send(prompt);
+  context.read<AdvisorRepository>().prepareDraft(prompt);
   context.go('/advisor');
 }

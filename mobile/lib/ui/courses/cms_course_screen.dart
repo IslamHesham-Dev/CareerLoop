@@ -604,7 +604,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
       ),
     );
     if (prompt == null || !mounted) return;
-    context.read<AdvisorRepository>().send(prompt);
+    context.read<AdvisorRepository>().prepareDraft(prompt);
     context.go('/advisor');
   }
 

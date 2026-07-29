@@ -61,6 +61,7 @@ class ContentAiOverlay extends StatefulWidget {
 class _ContentAiOverlayState extends State<ContentAiOverlay> {
   static const _bubbleSize = 58.0;
   final _controller = TextEditingController();
+  final _composerFocusNode = FocusNode();
   final _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   ChatMessage? _messageToReveal;
@@ -93,6 +94,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
       widget.controller?._state = null;
     }
     _controller.dispose();
+    _composerFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -115,6 +117,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                   quickActions: widget.quickActions,
                   welcomeDescription: widget.welcomeDescription,
                   controller: _controller,
+                  focusNode: _composerFocusNode,
                   scrollController: _scrollController,
                   messageToReveal: _messageToReveal,
                   messageToRevealKey: _messageToRevealKey,
@@ -125,6 +128,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                     setState(() => _expanded = false);
                   },
                   onPrompt: _send,
+                  onDraft: _prepareDraft,
                 ),
               )
             else if (widget.showLauncher)
@@ -254,8 +258,19 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
     if (!mounted) return;
     setState(() => _expanded = true);
     if (prompt != null && prompt.trim().isNotEmpty) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _send(prompt));
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _prepareDraft(prompt),
+      );
     }
+  }
+
+  void _prepareDraft(String text) {
+    if (!mounted) return;
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _composerFocusNode.requestFocus();
   }
 
   void _scrollToEnd() {
@@ -291,6 +306,7 @@ class _ChatPanel extends StatelessWidget {
   final List<ContentAiQuickAction> quickActions;
   final String welcomeDescription;
   final TextEditingController controller;
+  final FocusNode focusNode;
   final ScrollController scrollController;
   final ChatMessage? messageToReveal;
   final GlobalKey? messageToRevealKey;
@@ -298,6 +314,7 @@ class _ChatPanel extends StatelessWidget {
   final String? error;
   final VoidCallback onMinimize;
   final ValueChanged<String> onPrompt;
+  final ValueChanged<String> onDraft;
 
   const _ChatPanel({
     required this.title,
@@ -306,6 +323,7 @@ class _ChatPanel extends StatelessWidget {
     required this.quickActions,
     required this.welcomeDescription,
     required this.controller,
+    required this.focusNode,
     required this.scrollController,
     required this.messageToReveal,
     required this.messageToRevealKey,
@@ -313,6 +331,7 @@ class _ChatPanel extends StatelessWidget {
     required this.error,
     required this.onMinimize,
     required this.onPrompt,
+    required this.onDraft,
   });
 
   @override
@@ -396,7 +415,7 @@ class _ChatPanel extends StatelessWidget {
                         ? _ChatWelcome(
                             quickActions: quickActions,
                             description: welcomeDescription,
-                            onPrompt: onPrompt,
+                            onPrompt: onDraft,
                           )
                         : ListView.builder(
                             controller: scrollController,
@@ -435,6 +454,7 @@ class _ChatPanel extends StatelessWidget {
                     ),
                   _OverlayComposer(
                     controller: controller,
+                    focusNode: focusNode,
                     isSending: sending,
                     quickActions: quickActions,
                     onPrompt: onPrompt,
@@ -451,12 +471,14 @@ class _ChatPanel extends StatelessWidget {
 
 class _OverlayComposer extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode focusNode;
   final bool isSending;
   final List<ContentAiQuickAction> quickActions;
   final ValueChanged<String> onPrompt;
 
   const _OverlayComposer({
     required this.controller,
+    required this.focusNode,
     required this.isSending,
     required this.quickActions,
     required this.onPrompt,
@@ -498,6 +520,7 @@ class _OverlayComposer extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              focusNode: focusNode,
               minLines: 1,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
@@ -683,7 +706,11 @@ class _OverlayComposer extends StatelessWidget {
       ),
     );
     if (selected == null || !context.mounted) return;
-    onPrompt(selected.prompt);
+    controller.value = TextEditingValue(
+      text: selected.prompt,
+      selection: TextSelection.collapsed(offset: selected.prompt.length),
+    );
+    focusNode.requestFocus();
   }
 }
 

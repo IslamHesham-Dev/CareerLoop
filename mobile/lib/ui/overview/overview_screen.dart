@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_icons/simple_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
+import '../../data/models.dart';
 import '../../data/opportunity_repository.dart';
 import '../../data/repositories.dart';
 import '../core/lens_components.dart';
@@ -37,6 +40,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
     final resume = context.watch<CurrentCvRepository>();
     final resumeReady = resume.hasProfile;
     final opportunities = context.watch<OpportunityRepository>();
+    final gapPath = _gapPath(opportunities.result);
     final professionalSources = [linkedInReady, githubReady, resumeReady]
         .where((ready) => ready)
         .length;
@@ -136,6 +140,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
                           : 'Create a resume from your connected evidence',
                       onTap: () => context.push('/master-resume'),
                     ),
+                    if (gapPath != null) ...[
+                      const SizedBox(height: 24),
+                      const _SectionTitle(title: 'Skill gap to close'),
+                      const SizedBox(height: 10),
+                      _GapCourseCard(
+                        skill: gapPath.skill,
+                        role: gapPath.job.title,
+                        course: gapPath.course,
+                      ),
+                    ],
                   ],
                 ],
               ),
@@ -147,7 +161,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   void _askCopilot(BuildContext context, String season) {
-    context.read<AdvisorRepository>().send(
+    context.read<AdvisorRepository>().prepareDraft(
           'Review my $season courses and academic record. What is the '
           'single most important action I should take next, and why?',
         );
@@ -221,6 +235,28 @@ class _OverviewScreenState extends State<OverviewScreen> {
       subtitle: 'LinkedIn, GitHub, and your resume are ready for matching.',
       onTap: (context) => context.push('/opportunities'),
     );
+  }
+
+  static ({
+    JobOpportunity job,
+    String skill,
+    CareerCourseRecommendation course,
+  })? _gapPath(OpportunitySearchResult? result) {
+    if (result == null) return null;
+    for (final job in result.jobs) {
+      final jobCourses = result.courses.where(
+        (course) => job.recommendedCourseIds.contains(course.id),
+      );
+      for (final gap in job.inferredSkillGaps) {
+        for (final course in jobCourses) {
+          final bridgesGap = course.addressesSkills.any(
+            (skill) => skill.toLowerCase() == gap.toLowerCase(),
+          );
+          if (bridgesGap) return (job: job, skill: gap, course: course);
+        }
+      }
+    }
+    return null;
   }
 }
 
@@ -435,6 +471,118 @@ class _CopilotSpotlight extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _GapCourseCard extends StatelessWidget {
+  final String skill;
+  final String role;
+  final CareerCourseRecommendation course;
+
+  const _GapCourseCard({
+    required this.skill,
+    required this.role,
+    required this.course,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _Surface(
+      onTap: () => launchUrl(
+        course.url,
+        mode: LaunchMode.externalApplication,
+      ),
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0056D2).withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(
+              SimpleIcons.coursera,
+              color: Color(0xFF0056D2),
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Missing evidence: $skill',
+                        style: const TextStyle(
+                          color: LensColors.rose,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: LensColors.rose.withValues(alpha: .08),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: const Text(
+                        'Bridges your gap',
+                        style: TextStyle(
+                          color: LensColors.rose,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  course.title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    height: 1.25,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${course.provider} · ${course.level} · ${course.duration}',
+                  style: const TextStyle(
+                    color: LensColors.muted,
+                    fontSize: 10.5,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Recommended for $role',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: LensColors.aqua,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Icon(Icons.arrow_outward_rounded, size: 18),
+        ],
       ),
     );
   }

@@ -41,6 +41,16 @@ const _locationChoices = <String>[
   'Egypt',
 ];
 
+String _evidenceLabel(JobOpportunity job) {
+  final citations = job.evidenceCitations.length;
+  if (citations >= 4 && job.inferredSkillGaps.length <= 2) {
+    return 'Strong evidence';
+  }
+  if (citations >= 2) return 'Mixed evidence';
+  if (citations == 1) return 'Limited evidence';
+  return 'Unverified';
+}
+
 class OpportunitiesScreen extends StatefulWidget {
   const OpportunitiesScreen({super.key});
 
@@ -863,7 +873,7 @@ class _JobCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  '${job.matchScore}% fit',
+                  _evidenceLabel(job),
                   style: const TextStyle(
                     color: LensColors.indigo,
                     fontSize: 11,
@@ -899,10 +909,10 @@ class _JobCard extends StatelessWidget {
                 ),
             ],
           ),
-          if (job.matchReasons.isNotEmpty) ...[
+          if (job.evidenceCitations.isNotEmpty) ...[
             const SizedBox(height: 14),
-            ...job.matchReasons.take(2).map(
-                  (reason) => Padding(
+            ...job.evidenceCitations.take(2).map(
+                  (citation) => Padding(
                     padding: const EdgeInsets.only(bottom: 7),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -915,7 +925,8 @@ class _JobCard extends StatelessWidget {
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            reason,
+                            '${citation.skill}: ${citation.title} '
+                            '(${citation.sourceLabel})',
                             style: const TextStyle(fontSize: 12, height: 1.35),
                           ),
                         ),

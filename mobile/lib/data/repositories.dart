@@ -495,6 +495,7 @@ class AdvisorRepository extends ChangeNotifier {
   final List<ChatMessage> messages = [];
   bool isSending = false;
   String? error;
+  String draft = '';
 
   AdvisorRepository({
     required this.api,
@@ -509,6 +510,15 @@ class AdvisorRepository extends ChangeNotifier {
     return sendContextual(visibleText: text, agentText: text);
   }
 
+  void prepareDraft(String text) {
+    draft = text;
+    notifyListeners();
+  }
+
+  void updateDraft(String text) {
+    draft = text;
+  }
+
   Future<ChatMessage?> sendContextual({
     required String visibleText,
     required String agentText,
@@ -516,6 +526,7 @@ class AdvisorRepository extends ChangeNotifier {
     final visible = visibleText.trim();
     final agent = agentText.trim();
     if (visible.isEmpty || agent.isEmpty || isSending) return null;
+    draft = '';
     messages.add(
       ChatMessage(
         isUser: true,
@@ -575,6 +586,7 @@ class AdvisorRepository extends ChangeNotifier {
       await api.post('/v1/chat/reset');
     } finally {
       messages.clear();
+      draft = '';
       error = null;
       notifyListeners();
     }
@@ -582,6 +594,7 @@ class AdvisorRepository extends ChangeNotifier {
 
   void clearLocal() {
     messages.clear();
+    draft = '';
     error = null;
     notifyListeners();
   }

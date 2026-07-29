@@ -129,7 +129,7 @@ class _CourseDetailsScreenState extends State<CourseDetailsScreen> {
             const SizedBox(height: 14),
             FilledButton.icon(
               onPressed: () {
-                context.read<AdvisorRepository>().send(
+                context.read<AdvisorRepository>().prepareDraft(
                       'Analyze ${widget.course.code}. Explain the grades, identify the weakest assessment, and make a practical improvement plan.',
                     );
                 context.go('/advisor');

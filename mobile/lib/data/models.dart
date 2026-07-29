@@ -659,6 +659,34 @@ class OpportunityEvidence {
       );
 }
 
+class JobEvidenceCitation {
+  final String source;
+  final String sourceLabel;
+  final String title;
+  final String detail;
+  final String skill;
+  final Uri? url;
+
+  const JobEvidenceCitation({
+    required this.source,
+    required this.sourceLabel,
+    required this.title,
+    required this.detail,
+    required this.skill,
+    this.url,
+  });
+
+  factory JobEvidenceCitation.fromJson(Map<String, dynamic> json) =>
+      JobEvidenceCitation(
+        source: json['source'] as String? ?? 'resume',
+        sourceLabel: json['source_label'] as String? ?? 'Profile evidence',
+        title: json['title'] as String? ?? 'Evidence',
+        detail: json['detail'] as String? ?? '',
+        skill: json['skill'] as String? ?? '',
+        url: Uri.tryParse(json['url'] as String? ?? ''),
+      );
+}
+
 class JobOpportunity {
   final String id;
   final String company;
@@ -682,6 +710,7 @@ class JobOpportunity {
   final List<String> profileSkillMatches;
   final List<String> inferredSkillGaps;
   final List<String> recommendedCourseIds;
+  final List<JobEvidenceCitation> evidenceCitations;
 
   const JobOpportunity({
     required this.id,
@@ -706,6 +735,7 @@ class JobOpportunity {
     required this.profileSkillMatches,
     required this.inferredSkillGaps,
     required this.recommendedCourseIds,
+    this.evidenceCitations = const [],
   });
 
   factory JobOpportunity.fromJson(Map<String, dynamic> json) => JobOpportunity(
@@ -745,6 +775,14 @@ class JobOpportunity {
         recommendedCourseIds: List<String>.from(
           json['recommended_course_ids'] as List? ?? const [],
         ),
+        evidenceCitations: (json['evidence_citations'] as List? ?? const [])
+            .whereType<Map>()
+            .map(
+              (item) => JobEvidenceCitation.fromJson(
+                Map<String, dynamic>.from(item),
+              ),
+            )
+            .toList(),
       );
 
   Map<String, dynamic> toDocumentJson() => {

@@ -903,16 +903,18 @@ class OpportunityService:
             if location.casefold() in posting.location.casefold()
         )
 
-        score = 30
-        score += min(25, len(keyword_matches) * 12)
-        score += min(25, len(skill_matches) * 5)
+        coverage = len(skill_matches) / max(1, len(expected_skills))
+        score = round(coverage * 55)
+        score += min(15, len(keyword_matches) * 7)
+        score += min(15, len(evidence_citations) * 4)
         if location_matches:
-            score += 15
+            score += 10
         elif target_market == "global":
-            score += 8
+            score += 4
         if "remote" in work_modes and "remote" in posting.location.casefold():
             score += 5
-        score = min(score, 100)
+        score -= min(20, len(gaps) * 2)
+        score = max(5, min(score, 92))
 
         reasons = []
         if keyword_matches:
@@ -921,7 +923,15 @@ class OpportunityService:
             )
         if skill_matches:
             reasons.append(
-                f"Profile evidence: {', '.join(skill_matches[:3])}"
+                f"Verified skills: {', '.join(skill_matches[:3])}"
+            )
+        if evidence_citations:
+            reasons.append(
+                f"{len(evidence_citations)} source-level profile citations"
+            )
+        if gaps:
+            reasons.append(
+                f"No verified evidence for: {', '.join(gaps[:3])}"
             )
         if location_matches:
             reasons.append(

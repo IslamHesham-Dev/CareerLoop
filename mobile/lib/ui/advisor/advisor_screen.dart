@@ -19,9 +19,11 @@ class AdvisorScreen extends StatefulWidget {
 
 class _AdvisorScreenState extends State<AdvisorScreen> {
   final _controller = TextEditingController();
+  final _composerFocusNode = FocusNode();
   final _scrollController = ScrollController();
   ChatMessage? _messageToReveal;
   GlobalKey? _messageToRevealKey;
+  bool _draftHydrated = false;
 
   static const _suggestions = [
     'Turn my academic strengths into career evidence',
@@ -32,14 +34,42 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
   ];
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_draftHydrated) return;
+    final draft = context.read<AdvisorRepository>().draft;
+    _controller.value = TextEditingValue(
+      text: draft,
+      selection: TextSelection.collapsed(offset: draft.length),
+    );
+    _controller.addListener(_persistDraft);
+    _draftHydrated = true;
+  }
+
+  @override
   void dispose() {
+    _controller.removeListener(_persistDraft);
     _controller.dispose();
+    _composerFocusNode.dispose();
     _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _send([String? suggestion]) async {
-    final text = suggestion ?? _controller.text;
+  void _persistDraft() {
+    if (!mounted) return;
+    context.read<AdvisorRepository>().updateDraft(_controller.text);
+  }
+
+  void _preparePrompt(String text) {
+    _controller.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    _composerFocusNode.requestFocus();
+  }
+
+  Future<void> _send() async {
+    final text = _controller.text;
     if (text.trim().isEmpty) return;
     _controller.clear();
     final request = context.read<AdvisorRepository>().send(text);
@@ -85,6 +115,15 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
   @override
   Widget build(BuildContext context) {
     final advisor = context.watch<AdvisorRepository>();
+    if (advisor.draft.isNotEmpty && advisor.draft != _controller.text) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || advisor.draft == _controller.text) return;
+        _controller.value = TextEditingValue(
+          text: advisor.draft,
+          selection: TextSelection.collapsed(offset: advisor.draft.length),
+        );
+      });
+    }
     return SafeArea(
       bottom: false,
       child: Column(
@@ -131,7 +170,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
           const Divider(height: 1, color: LensColors.line),
           Expanded(
             child: advisor.messages.isEmpty
-                ? _AdvisorWelcome(onPrompt: _send)
+                ? _AdvisorWelcome(onPrompt: _preparePrompt)
                 : ListView.builder(
                     controller: _scrollController,
                     keyboardDismissBehavior:
@@ -181,6 +220,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
             ),
           _Composer(
             controller: _controller,
+            focusNode: _composerFocusNode,
             isSending: advisor.isSending,
             onSend: _send,
             quickPrompts: _suggestions,
@@ -401,6 +441,7 @@ class _ThinkingBubble extends StatelessWidget {
 
 class _Composer extends StatelessWidget {
   final TextEditingController controller;
+  final FocusNode focusNode;
   final bool isSending;
   final VoidCallback onSend;
   final List<String> quickPrompts;
@@ -423,6 +464,7 @@ class _Composer extends StatelessWidget {
 
   const _Composer({
     required this.controller,
+    required this.focusNode,
     required this.isSending,
     required this.onSend,
     required this.quickPrompts,
@@ -469,6 +511,7 @@ class _Composer extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              focusNode: focusNode,
               minLines: 1,
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
@@ -648,7 +691,10 @@ class _Composer extends StatelessWidget {
       ),
     );
     if (selected == null || !context.mounted) return;
-    controller.text = selected;
-    onSend();
+    controller.value = TextEditingValue(
+      text: selected,
+      selection: TextSelection.collapsed(offset: selected.length),
+    );
+    focusNode.requestFocus();
   }
 }
