@@ -537,12 +537,11 @@ class GiuCmsClient:
     def _week_numbers(soup: BeautifulSoup) -> dict[int, tuple[int, str]]:
         """Map each week block's identity to a (week_number, label) pair.
 
-        A week block usually only carries a date header (e.g. "2026-02-10"),
-        and the CMS page may list the most recent week first, so raw page
-        order can't be trusted for numbering. An explicit "Week N" label
-        always wins; otherwise blocks with a parseable date are numbered by
-        that date (earliest = Week 1); page order is the last resort for
-        blocks with neither.
+        The CMS stores the meaningful week name in the last ``p.p2`` element
+        inside the block, while its heading is often only a date. The explicit
+        "Week N" label always wins so a late upload date cannot relabel Week 1
+        as the final week. Dates (earliest = Week 1) and then page order are
+        only fallbacks when the CMS does not provide an explicit number.
         """
         cards = soup.find_all(
             "div", class_=lambda value: value and "weeksdata" in value
@@ -550,38 +549,64 @@ class GiuCmsClient:
         if not cards:
             cards = soup.find_all(class_=re.compile(r"\bweek", re.I))
 
-        headers: list[tuple[int, str]] = []
+        records: list[tuple[int, str, date | None, int | None]] = []
         for card in cards:
-            header = card.find(["h2", "h3", "h4"], class_=re.compile(r"text-big", re.I))
+            header = card.find(
+                ["h2", "h3", "h4"],
+                class_=re.compile(r"text-big", re.I),
+            )
             header = header or card.find(["h2", "h3", "h4"])
-            headers.append(
-                (id(card), _clean(header.get_text(" ", strip=True) if header else "")),
+            header_text = _clean(
+                header.get_text(" ", strip=True) if header else ""
+            )
+            names = [
+                _clean(node.get_text(" ", strip=True))
+                for node in card.find_all("p", class_="p2")
+                if _clean(node.get_text(" ", strip=True))
+            ]
+            label = names[-1] if names else header_text
+            explicit_match = _WEEK_LABEL_RE.search(label)
+            records.append(
+                (
+                    id(card),
+                    label,
+                    _parse_week_date(header_text),
+                    int(explicit_match.group(1))
+                    if explicit_match
+                    else None,
+                )
             )
 
-        explicit: dict[int, int] = {}
-        dated: list[tuple[int, date]] = []
-        undated: list[int] = []
-        for key, text in headers:
-            match = _WEEK_LABEL_RE.search(text)
-            if match:
-                explicit[key] = int(match.group(1))
-                continue
-            parsed_date = _parse_week_date(text)
-            if parsed_date is not None:
-                dated.append((key, parsed_date))
-            else:
-                undated.append(key)
+        labels = {key: label for key, label, _date, _number in records}
+        dated = [
+            (key, parsed_date)
+            for key, _label, parsed_date, _number in records
+            if parsed_date is not None
+        ]
         dated.sort(key=lambda item: item[1])
-
-        labels = dict(headers)
-        mapping = {
-            key: (number, labels.get(key) or f"Week {number}")
-            for key, number in explicit.items()
-        }
+        mapping: dict[int, tuple[int, str]] = {}
         for rank, (key, _date) in enumerate(dated, start=1):
-            mapping[key] = (rank, labels.get(key) or f"Week {rank}")
-        for rank, key in enumerate(undated, start=len(dated) + 1):
-            mapping[key] = (rank, labels.get(key) or f"Week {rank}")
+            label = labels.get(key) or f"Week {rank}"
+            mapping[key] = (rank, label)
+
+        used_numbers = {
+            number
+            for _key, _label, _date, number in records
+            if number is not None
+        }
+        for key, label, _date, number in records:
+            if number is not None:
+                mapping[key] = (number, label or f"Week {number}")
+
+        next_number = 1
+        for key, label, parsed_date, number in records:
+            if number is not None or parsed_date is not None:
+                continue
+            while next_number in used_numbers:
+                next_number += 1
+            mapping[key] = (next_number, label or f"Week {next_number}")
+            used_numbers.add(next_number)
+            next_number += 1
         return mapping
 
     def _parse_resources(

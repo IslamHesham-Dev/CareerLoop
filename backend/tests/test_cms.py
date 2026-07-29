@@ -184,6 +184,51 @@ def test_live_cms_html_parsers_cover_course_links_and_resources() -> None:
     client.close()
 
 
+def test_cms_explicit_week_labels_keep_their_own_resources() -> None:
+    client = GiuCmsClient("student", "secret")
+    html = """
+    <div class="menu-header-title">
+      <span>Data Structures and Algorithms (|CSEN301|)</span>
+    </div>
+    <div class="card mb-5 weeksdata">
+      <div class="card-header"><h2 class="text-big">2026-02-10</h2></div>
+      <p class="p2">Final review announcement</p>
+      <p class="p2">Week 13</p>
+      <div class="card-body">
+        <div><strong>13 - Final review (Lecture)</strong></div>
+        <div>Final material</div>
+        <a id="download" href="/Uploads/final-review.pdf">Download</a>
+      </div>
+    </div>
+    <div class="card mb-5 weeksdata">
+      <div class="card-header"><h2 class="text-big">2026-05-10</h2></div>
+      <p class="p2">Welcome announcement</p>
+      <p class="p2">Week 1</p>
+      <div class="card-body">
+        <div><strong>1 - Introduction (Lecture)</strong></div>
+        <div>First lecture</div>
+        <a id="download" href="/Uploads/introduction.pdf">Download</a>
+      </div>
+    </div>
+    """
+
+    _code, _title, resources = client._parse_resources(
+        html,
+        page_url=(
+            "https://cms.giu-uni.de/apps/student/CourseViewStn.aspx?id=42"
+        ),
+    )
+    weeks_by_title = {
+        resource["title"]: resource["week"] for resource in resources
+    }
+
+    assert weeks_by_title == {
+        "Final review (Lecture)": 13,
+        "Introduction (Lecture)": 1,
+    }
+    client.close()
+
+
 def test_view_all_courses_maps_historical_seasons_and_drive_videos() -> None:
     client = GiuCmsClient("student", "secret")
     html = """
