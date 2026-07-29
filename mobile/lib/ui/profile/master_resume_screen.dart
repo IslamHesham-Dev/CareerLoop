@@ -167,11 +167,15 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
     final academic = context.watch<AcademicRepository>();
     final documents = context.watch<CareerDocumentRepository>();
     final currentCv = context.watch<CurrentCvRepository>();
+    final linkedIn = context.watch<CareerProfileRepository>();
+    final github = context.watch<GithubProfileRepository>();
     final tone = context.watch<ToneProfileRepository>();
     final transcript = academic.fullTranscript;
     final document = documents.documentFor(_masterJob, 'resume');
     final generating = documents.isBusy(_masterJob, 'resume');
     final transcriptReady = transcript != null && transcript.courses.isNotEmpty;
+    final linkedInProfile = linkedIn.profile;
+    final githubProfile = github.profile;
 
     return Scaffold(
       backgroundColor: LensColors.canvas,
@@ -191,7 +195,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
             ),
             const SizedBox(height: 6),
             const Text(
-              'Build a one-page resume from your academic history and connected profile sources.',
+              'Build a one-page resume from your complete academic and career evidence.',
               style: TextStyle(color: LensColors.muted, height: 1.45),
             ),
             const SizedBox(height: 16),
@@ -214,6 +218,26 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                         ? 'Included as verified evidence'
                         : 'Not required',
                     ready: currentCv.hasProfile,
+                    optional: true,
+                  ),
+                  const Divider(height: 24),
+                  _EvidenceLine(
+                    icon: Icons.work_outline_rounded,
+                    title: 'LinkedIn profile',
+                    value: linkedInProfile == null
+                        ? 'Not connected'
+                        : _linkedinEvidenceSummary(linkedInProfile),
+                    ready: linkedIn.hasProfile,
+                    optional: true,
+                  ),
+                  const Divider(height: 24),
+                  _EvidenceLine(
+                    icon: Icons.code_rounded,
+                    title: 'GitHub projects',
+                    value: githubProfile == null
+                        ? 'Not connected'
+                        : _githubEvidenceSummary(githubProfile),
+                    ready: github.hasProfile,
                     optional: true,
                   ),
                   const Divider(height: 24),
@@ -338,6 +362,29 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
       ),
     );
   }
+}
+
+String _linkedinEvidenceSummary(LinkedInPdfProfile profile) {
+  final parts = <String>[
+    if (profile.experience.isNotEmpty)
+      '${profile.experience.length} experience ${profile.experience.length == 1 ? 'entry' : 'entries'}',
+    if (profile.certifications.isNotEmpty)
+      '${profile.certifications.length} ${profile.certifications.length == 1 ? 'certification' : 'certifications'}',
+    if (profile.skills.isNotEmpty) '${profile.skills.length} skills',
+  ];
+  return parts.isEmpty ? 'Connected profile included' : parts.join(' · ');
+}
+
+String _githubEvidenceSummary(GithubProfileEvidence profile) {
+  final repositoryCount = profile.analyzedRepositoryCount > 0
+      ? profile.analyzedRepositoryCount
+      : profile.repositories.length;
+  final parts = <String>[
+    '$repositoryCount analyzed ${repositoryCount == 1 ? 'project' : 'projects'}',
+    if (profile.skills.isNotEmpty)
+      '${profile.skills.length} evidenced ${profile.skills.length == 1 ? 'skill' : 'skills'}',
+  ];
+  return parts.join(' · ');
 }
 
 class _EvidenceLine extends StatelessWidget {

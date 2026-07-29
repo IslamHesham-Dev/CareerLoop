@@ -107,8 +107,20 @@ class CareerDocumentRepository extends ChangeNotifier {
   }
 
   Future<void> _syncEvidence() async {
-    await careerProfileRepository.ensureSynced();
-    await githubProfileRepository.ensureSynced();
+    final linkedInReady = await careerProfileRepository.ensureSynced();
+    if (careerProfileRepository.hasProfile && !linkedInReady) {
+      throw const ApiException(
+        'Your LinkedIn evidence could not be loaded into this session.',
+      );
+    }
+
+    final githubReady = await githubProfileRepository.ensureSynced();
+    if (githubProfileRepository.hasProfile && !githubReady) {
+      throw const ApiException(
+        'Your GitHub projects could not be loaded into this session.',
+      );
+    }
+
     await toneProfileRepository.ensureSynced();
     final resumeReady = await currentCvRepository.ensureSynced();
     if (currentCvRepository.hasProfile && !resumeReady) {
