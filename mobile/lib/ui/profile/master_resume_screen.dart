@@ -30,6 +30,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
   );
   bool _initializedName = false;
   bool _adopting = false;
+  bool _opening = false;
 
   static final _masterJob = JobOpportunity(
     id: 'careerloop-master-resume',
@@ -115,6 +116,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
           'invent contact details, experience, projects, or achievements.',
     );
     if (document == null || !mounted) return;
+    setState(() => _opening = true);
     try {
       final file = await repository.download(document);
       if (!mounted) return;
@@ -133,6 +135,8 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(exception.message)),
       );
+    } finally {
+      if (mounted) setState(() => _opening = false);
     }
   }
 
@@ -150,7 +154,6 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
           );
       if (!mounted) return;
       if (imported) {
-        repository.clear();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -290,10 +293,13 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: generating || _adopting || !transcriptReady
+                      onPressed: generating ||
+                              _adopting ||
+                              _opening ||
+                              !transcriptReady
                           ? null
                           : () => _openDocument(),
-                      icon: generating || _adopting
+                      icon: generating || _adopting || _opening
                           ? const SizedBox.square(
                               dimension: 17,
                               child: CircularProgressIndicator(
@@ -309,11 +315,13 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                       label: Text(
                         generating
                             ? 'Generating and compiling…'
-                            : _adopting
-                                ? 'Loading as active resume…'
-                                : document == null
-                                    ? 'Generate master resume'
-                                    : 'Open version ${document.version}',
+                            : _opening
+                                ? 'Opening PDF…'
+                                : _adopting
+                                    ? 'Loading as active resume…'
+                                    : document == null
+                                        ? 'Generate master resume'
+                                        : 'Open version ${document.version}',
                       ),
                     ),
                   ),
@@ -322,7 +330,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                     SizedBox(
                       width: double.infinity,
                       child: TextButton.icon(
-                        onPressed: generating || _adopting
+                        onPressed: generating || _adopting || _opening
                             ? null
                             : () => _openDocument(regenerate: true),
                         icon: const Icon(Icons.refresh_rounded),

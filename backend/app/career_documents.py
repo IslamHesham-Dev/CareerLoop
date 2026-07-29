@@ -123,23 +123,46 @@ def generate_document(
         "job": job_payload,
         "preview": preview,
         "sources_used": list(context.get("sources_used", [])),
+        "generation_context": (
+            existing.get("generation_context", "")
+            if existing
+            else (
+                instructions.strip()
+                or (
+                    f"Tailored for {job_payload['title']} "
+                    f"at {job_payload['company']}."
+                )
+            )
+        ),
+        "revision_note": instructions.strip(),
         "content": content,
         "latex_source": latex_source,
         "pdf_bytes": pdf_bytes,
         "created_at": existing.get("created_at", now) if existing else now,
         "updated_at": now,
     }
+    previous_versions = list(existing.get("versions", [])) if existing else []
+    if existing and not previous_versions:
+        previous_versions = [_version_snapshot(existing)]
+    record["versions"] = [
+        *previous_versions,
+        _version_snapshot(record),
+    ][-8:]
     with student.chat_lock:
         student.career_documents[document_id] = record
         _trim_documents(student.career_documents)
     return record
 
 
-def public_document(record: dict[str, Any]) -> dict[str, Any]:
+def public_document(
+    record: dict[str, Any],
+    *,
+    version: int | None = None,
+) -> dict[str, Any]:
+    selected = _select_version(record, version)
     return {
-        key: record[key]
+        key: selected[key]
         for key in (
-            "id",
             "kind",
             "version",
             "filename",
@@ -151,7 +174,42 @@ def public_document(record: dict[str, Any]) -> dict[str, Any]:
             "created_at",
             "updated_at",
         )
-    } | {"pdf_path": f"/v1/career/documents/{record['id']}/pdf"}
+    } | {
+        "id": record["id"],
+        "job": record.get("job")
+        or {
+            "id": str(record["id"]),
+            "company": str(record.get("company", "CareerLoop Profile")),
+            "title": str(record.get("job_title", "Generated document")),
+        },
+        "generation_context": str(selected.get("generation_context", "")),
+        "revision_note": str(selected.get("revision_note", "")),
+        "pdf_path": (
+            f"/v1/career/documents/{record['id']}/pdf"
+            f"?version={selected['version']}"
+        ),
+    }
+
+
+def document_versions(record: dict[str, Any]) -> list[dict[str, Any]]:
+    versions = list(record.get("versions", []))
+    if not any(
+        int(candidate.get("version", 0)) == int(record["version"])
+        for candidate in versions
+    ):
+        versions.append(_version_snapshot(record))
+    return [
+        public_document(record, version=int(version["version"]))
+        for version in versions
+    ]
+
+
+def document_pdf(
+    record: dict[str, Any],
+    version: int | None = None,
+) -> tuple[bytes, str]:
+    selected = _select_version(record, version)
+    return selected["pdf_bytes"], str(selected["filename"])
 
 
 def _career_context(student: StudentSession) -> dict[str, Any]:
@@ -186,6 +244,40 @@ def _career_context(student: StudentSession) -> dict[str, Any]:
 def _filename_part(value: str) -> str:
     cleaned = re.sub(r"[^A-Za-z0-9]+", "_", value).strip("_")
     return cleaned[:50] or "Document"
+
+
+def _version_snapshot(record: dict[str, Any]) -> dict[str, Any]:
+    keys = (
+        "kind",
+        "version",
+        "filename",
+        "title",
+        "company",
+        "job_title",
+        "job",
+        "preview",
+        "sources_used",
+        "generation_context",
+        "revision_note",
+        "content",
+        "latex_source",
+        "pdf_bytes",
+        "created_at",
+        "updated_at",
+    )
+    return {key: record[key] for key in keys if key in record}
+
+
+def _select_version(
+    record: dict[str, Any],
+    version: int | None,
+) -> dict[str, Any]:
+    if version is None or version == int(record["version"]):
+        return record
+    for candidate in record.get("versions", []):
+        if int(candidate.get("version", 0)) == version:
+            return candidate
+    raise KeyError(version)
 
 
 def _trim_documents(documents: dict[str, dict[str, Any]]) -> None:

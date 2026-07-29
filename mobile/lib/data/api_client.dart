@@ -198,11 +198,11 @@ class ApiClient {
   Future<DownloadedFile> download(
     String path, {
     required String filename,
+    Duration timeout = const Duration(minutes: 5),
   }) async {
     final request = http.Request('GET', _uri(path));
     request.headers.addAll(_headers()..remove('Content-Type'));
-    final response =
-        await _client.send(request).timeout(const Duration(minutes: 5));
+    final response = await _client.send(request).timeout(timeout);
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = await response.stream.bytesToString();
       var message = 'The file could not be downloaded.';

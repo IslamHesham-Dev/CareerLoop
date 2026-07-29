@@ -22,6 +22,7 @@ import '../ui/overview/overview_screen.dart';
 import '../ui/practice/practice_screens.dart';
 import '../ui/profile/profile_screen.dart';
 import '../ui/profile/email_studio_screen.dart';
+import '../ui/profile/generated_documents_screen.dart';
 import '../ui/profile/master_resume_screen.dart';
 import '../ui/profile/tone_screen.dart';
 import '../ui/transcript/transcript_screen.dart';
@@ -180,6 +181,10 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
         GoRoute(
           path: '/master-resume',
           builder: (context, state) => const MasterResumeScreen(),
+        ),
+        GoRoute(
+          path: '/generated-documents',
+          builder: (context, state) => const GeneratedDocumentsScreen(),
         ),
         GoRoute(
           path: '/writing-voice',

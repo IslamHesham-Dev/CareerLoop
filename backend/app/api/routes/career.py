@@ -5,12 +5,22 @@ import io
 import logging
 import time
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    Query,
+    UploadFile,
+    status,
+)
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 
 from app.career_documents import (
     CareerDocumentError,
+    document_pdf,
+    document_versions,
     generate_document,
     public_document,
 )
@@ -530,6 +540,19 @@ async def generate_career_document(
     return public_document(record)
 
 
+@router.get("/documents")
+def list_career_documents(
+    student: StudentSession = Depends(get_student_session),
+) -> dict[str, list[dict]]:
+    documents = [
+        version
+        for record in student.career_documents.values()
+        for version in document_versions(record)
+    ]
+    documents.sort(key=lambda item: item["updated_at"], reverse=True)
+    return {"documents": documents}
+
+
 @router.post(
     "/documents/{document_id}/refine",
     response_model=CareerDocumentResponse,
@@ -572,6 +595,7 @@ async def refine_career_document(
 @router.get("/documents/{document_id}/pdf")
 def download_career_document(
     document_id: str,
+    version: int | None = Query(default=None, ge=1),
     student: StudentSession = Depends(get_student_session),
 ) -> StreamingResponse:
     record = student.career_documents.get(document_id)
@@ -580,13 +604,20 @@ def download_career_document(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="This generated document is no longer in the active session.",
         )
+    try:
+        pdf_bytes, filename = document_pdf(record, version)
+    except KeyError:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This document version is no longer available.",
+        ) from None
     return StreamingResponse(
-        io.BytesIO(record["pdf_bytes"]),
+        io.BytesIO(pdf_bytes),
         media_type="application/pdf",
         headers={
             "Cache-Control": "no-store",
             "Content-Disposition": (
-                f'inline; filename="{record["filename"]}"'
+                f'inline; filename="{filename}"'
             ),
             "Cache-Control": "private, no-store",
         },

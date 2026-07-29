@@ -53,7 +53,9 @@ Future<void> main() async {
     careerProfileRepository: careerProfile,
     githubProfileRepository: githubProfile,
     currentCvRepository: currentCv,
+    storage: storage,
   );
+  await opportunities.loadSavedPreferences();
   final applications = ApplicationRepository(
     api: api,
     careerProfileRepository: careerProfile,

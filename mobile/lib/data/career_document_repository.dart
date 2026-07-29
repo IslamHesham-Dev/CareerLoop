@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
@@ -7,6 +10,18 @@ import 'github_profile_repository.dart';
 import 'models.dart';
 import 'tone_profile_repository.dart';
 
+class CareerDocumentHistory {
+  final JobOpportunity job;
+  final String kind;
+  final List<CareerDocument> versions;
+
+  const CareerDocumentHistory({
+    required this.job,
+    required this.kind,
+    required this.versions,
+  });
+}
+
 class CareerDocumentRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
@@ -15,7 +30,11 @@ class CareerDocumentRepository extends ChangeNotifier {
   final ToneProfileRepository toneProfileRepository;
 
   final Map<String, CareerDocument> _documents = {};
+  final Map<String, JobOpportunity> _jobs = {};
+  final Map<String, List<CareerDocument>> _history = {};
+  final Map<String, DownloadedFile> _downloaded = {};
   final Set<String> _busy = {};
+  bool _historyLoaded = false;
   String? error;
 
   CareerDocumentRepository({
@@ -32,6 +51,52 @@ class CareerDocumentRepository extends ChangeNotifier {
   bool isBusy(JobOpportunity job, String kind) => _busy.contains(
         _key(job.id, kind),
       );
+
+  List<CareerDocumentHistory> get histories {
+    final values = <CareerDocumentHistory>[];
+    for (final entry in _history.entries) {
+      final job = _jobs[entry.key];
+      if (job == null || entry.value.isEmpty) continue;
+      final versions = [...entry.value]
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+      values.add(
+        CareerDocumentHistory(
+          job: job,
+          kind: versions.first.kind,
+          versions: List.unmodifiable(versions),
+        ),
+      );
+    }
+    values.sort(
+      (a, b) => b.versions.first.updatedAt.compareTo(
+        a.versions.first.updatedAt,
+      ),
+    );
+    return List.unmodifiable(values);
+  }
+
+  Future<void> loadHistory({bool force = false}) async {
+    if (_historyLoaded && !force) return;
+    try {
+      final json = await api.get('/v1/career/documents');
+      for (final raw in json['documents'] as List? ?? const []) {
+        if (raw is! Map) continue;
+        final item = Map<String, dynamic>.from(raw);
+        final jobJson = item['job'];
+        if (jobJson is! Map) continue;
+        _register(
+          JobOpportunity.fromDocumentJson(
+            Map<String, dynamic>.from(jobJson),
+          ),
+          CareerDocument.fromJson(item),
+        );
+      }
+      _historyLoaded = true;
+      notifyListeners();
+    } catch (_) {
+      // The library remains usable with documents generated in this runtime.
+    }
+  }
 
   Future<CareerDocument?> generate(
     JobOpportunity job,
@@ -54,7 +119,7 @@ class CareerDocumentRepository extends ChangeNotifier {
         },
       );
       final document = CareerDocument.fromJson(json);
-      _documents[key] = document;
+      _register(job, document);
       return document;
     } on ApiException catch (exception) {
       error = exception.message;
@@ -85,7 +150,7 @@ class CareerDocumentRepository extends ChangeNotifier {
         body: {'instruction': instruction},
       );
       final updated = CareerDocument.fromJson(json);
-      _documents[key] = updated;
+      _register(job, updated);
       return updated;
     } on ApiException catch (exception) {
       error = exception.message;
@@ -99,11 +164,27 @@ class CareerDocumentRepository extends ChangeNotifier {
     }
   }
 
-  Future<DownloadedFile> download(CareerDocument document) {
-    return api.download(
-      document.pdfPath,
-      filename: document.filename,
-    );
+  Future<DownloadedFile> download(CareerDocument document) async {
+    final cacheKey = _downloadKey(document);
+    final cached = _downloaded[cacheKey];
+    if (cached != null && await File(cached.path).exists()) {
+      return cached;
+    }
+    late final DownloadedFile downloaded;
+    try {
+      downloaded = await api.download(
+        document.pdfPath,
+        filename: document.filename,
+        timeout: const Duration(seconds: 75),
+      );
+    } on TimeoutException {
+      throw const ApiException(
+        'The PDF took too long to open. The backend may still be waking up; '
+        'try once more.',
+      );
+    }
+    _downloaded[cacheKey] = downloaded;
+    return downloaded;
   }
 
   Future<void> _syncEvidence() async {
@@ -132,10 +213,38 @@ class CareerDocumentRepository extends ChangeNotifier {
 
   void clear() {
     _documents.clear();
+    _jobs.clear();
+    _history.clear();
+    _downloaded.clear();
+    _historyLoaded = false;
+    _busy.clear();
+    error = null;
+    notifyListeners();
+  }
+
+  void invalidateCurrent() {
+    _documents.clear();
     _busy.clear();
     error = null;
     notifyListeners();
   }
 
   static String _key(String jobId, String kind) => '$jobId::$kind';
+
+  static String _downloadKey(CareerDocument document) =>
+      '${document.id}::${document.version}';
+
+  void _register(JobOpportunity job, CareerDocument document) {
+    final key = _key(job.id, document.kind);
+    final current = _documents[key];
+    if (current == null || document.updatedAt.isAfter(current.updatedAt)) {
+      _documents[key] = document;
+    }
+    _jobs[document.id] = job;
+    final versions = _history.putIfAbsent(document.id, () => []);
+    versions.removeWhere(
+      (value) => value.id == document.id && value.version == document.version,
+    );
+    versions.add(document);
+  }
 }

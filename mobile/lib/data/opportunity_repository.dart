@@ -7,12 +7,14 @@ import 'career_profile_repository.dart';
 import 'current_cv_repository.dart';
 import 'github_profile_repository.dart';
 import 'models.dart';
+import 'session_storage.dart';
 
 class OpportunityRepository extends ChangeNotifier {
   final ApiClient api;
   final CareerProfileRepository careerProfileRepository;
   final GithubProfileRepository githubProfileRepository;
   final CurrentCvRepository currentCvRepository;
+  final SessionStorage storage;
 
   OpportunitySearchResult? result;
   String roleType = 'newgrad';
@@ -30,7 +32,26 @@ class OpportunityRepository extends ChangeNotifier {
     required this.careerProfileRepository,
     required this.githubProfileRepository,
     required this.currentCvRepository,
+    required this.storage,
   });
+
+  Future<void> loadSavedPreferences() async {
+    final saved = await storage.readOpportunityPreferences();
+    if (saved == null) return;
+    roleType = saved['role_type'] as String? ?? roleType;
+    timeframe = saved['timeframe'] as String? ?? timeframe;
+    targetMarket = saved['target_market'] as String? ?? targetMarket;
+    locations = List<String>.from(
+      saved['locations'] as List? ?? locations,
+    );
+    keywords = List<String>.from(
+      saved['keywords'] as List? ?? keywords,
+    );
+    workModes = List<String>.from(
+      saved['work_modes'] as List? ?? workModes,
+    );
+    notifyListeners();
+  }
 
   Future<bool> search({
     required String roleType,
@@ -47,6 +68,18 @@ class OpportunityRepository extends ChangeNotifier {
     this.locations = List.unmodifiable(locations);
     this.keywords = List.unmodifiable(keywords);
     this.workModes = List.unmodifiable(workModes);
+    try {
+      await storage.saveOpportunityPreferences({
+        'role_type': roleType,
+        'timeframe': timeframe,
+        'target_market': targetMarket,
+        'locations': locations,
+        'keywords': keywords,
+        'work_modes': workModes,
+      });
+    } catch (_) {
+      // Preference persistence must not prevent a live search.
+    }
     loading = true;
     loadingStage = 'Preparing your profile evidence…';
     error = null;

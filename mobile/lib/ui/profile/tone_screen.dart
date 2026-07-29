@@ -132,7 +132,7 @@ class _ToneOnboardingState extends State<_ToneOnboarding> {
     };
     final saved = await widget.repository.save(answers);
     if (saved && mounted) {
-      context.read<CareerDocumentRepository>().clear();
+      context.read<CareerDocumentRepository>().invalidateCurrent();
       context.read<AdvisorRepository>().clearLocal();
       widget.onDone();
     }
@@ -563,7 +563,7 @@ class _ToneSummary extends StatelessWidget {
     if (remove == true) {
       await repository.remove();
       if (context.mounted) {
-        context.read<CareerDocumentRepository>().clear();
+        context.read<CareerDocumentRepository>().invalidateCurrent();
         context.read<AdvisorRepository>().clearLocal();
       }
     }

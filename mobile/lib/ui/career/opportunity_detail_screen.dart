@@ -67,13 +67,39 @@ class CompanyLogo extends StatelessWidget {
   }
 }
 
-String _evidenceVerdict(JobOpportunity job) {
-  final citations = job.evidenceCitations.length;
-  final gaps = job.inferredSkillGaps.length;
-  if (citations >= 4 && gaps <= 2) return 'Strong evidence';
-  if (citations >= 2) return 'Mixed evidence';
-  if (citations == 1) return 'Limited evidence';
-  return 'Unverified match';
+String _matchStrengthLabel(JobOpportunity job) {
+  if (job.matchScore >= 75) return 'Strong match';
+  if (job.matchScore >= 55) return 'Promising match';
+  if (job.matchScore >= 35) return 'Developing match';
+  return 'Weak match';
+}
+
+Color _matchStrengthColor(JobOpportunity job) {
+  if (job.matchScore >= 75) return const Color(0xFF218A68);
+  if (job.matchScore >= 55) return LensColors.aqua;
+  if (job.matchScore >= 35) return LensColors.amber;
+  return LensColors.rose;
+}
+
+String _matchStrengthText(JobOpportunity job) =>
+    '${job.matchScore}% · ${_matchStrengthLabel(job)}';
+
+List<JobEvidenceCitation> _diverseCitations(
+  List<JobEvidenceCitation> citations, {
+  int limit = 3,
+}) {
+  final selected = <JobEvidenceCitation>[];
+  final usedSources = <String>{};
+  for (final citation in citations) {
+    if (usedSources.add(citation.source)) selected.add(citation);
+    if (selected.length == limit) return selected;
+  }
+  for (final citation in citations) {
+    if (selected.contains(citation)) continue;
+    selected.add(citation);
+    if (selected.length == limit) break;
+  }
+  return selected;
 }
 
 class OpportunityDetailScreen extends StatefulWidget {
@@ -328,13 +354,13 @@ class _PositionHeader extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  color: LensColors.indigo.withValues(alpha: .08),
+                  color: _matchStrengthColor(job).withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  _evidenceVerdict(job),
-                  style: const TextStyle(
-                    color: LensColors.indigo,
+                  _matchStrengthText(job),
+                  style: TextStyle(
+                    color: _matchStrengthColor(job),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
@@ -476,6 +502,7 @@ class _FitCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visibleCitations = _diverseCitations(job.evidenceCitations);
     return LensCard(
       padding: const EdgeInsets.all(17),
       child: Column(
@@ -492,13 +519,13 @@ class _FitCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                 decoration: BoxDecoration(
-                  color: LensColors.indigo.withValues(alpha: .08),
+                  color: _matchStrengthColor(job).withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  _evidenceVerdict(job),
-                  style: const TextStyle(
-                    color: LensColors.indigo,
+                  _matchStrengthText(job),
+                  style: TextStyle(
+                    color: _matchStrengthColor(job),
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                   ),
@@ -525,10 +552,21 @@ class _FitCard extends StatelessWidget {
               ),
             )
           else
-            ...job.evidenceCitations.map(
+            ...visibleCitations.map(
               (citation) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: _EvidenceCitationCard(citation: citation),
+              ),
+            ),
+          if (job.evidenceCitations.length > visibleCitations.length)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _showAllEvidence(context),
+                icon: const Icon(Icons.layers_outlined, size: 17),
+                label: Text(
+                  'View ${job.evidenceCitations.length - visibleCitations.length} more evidence',
+                ),
               ),
             ),
           if (job.inferredSkillGaps.isNotEmpty) ...[
@@ -544,7 +582,8 @@ class _FitCard extends StatelessWidget {
                   (gap) => _ReasonRow(
                     icon: Icons.remove_circle_outline_rounded,
                     color: LensColors.rose,
-                    text: 'No verified evidence found for $gap.',
+                    text:
+                        'No transcript course, GitHub project, LinkedIn credential, or resume evidence currently demonstrates $gap.',
                   ),
                 ),
           ],
@@ -560,6 +599,48 @@ class _FitCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Future<void> _showAllEvidence(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      backgroundColor: LensColors.canvas,
+      builder: (sheetContext) => SafeArea(
+        child: DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: .72,
+          maxChildSize: .92,
+          minChildSize: .45,
+          builder: (context, controller) => ListView(
+            controller: controller,
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+            children: [
+              Text(
+                'All verified evidence',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Each item points to a concrete profile source used in this match.',
+                style: TextStyle(
+                  color: LensColors.muted,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 14),
+              ...job.evidenceCitations.map(
+                (citation) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _EvidenceCitationCard(citation: citation),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

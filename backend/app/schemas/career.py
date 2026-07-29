@@ -272,8 +272,11 @@ class CareerDocumentResponse(BaseModel):
     title: str
     company: str
     job_title: str
+    job: JobDocumentTarget
     preview: str
     sources_used: list[str]
+    generation_context: str = ""
+    revision_note: str = ""
     pdf_path: str
     created_at: str
     updated_at: str

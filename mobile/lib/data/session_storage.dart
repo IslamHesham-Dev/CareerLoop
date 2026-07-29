@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class QuickLoginCredentials {
@@ -22,6 +24,8 @@ class SessionStorage {
   static const _quickLoginEnrollmentKey =
       'careerloop_quick_login_enrollment_year';
   static const _quickLoginInstitutionKey = 'careerloop_quick_login_institution';
+  static const _opportunityPreferencesKey =
+      'careerloop_opportunity_preferences';
   final FlutterSecureStorage _storage;
 
   SessionStorage()
@@ -96,4 +100,23 @@ class SessionStorage {
       _storage.delete(key: _quickLoginInstitutionKey),
     ]);
   }
+
+  Future<Map<String, dynamic>?> readOpportunityPreferences() async {
+    final raw = await _storage.read(key: _opportunityPreferencesKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> saveOpportunityPreferences(
+    Map<String, dynamic> preferences,
+  ) =>
+      _storage.write(
+        key: _opportunityPreferencesKey,
+        value: jsonEncode(preferences),
+      );
 }

@@ -1,5 +1,5 @@
 from app.career_context import build_career_context
-from app.career_documents import public_document
+from app.career_documents import document_pdf, document_versions, public_document
 from cover_letter_generator.latex_template import render_cover_letter_latex
 from cover_letter_generator.models import CoverLetterContent
 from cv_generator.models import ContactInfo
@@ -79,7 +79,57 @@ def test_public_document_never_exposes_pdf_or_latex_bytes() -> None:
 
     payload = public_document(record)
 
-    assert payload["pdf_path"] == "/v1/career/documents/doc-1/pdf"
+    assert payload["pdf_path"] == "/v1/career/documents/doc-1/pdf?version=1"
     assert "pdf_bytes" not in payload
     assert "latex_source" not in payload
 
+
+def test_document_history_keeps_each_pdf_version_downloadable() -> None:
+    record = {
+        "id": "doc-1",
+        "kind": "resume",
+        "version": 2,
+        "filename": "Ada_Resume_v2.pdf",
+        "title": "Tailored resume",
+        "company": "Analytical Engines",
+        "job_title": "Engineer",
+        "job": {
+            "id": "job-1",
+            "company": "Analytical Engines",
+            "title": "Engineer",
+        },
+        "preview": "Version two.",
+        "sources_used": ["resume", "github"],
+        "created_at": "2026-07-28T10:00:00+00:00",
+        "updated_at": "2026-07-28T11:00:00+00:00",
+        "pdf_bytes": b"version-two",
+        "latex_source": "v2",
+        "versions": [
+            {
+                "kind": "resume",
+                "version": 1,
+                "filename": "Ada_Resume_v1.pdf",
+                "title": "Tailored resume",
+                "company": "Analytical Engines",
+                "job_title": "Engineer",
+                "job": {
+                    "id": "job-1",
+                    "company": "Analytical Engines",
+                    "title": "Engineer",
+                },
+                "preview": "Version one.",
+                "sources_used": ["resume"],
+                "created_at": "2026-07-28T10:00:00+00:00",
+                "updated_at": "2026-07-28T10:00:00+00:00",
+                "pdf_bytes": b"version-one",
+                "latex_source": "v1",
+            },
+        ],
+    }
+
+    versions = document_versions(record)
+
+    assert versions[0]["version"] == 1
+    assert versions[0]["pdf_path"].endswith("?version=1")
+    assert document_pdf(record, 1) == (b"version-one", "Ada_Resume_v1.pdf")
+    assert document_pdf(record, 2) == (b"version-two", "Ada_Resume_v2.pdf")

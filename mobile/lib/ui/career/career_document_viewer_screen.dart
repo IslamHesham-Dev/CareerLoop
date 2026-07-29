@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../../app/theme.dart';
 import '../../data/career_document_repository.dart';
@@ -67,6 +68,16 @@ class _CareerDocumentViewerScreenState
             ),
           ],
         ),
+        actions: [
+          Builder(
+            builder: (buttonContext) => IconButton(
+              tooltip: 'Share or save PDF',
+              onPressed: () => _share(buttonContext),
+              icon: const Icon(Icons.ios_share_rounded),
+            ),
+          ),
+          const SizedBox(width: 6),
+        ],
       ),
       body: ContentAiOverlay(
         title: 'Document Copilot',
@@ -139,6 +150,19 @@ class _CareerDocumentViewerScreenState
         ToolActivity(name: 'Career evidence merge', status: 'completed'),
         ToolActivity(name: 'LaTeX template compiler', status: 'completed'),
       ],
+    );
+  }
+
+  Future<void> _share(BuildContext buttonContext) async {
+    final box = buttonContext.findRenderObject() as RenderBox?;
+    final origin =
+        box == null ? null : box.localToGlobal(Offset.zero) & box.size;
+    await Share.shareXFiles(
+      [XFile(_localPath, mimeType: 'application/pdf')],
+      subject: _document.title,
+      text:
+          '${_document.title} for ${widget.args.job.title} at ${widget.args.job.company}',
+      sharePositionOrigin: origin,
     );
   }
 }

@@ -27,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AcademicRepository>().loadDashboard();
+      context.read<CareerDocumentRepository>().loadHistory();
     });
   }
 
@@ -113,6 +114,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             status: 'OPEN',
             color: LensColors.indigo,
             onTap: () => context.push('/master-resume'),
+          ),
+          const SizedBox(height: 9),
+          _EvidenceSource(
+            icon: Icons.folder_copy_outlined,
+            title: 'Generated documents',
+            subtitle: 'Resumes, cover letters, and version history',
+            status: 'OPEN',
+            color: LensColors.aqua,
+            onTap: () => context.push('/generated-documents'),
           ),
           const SizedBox(height: 9),
           _EvidenceSource(

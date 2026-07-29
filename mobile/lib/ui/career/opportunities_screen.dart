@@ -42,13 +42,17 @@ const _locationChoices = <String>[
 ];
 
 String _evidenceLabel(JobOpportunity job) {
-  final citations = job.evidenceCitations.length;
-  if (citations >= 4 && job.inferredSkillGaps.length <= 2) {
-    return 'Strong evidence';
-  }
-  if (citations >= 2) return 'Mixed evidence';
-  if (citations == 1) return 'Limited evidence';
-  return 'Unverified';
+  if (job.matchScore >= 75) return '${job.matchScore}% · Strong';
+  if (job.matchScore >= 55) return '${job.matchScore}% · Promising';
+  if (job.matchScore >= 35) return '${job.matchScore}% · Developing';
+  return '${job.matchScore}% · Weak';
+}
+
+Color _matchColor(JobOpportunity job) {
+  if (job.matchScore >= 75) return const Color(0xFF218A68);
+  if (job.matchScore >= 55) return LensColors.aqua;
+  if (job.matchScore >= 35) return LensColors.amber;
+  return LensColors.rose;
 }
 
 class OpportunitiesScreen extends StatefulWidget {
@@ -98,6 +102,10 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
         .join(', ');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AcademicRepository>().loadDashboard();
+      final opportunities = context.read<OpportunityRepository>();
+      if (opportunities.result == null && !opportunities.loading) {
+        _search();
+      }
     });
   }
 
@@ -870,13 +878,13 @@ class _JobCard extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
                 decoration: BoxDecoration(
-                  color: LensColors.indigo.withValues(alpha: .08),
+                  color: _matchColor(job).withValues(alpha: .1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   _evidenceLabel(job),
-                  style: const TextStyle(
-                    color: LensColors.indigo,
+                  style: TextStyle(
+                    color: _matchColor(job),
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),

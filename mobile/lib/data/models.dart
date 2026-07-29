@@ -785,6 +785,30 @@ class JobOpportunity {
             .toList(),
       );
 
+  factory JobOpportunity.fromDocumentJson(Map<String, dynamic> json) =>
+      JobOpportunity(
+        id: json['id'] as String? ?? 'generated-document',
+        company: json['company'] as String? ?? 'CareerLoop Profile',
+        title: json['title'] as String? ?? 'Generated document',
+        location: json['location'] as String? ?? '',
+        url: Uri.tryParse(json['url'] as String? ?? '') ?? Uri(),
+        source: 'CareerLoop',
+        category: json['category'] as String?,
+        roleFamily: json['role_family'] as String? ?? 'general',
+        matchScore: 0,
+        matchReasons:
+            List<String>.from(json['match_reasons'] as List? ?? const []),
+        keywordMatches:
+            List<String>.from(json['keyword_matches'] as List? ?? const []),
+        profileSkillMatches: List<String>.from(
+          json['profile_skill_matches'] as List? ?? const [],
+        ),
+        inferredSkillGaps: List<String>.from(
+          json['inferred_skill_gaps'] as List? ?? const [],
+        ),
+        recommendedCourseIds: const [],
+      );
+
   Map<String, dynamic> toDocumentJson() => {
         'id': id,
         'company': company,
@@ -810,6 +834,8 @@ class CareerDocument {
   final String jobTitle;
   final String preview;
   final List<String> sourcesUsed;
+  final String generationContext;
+  final String revisionNote;
   final String pdfPath;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -824,6 +850,8 @@ class CareerDocument {
     required this.jobTitle,
     required this.preview,
     required this.sourcesUsed,
+    required this.generationContext,
+    required this.revisionNote,
     required this.pdfPath,
     required this.createdAt,
     required this.updatedAt,
@@ -840,6 +868,8 @@ class CareerDocument {
         preview: json['preview'] as String? ?? '',
         sourcesUsed:
             List<String>.from(json['sources_used'] as List? ?? const []),
+        generationContext: json['generation_context'] as String? ?? '',
+        revisionNote: json['revision_note'] as String? ?? '',
         pdfPath: json['pdf_path'] as String? ?? '',
         createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
             DateTime.now(),
