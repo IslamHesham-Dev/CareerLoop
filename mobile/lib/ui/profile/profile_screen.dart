@@ -143,15 +143,15 @@ class _SignOutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        style: FilledButton.styleFrom(
-          backgroundColor: LensColors.rose,
+    return Center(
+      child: TextButton.icon(
+        style: TextButton.styleFrom(
+          foregroundColor: LensColors.rose,
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
         ),
         onPressed: auth.isBusy ? null : () => _signOut(context),
-        icon: const Icon(Icons.logout_rounded),
-        label: const Text('Sign out and close portal session'),
+        icon: const Icon(Icons.logout_rounded, size: 18),
+        label: const Text('Sign out'),
       ),
     );
   }

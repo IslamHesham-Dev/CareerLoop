@@ -19,17 +19,12 @@ class LensLogo extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
+        SizedBox(
           width: size,
           height: size,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(size * .27),
-            border: Border.all(color: LensColors.line),
-          ),
-          clipBehavior: Clip.antiAlias,
           child: Image.asset(
             'assets/branding/careerloop-icon-removebg-preview.png',
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             filterQuality: FilterQuality.high,
             semanticLabel: 'CareerLoop',
           ),
