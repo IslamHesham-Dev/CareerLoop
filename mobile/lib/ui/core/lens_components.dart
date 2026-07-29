@@ -91,6 +91,18 @@ class AuroraBackground extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: dark ? LensColors.ink : LensColors.canvas,
+        gradient: dark
+            ? null
+            : const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  LensColors.lavenderWash,
+                  LensColors.canvas,
+                  LensColors.mintWash,
+                ],
+                stops: [0, .52, 1],
+              ),
       ),
       child: child,
     );
@@ -116,14 +128,25 @@ class LensCard extends StatelessWidget {
     final content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? LensColors.card,
+        color: color,
+        gradient: color == null
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  LensColors.card,
+                  Color(0xFFFCFBFF),
+                  Color(0xFFFAFDFC),
+                ],
+              )
+            : null,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: LensColors.line),
         boxShadow: [
           BoxShadow(
-            color: LensColors.ink.withValues(alpha: .025),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: LensColors.violet.withValues(alpha: .055),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
           ),
         ],
       ),

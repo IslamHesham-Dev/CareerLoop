@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 
 abstract final class LensColors {
-  static const ink = Color(0xFF101828);
-  static const midnight = Color(0xFF1D2939);
-  static const indigo = Color(0xFF4654D6);
-  static const violet = Color(0xFF7257C7);
-  static const aqua = Color(0xFF238B7D);
+  // Calmer application variants of the light login palette.
+  static const ink = Color(0xFF14171F);
+  static const midnight = Color(0xFF252938);
+  static const indigo = Color(0xFF6D61E4);
+  static const violet = Color(0xFF7C6CFF);
+  static const aqua = Color(0xFF2B9F92);
   static const amber = Color(0xFFD58B2A);
   static const rose = Color(0xFFD8495B);
-  static const canvas = Color(0xFFF7F8FA);
+  static const canvas = Color(0xFFF6F7FC);
+  static const lavenderWash = Color(0xFFF2F0FF);
+  static const mintWash = Color(0xFFEEF9F7);
   static const card = Color(0xFFFFFFFF);
-  static const muted = Color(0xFF667085);
-  static const line = Color(0xFFE4E7EC);
+  static const muted = Color(0xFF6B7080);
+  static const line = Color(0xFFE3E5EF);
 }
 
 abstract final class CareerLoopTheme {
@@ -97,7 +100,7 @@ abstract final class CareerLoopTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: const Color(0xFFF2F3F9),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
         border: OutlineInputBorder(
@@ -148,7 +151,7 @@ abstract final class CareerLoopTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 68,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFFCFCFF),
         indicatorColor: LensColors.indigo.withValues(alpha: .12),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:simple_icons/simple_icons.dart';
 
 import '../../app/theme.dart';
 import '../../data/api_client.dart';
@@ -12,6 +13,7 @@ import '../../data/models.dart';
 import '../../data/repositories.dart';
 import '../../data/tone_profile_repository.dart';
 import '../career/career_document_viewer_screen.dart';
+import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
 
 class MasterResumeScreen extends StatefulWidget {
@@ -223,6 +225,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                   const Divider(height: 24),
                   _EvidenceLine(
                     icon: Icons.work_outline_rounded,
+                    leading: const LinkedInBrandMark(size: 22),
                     title: 'LinkedIn profile',
                     value: linkedInProfile == null
                         ? 'Not connected'
@@ -233,6 +236,11 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
                   const Divider(height: 24),
                   _EvidenceLine(
                     icon: Icons.code_rounded,
+                    leading: const Icon(
+                      SimpleIcons.github,
+                      color: Color(0xFF181717),
+                      size: 22,
+                    ),
                     title: 'GitHub projects',
                     value: githubProfile == null
                         ? 'Not connected'
@@ -389,6 +397,7 @@ String _githubEvidenceSummary(GithubProfileEvidence profile) {
 
 class _EvidenceLine extends StatelessWidget {
   final IconData icon;
+  final Widget? leading;
   final String title;
   final String value;
   final bool ready;
@@ -396,6 +405,7 @@ class _EvidenceLine extends StatelessWidget {
 
   const _EvidenceLine({
     required this.icon,
+    this.leading,
     required this.title,
     required this.value,
     required this.ready,
@@ -406,7 +416,7 @@ class _EvidenceLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: LensColors.aqua, size: 21),
+        leading ?? Icon(icon, color: LensColors.aqua, size: 21),
         const SizedBox(width: 11),
         Expanded(
           child: Column(
