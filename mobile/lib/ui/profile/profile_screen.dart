@@ -124,11 +124,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => context.push('/email-studio'),
           ),
           const SizedBox(height: 26),
-          const _Header(
-            title: 'Account',
-            detail: '',
-          ),
-          const SizedBox(height: 12),
           _SignOutButton(auth: context.watch<AuthRepository>()),
         ],
       ),
