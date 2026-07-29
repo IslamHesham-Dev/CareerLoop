@@ -66,6 +66,7 @@ class TranscriptWindowResponse(BaseModel):
     enrollment_year: int
     requested_years: list[str]
     loaded_years: list[str]
+    failed_years: list[str] = Field(default_factory=list)
     cumulative_gpa: str | None
     courses: list[TranscriptWindowCourseResponse]
 

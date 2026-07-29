@@ -128,5 +128,8 @@ async def transcript_window(
 def clear_cache(
     student: StudentSession = Depends(get_student_session),
 ) -> dict[str, str]:
-    student.academic.clear_cache()
+    with student.chat_lock:
+        student.academic.clear_cache()
+        student.conversation.clear()
+        student.agent = None
     return {"message": "Portal cache cleared."}

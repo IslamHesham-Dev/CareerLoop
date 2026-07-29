@@ -26,7 +26,8 @@ class _TranscriptScreenState extends State<TranscriptScreen> {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
-    final transcript = academic.transcript;
+    final history = academic.fullTranscript;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Academic record'),
@@ -37,91 +38,119 @@ class _TranscriptScreenState extends State<TranscriptScreen> {
           icon: const Icon(Icons.arrow_back_rounded),
         ),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
-        children: [
-          Text(
-            'Choose a year to review the transcript CareerLoop uses for '
-            'academic and career guidance.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 18),
-          _TranscriptYearPicker(academic: academic),
-          if (academic.loadingTranscript) ...[
-            const SizedBox(height: 10),
-            const LinearProgressIndicator(minHeight: 2),
-          ],
-          if (academic.error != null && transcript != null) ...[
-            const SizedBox(height: 12),
-            Text(
-              academic.error!,
-              style: const TextStyle(
-                color: LensColors.rose,
-                fontSize: 12,
+      body: RefreshIndicator(
+        onRefresh: () => academic.loadDashboard(force: true),
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 40),
+          children: [
+            if (academic.loadingDashboard && history == null)
+              const Padding(
+                padding: EdgeInsets.only(top: 80),
+                child: LensLoading(
+                  label: 'Loading your complete academic record…',
+                ),
+              )
+            else if (history == null)
+              Padding(
+                padding: const EdgeInsets.only(top: 32),
+                child: LensError(
+                  message: academic.fullTranscriptError ??
+                      academic.error ??
+                      'Your complete transcript could not be loaded.',
+                  onRetry: () => academic.loadDashboard(force: true),
+                ),
+              )
+            else ...[
+              _GpaHero(history: history),
+              if (history.failedYears.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _IncompleteHistoryNotice(
+                  failedYears: history.failedYears,
+                ),
+              ],
+              const SizedBox(height: 14),
+              const _GradeScaleCard(),
+              const SizedBox(height: 28),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Transcript history',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  Text(
+                    '${history.courses.length} courses',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
               ),
-            ),
-          ],
-          const SizedBox(height: 22),
-          if (academic.loadingDashboard && transcript == null)
-            const LensLoading(label: 'Loading transcript year…')
-          else if (academic.error != null && transcript == null)
-            LensError(
-              message: academic.error!,
-              onRetry: () => academic.loadDashboard(force: true),
-            )
-          else if (transcript != null) ...[
-            _GpaHero(transcript: transcript),
-            const SizedBox(height: 14),
-            const _GradeScaleCard(),
-            const SizedBox(height: 28),
-            ...transcript.bySemester.entries.map(
-              (entry) => _SemesterSection(
-                semester: entry.key,
-                courses: entry.value,
+              const SizedBox(height: 16),
+              ..._displayYears(history).map(
+                (year) => _AcademicYearSection(
+                  academicYear: year,
+                  semesters:
+                      history.byAcademicYearAndSemester[year] ?? const {},
+                ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
+
+  List<String> _displayYears(TranscriptWindow history) {
+    final years = <String>[];
+    for (final year in history.requestedYears) {
+      if (history.byAcademicYearAndSemester.containsKey(year)) years.add(year);
+    }
+    for (final year in history.byAcademicYearAndSemester.keys) {
+      if (!years.contains(year)) years.add(year);
+    }
+    if (years.isEmpty) return history.loadedYears;
+    return years;
+  }
 }
 
-class _TranscriptYearPicker extends StatelessWidget {
-  final AcademicRepository academic;
+class _IncompleteHistoryNotice extends StatelessWidget {
+  final List<String> failedYears;
 
-  const _TranscriptYearPicker({required this.academic});
+  const _IncompleteHistoryNotice({required this.failedYears});
 
   @override
   Widget build(BuildContext context) {
-    final current = academic.selectedTranscriptYear ??
-        academic.transcript?.year ??
-        academic.context?.transcriptYear;
-    final years = <String>{
-      if (current != null) current,
-      ...academic.transcriptYears,
-    }.toList();
-
-    return DropdownButtonFormField<String>(
-      value: current,
-      isExpanded: true,
-      decoration: const InputDecoration(
-        labelText: 'Academic year',
-        prefixIcon: Icon(Icons.calendar_today_outlined),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: LensColors.amber.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: LensColors.amber.withValues(alpha: .24),
+        ),
       ),
-      items: years
-          .map(
-            (year) => DropdownMenuItem(
-              value: year,
-              child: Text(year),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.sync_problem_rounded,
+            color: LensColors.amber,
+            size: 19,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'The portal did not return ${failedYears.join(', ')}. '
+              'Pull down to try loading the missing year again.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: 12,
+                    height: 1.4,
+                  ),
             ),
-          )
-          .toList(),
-      onChanged: academic.loadingTranscript
-          ? null
-          : (year) {
-              if (year != null) academic.loadTranscriptYear(year);
-            },
+          ),
+        ],
+      ),
     );
   }
 }
@@ -143,10 +172,6 @@ class _GradeScaleCard extends StatelessWidget {
         title: const Text(
           'Grading scale',
           style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-        ),
-        subtitle: const Text(
-          'Percentage → letter grade → GPA band',
-          style: TextStyle(fontSize: 11.5),
         ),
         children: GiuGradeScale.bands
             .map(
@@ -196,12 +221,24 @@ class _GradeScaleCard extends StatelessWidget {
 }
 
 class _GpaHero extends StatelessWidget {
-  final Transcript transcript;
+  final TranscriptWindow history;
 
-  const _GpaHero({required this.transcript});
+  const _GpaHero({required this.history});
 
   @override
   Widget build(BuildContext context) {
+    final recordedYears = history.byAcademicYearAndSemester.keys.toList();
+    final firstYear = recordedYears.isNotEmpty
+        ? recordedYears.first
+        : history.requestedYears.isNotEmpty
+            ? history.requestedYears.first
+            : history.enrollmentYear.toString();
+    final lastYear = recordedYears.isNotEmpty
+        ? recordedYears.last
+        : history.loadedYears.isNotEmpty
+            ? history.loadedYears.last
+            : 'present';
+
     return LensCard(
       padding: const EdgeInsets.all(20),
       child: Row(
@@ -220,7 +257,7 @@ class _GpaHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  transcript.cumulativeGpaWithGrade,
+                  history.cumulativeGpaWithGrade,
                   style: const TextStyle(
                     color: LensColors.ink,
                     fontWeight: FontWeight.w800,
@@ -230,7 +267,8 @@ class _GpaHero extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  '${transcript.courses.length} courses in ${transcript.year}',
+                  '$firstYear → $lastYear · '
+                  '${recordedYears.length} academic years on record',
                   style: const TextStyle(
                     color: LensColors.muted,
                     fontSize: 12,
@@ -258,34 +296,104 @@ class _GpaHero extends StatelessWidget {
   }
 }
 
-class _SemesterSection extends StatelessWidget {
-  final String semester;
-  final List<TranscriptCourse> courses;
+class _AcademicYearSection extends StatelessWidget {
+  final String academicYear;
+  final Map<String, List<TranscriptWindowCourse>> semesters;
 
-  const _SemesterSection({required this.semester, required this.courses});
+  const _AcademicYearSection({
+    required this.academicYear,
+    required this.semesters,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final courseCount = semesters.values.fold<int>(
+      0,
+      (count, courses) => count + courses.length,
+    );
     return Padding(
-      padding: const EdgeInsets.only(bottom: 26),
+      padding: const EdgeInsets.only(bottom: 30),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: LensColors.indigo,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  semester.isEmpty ? 'Semester' : semester,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  academicYear,
+                  style: const TextStyle(
+                    color: LensColors.ink,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               Text(
-                '${courses.length} courses',
-                style: Theme.of(context).textTheme.bodyMedium,
+                '$courseCount courses',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontSize: 12,
+                    ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
+          if (semesters.isEmpty)
+            const LensCard(
+              child: Text(
+                'No transcript entries were returned for this academic year.',
+                style: TextStyle(
+                  color: LensColors.muted,
+                  fontSize: 12,
+                ),
+              ),
+            )
+          else
+            ...semesters.entries.map(
+              (entry) => _SemesterSection(
+                semester: entry.key,
+                courses: entry.value,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SemesterSection extends StatelessWidget {
+  final String semester;
+  final List<TranscriptWindowCourse> courses;
+
+  const _SemesterSection({
+    required this.semester,
+    required this.courses,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            semester.isEmpty ? 'Semester' : semester,
+            style: const TextStyle(
+              color: LensColors.muted,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(height: 9),
           LensCard(
             padding: EdgeInsets.zero,
             child: Column(
@@ -328,14 +436,21 @@ class _SemesterSection extends StatelessWidget {
                                     fontSize: 13,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${course.hours} hours · ${course.group}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(fontSize: 11),
-                                ),
+                                if (course.hours.isNotEmpty ||
+                                    course.group.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    [
+                                      if (course.hours.isNotEmpty)
+                                        '${course.hours} hours',
+                                      if (course.group.isNotEmpty) course.group,
+                                    ].join(' · '),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(fontSize: 11),
+                                  ),
+                                ],
                               ],
                             ),
                           ),

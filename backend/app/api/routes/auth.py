@@ -115,8 +115,8 @@ async def login(payload: LoginRequest) -> LoginResponse:
         portal.session.auth = None
         portal.session.close()
         raise
-    # Use the newest non-empty transcript page inside the student's four-year
-    # enrollment window to choose the advisory year and semester. If the
+    # Use the newest non-empty transcript page from enrollment onward to
+    # choose the advisory year and semester. If the
     # portal is temporarily flaky, login still succeeds with the fallback.
     try:
         await run_in_threadpool(student.academic.select_latest_actual_context)

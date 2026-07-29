@@ -406,6 +406,7 @@ class TranscriptWindow {
   final int enrollmentYear;
   final List<String> requestedYears;
   final List<String> loadedYears;
+  final List<String> failedYears;
   final String? cumulativeGpa;
   final List<TranscriptWindowCourse> courses;
 
@@ -413,6 +414,7 @@ class TranscriptWindow {
     required this.enrollmentYear,
     required this.requestedYears,
     required this.loadedYears,
+    required this.failedYears,
     required this.cumulativeGpa,
     required this.courses,
   });
@@ -424,6 +426,8 @@ class TranscriptWindow {
             List<String>.from(json['requested_years'] as List? ?? const []),
         loadedYears:
             List<String>.from(json['loaded_years'] as List? ?? const []),
+        failedYears:
+            List<String>.from(json['failed_years'] as List? ?? const []),
         cumulativeGpa: json['cumulative_gpa'] as String?,
         courses: (json['courses'] as List? ?? const [])
             .map(
@@ -433,6 +437,32 @@ class TranscriptWindow {
             )
             .toList(),
       );
+
+  Map<String, Map<String, List<TranscriptWindowCourse>>>
+      get byAcademicYearAndSemester {
+    final grouped = <String, Map<String, List<TranscriptWindowCourse>>>{};
+    for (final course in courses) {
+      grouped
+          .putIfAbsent(course.academicYear, () => {})
+          .putIfAbsent(course.semester, () => [])
+          .add(course);
+    }
+    return grouped;
+  }
+
+  GradeBand? get cumulativeGrade {
+    final match = RegExp(r'-?\d+(?:[.,]\d+)?').firstMatch(cumulativeGpa ?? '');
+    if (match == null) return null;
+    final value = double.tryParse(match.group(0)!.replaceAll(',', '.'));
+    return GiuGradeScale.forGpa(value);
+  }
+
+  String get cumulativeGpaWithGrade {
+    final value = cumulativeGpa;
+    if (value == null || value.isEmpty) return 'Not displayed';
+    final letter = cumulativeGrade?.letter;
+    return letter == null ? value : '$value ($letter)';
+  }
 }
 
 class CmsCourse {

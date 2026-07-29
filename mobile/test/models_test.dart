@@ -104,6 +104,43 @@ void main() {
     expect(transcript.cumulativeGpaWithGrade, '1.45 (A-)');
   });
 
+  test('groups the complete transcript by academic year and semester', () {
+    final history = TranscriptWindow.fromJson({
+      'enrollment_year': 2021,
+      'requested_years': ['2021-2022', '2022-2023'],
+      'loaded_years': ['2021-2022', '2022-2023'],
+      'failed_years': <String>[],
+      'cumulative_gpa': '1.45',
+      'courses': [
+        {
+          'academic_year': '2021-2022',
+          'semester': 'Winter 2021',
+          'course': 'CSEN101 Introduction to Computer Science',
+          'grade': 'A',
+          'numeric': '1.20',
+          'hours': '4',
+          'group': 'Core',
+        },
+        {
+          'academic_year': '2022-2023',
+          'semester': 'Spring 2023',
+          'course': 'CSEN301 Data Structures and Algorithms',
+          'grade': 'A-',
+          'numeric': '1.50',
+          'hours': '4',
+          'group': 'Core',
+        },
+      ],
+    });
+
+    expect(history.cumulativeGpaWithGrade, '1.45 (A-)');
+    expect(
+      history.byAcademicYearAndSemester['2022-2023']!['Spring 2023']!.single
+          .course,
+      contains('Data Structures'),
+    );
+  });
+
   test('maps a hidden practice answer to the correct local option', () {
     final practice = PracticeSet.fromJson({
       'id': 'set-1',

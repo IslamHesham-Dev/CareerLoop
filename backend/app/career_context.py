@@ -30,7 +30,7 @@ _LINKEDIN_URL_RE = re.compile(
 def _strong_courses(courses: list[dict[str, Any]], *, top_n: int = 8) -> list[str]:
     """Course names with an A-range grade — the cheapest "this is CV-worthy"
     signal available from a transcript. De-duplicated, order-preserving, and
-    capped so it doesn't blow up the prompt on a four-year transcript."""
+    capped so it doesn't blow up the prompt on a complete transcript."""
     seen: set[str] = set()
     result: list[str] = []
     for row in courses:

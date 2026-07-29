@@ -59,7 +59,7 @@ source labels so the mobile interface can distinguish portal facts from advice.
 ```
 
 The endpoint reads live Swelist metadata, ranks openings against the student's
-four-year transcript, imported LinkedIn PDF, and connected GitHub project
+complete transcript from enrollment onward, imported LinkedIn PDF, and connected GitHub project
 snapshot when available, and returns explainable match signals. Skill gaps are
 explicitly marked as role-family
 inferences because Swelist does not provide complete job descriptions. Course

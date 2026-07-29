@@ -58,6 +58,19 @@ class FakePortal:
         return Transcript(rows=rows, cumulative_gpa="1.45" if rows else None)
 
 
+class PartiallyFailingPortal(FakePortal):
+    def get_transcript_year(
+        self, year_value: str, *, tries: int, delay: float
+    ) -> Transcript:
+        if year_value == "2023":
+            raise RuntimeError("temporary portal failure")
+        return super().get_transcript_year(
+            year_value,
+            tries=tries,
+            delay=delay,
+        )
+
+
 def test_select_current_season_changes_default_course_context() -> None:
     academic = AcademicService(
         FakePortal(),  # type: ignore[arg-type]
@@ -90,7 +103,7 @@ def test_advisory_semester_update_has_an_explicit_post_route() -> None:
     assert "post" in operation
 
 
-def test_enrollment_year_limits_transcript_to_four_academic_years() -> None:
+def test_enrollment_year_loads_every_available_later_academic_year() -> None:
     academic = AcademicService(
         FakePortal(),  # type: ignore[arg-type]
         current_season="Winter 2024",
@@ -105,12 +118,14 @@ def test_enrollment_year_limits_transcript_to_four_academic_years() -> None:
         "2022-2023",
         "2023-2024",
         "2024-2025",
+        "2025-2026",
     ]
     assert transcript["loaded_years"] == transcript["requested_years"]
     assert {row["academic_year"] for row in transcript["courses"]} == set(
-        transcript["requested_years"]
+        transcript["requested_years"][:-1]
     )
     assert academic.list_transcript_years() == transcript["requested_years"]
+    assert transcript["failed_years"] == []
 
 
 def test_latest_real_transcript_semester_is_auto_selected() -> None:
@@ -125,6 +140,25 @@ def test_latest_real_transcript_semester_is_auto_selected() -> None:
 
     assert context["transcript_year"] == "2024-2025"
     assert context["simulated_current_season"] == "Spring 2025"
+
+
+def test_full_transcript_keeps_other_years_when_one_year_fails() -> None:
+    academic = AcademicService(
+        PartiallyFailingPortal(),  # type: ignore[arg-type]
+        current_season="Winter 2024",
+        advisory_year="2024-2025",
+        enrollment_year=2021,
+    )
+
+    transcript = academic.full_transcript()
+
+    assert transcript["failed_years"] == ["2023-2024"]
+    assert "2023-2024" not in transcript["loaded_years"]
+    assert {row["academic_year"] for row in transcript["courses"]} == {
+        "2021-2022",
+        "2022-2023",
+        "2024-2025",
+    }
 
 
 def test_giu_semesters_are_ordered_spring_summer_winter() -> None:

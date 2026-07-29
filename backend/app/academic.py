@@ -24,6 +24,8 @@ class AcademicService:
         self.current_season = current_season
         fallback_start = self._academic_year_start(advisory_year)
         self.enrollment_year = enrollment_year or max(2000, fallback_start - 3)
+        # Safe fallback until the portal year selector is read. Once available
+        # years are known, this expands to every year from enrollment onward.
         self.transcript_window_years = [
             f"{year}-{year + 1}"
             for year in range(
@@ -106,7 +108,26 @@ class AcademicService:
                 self.cache["years"] = self.portal.available_years(
                     tries=2, delay=60
                 )
-            return self.cache["years"]
+            years = self.cache["years"]
+            enrollment_years = self._enrollment_transcript_years(years)
+            if enrollment_years:
+                self.transcript_window_years = enrollment_years
+            return years
+
+    def _enrollment_transcript_years(
+        self,
+        options: list[tuple[str, str]],
+    ) -> list[str]:
+        """Return every portal transcript year from enrollment onward."""
+        matching: dict[int, str] = {}
+        for _value, label in options:
+            match = re.search(r"\b(20\d{2})\b", label)
+            if match is None:
+                continue
+            start = int(match.group(1))
+            if start >= self.enrollment_year:
+                matching.setdefault(start, label)
+        return [matching[start] for start in sorted(matching)]
 
     def context(self) -> dict[str, Any]:
         sources = [
@@ -279,18 +300,28 @@ class AcademicService:
         }
 
     def full_transcript(self) -> dict[str, Any]:
-        """Load the four academic years beginning at enrollment."""
+        """Load every available transcript year beginning at enrollment."""
+        with self.portal_lock:
+            cached = self.cache.get("full_transcript")
+            if cached is not None:
+                return cached
+
         available = {
             label.casefold(): label for _value, label in self._years()
         }
         loaded_years: list[str] = []
+        failed_years: list[str] = []
         courses: list[dict[str, str]] = []
         cumulative_gpa: str | None = None
         for expected_year in self.transcript_window_years:
             actual_year = available.get(expected_year.casefold())
             if actual_year is None:
                 continue
-            data = self.transcript(actual_year)
+            try:
+                data = self.transcript(actual_year)
+            except Exception:
+                failed_years.append(actual_year)
+                continue
             loaded_years.append(data["year"])
             courses.extend(
                 {"academic_year": data["year"], **row}
@@ -298,13 +329,20 @@ class AcademicService:
             )
             if data["cumulative_gpa"]:
                 cumulative_gpa = data["cumulative_gpa"]
-        return {
+        if not loaded_years and failed_years:
+            raise RuntimeError("No transcript year could be loaded.")
+        result = {
             "enrollment_year": self.enrollment_year,
             "requested_years": self.transcript_window_years,
             "loaded_years": loaded_years,
+            "failed_years": failed_years,
             "cumulative_gpa": cumulative_gpa,
             "courses": courses,
         }
+        if not failed_years:
+            with self.portal_lock:
+                self.cache["full_transcript"] = result
+        return result
 
     def clear_cache(self) -> None:
         with self.portal_lock:
