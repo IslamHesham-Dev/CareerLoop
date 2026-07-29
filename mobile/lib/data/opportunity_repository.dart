@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
@@ -20,6 +22,7 @@ class OpportunityRepository extends ChangeNotifier {
   List<String> keywords = const ['software engineer', 'backend'];
   List<String> workModes = const ['remote', 'hybrid'];
   bool loading = false;
+  String? loadingStage;
   String? error;
 
   OpportunityRepository({
@@ -45,20 +48,39 @@ class OpportunityRepository extends ChangeNotifier {
     this.keywords = List.unmodifiable(keywords);
     this.workModes = List.unmodifiable(workModes);
     loading = true;
+    loadingStage = 'Preparing your profile evidence…';
     error = null;
     notifyListeners();
     try {
-      await careerProfileRepository.ensureSynced();
-      await githubProfileRepository.ensureSynced();
-      final resumeReady = await currentCvRepository.ensureSynced();
+      final synced = await Future.wait<bool>([
+        careerProfileRepository.ensureSynced(),
+        githubProfileRepository.ensureSynced(),
+        currentCvRepository.ensureSynced(),
+      ]).timeout(const Duration(seconds: 75));
+      final linkedInReady = synced[0];
+      final githubReady = synced[1];
+      final resumeReady = synced[2];
+      if (careerProfileRepository.hasProfile && !linkedInReady) {
+        throw const ApiException(
+          'Your LinkedIn evidence could not be loaded for matching.',
+        );
+      }
+      if (githubProfileRepository.hasProfile && !githubReady) {
+        throw const ApiException(
+          'Your GitHub projects could not be loaded for matching.',
+        );
+      }
       if (currentCvRepository.hasProfile && !resumeReady) {
         throw const ApiException(
           'Your resume could not be loaded for matching. Try replacing the '
           'PDF or signing in again.',
         );
       }
+      loadingStage = 'Loading and ranking live roles…';
+      notifyListeners();
       final json = await api.post(
         '/v1/career/opportunities/search',
+        timeout: const Duration(seconds: 75),
         body: {
           'role_type': roleType,
           'timeframe': timeframe,
@@ -71,6 +93,10 @@ class OpportunityRepository extends ChangeNotifier {
       );
       result = OpportunitySearchResult.fromJson(json);
       return true;
+    } on TimeoutException {
+      error = 'The opportunity search took too long. The live job source or '
+          'backend may still be waking up; try once more.';
+      return false;
     } on ApiException catch (exception) {
       error = exception.message;
       return false;
@@ -79,12 +105,14 @@ class OpportunityRepository extends ChangeNotifier {
       return false;
     } finally {
       loading = false;
+      loadingStage = null;
       notifyListeners();
     }
   }
 
   void clear() {
     result = null;
+    loadingStage = null;
     error = null;
     notifyListeners();
   }

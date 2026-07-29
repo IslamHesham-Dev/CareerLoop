@@ -159,6 +159,23 @@ def test_full_transcript_keeps_other_years_when_one_year_fails() -> None:
         "2022-2023",
         "2024-2025",
     }
+    assert academic.full_transcript() is transcript
+
+
+def test_transcript_snapshot_uses_loaded_years_without_more_portal_calls() -> None:
+    academic = AcademicService(
+        FakePortal(),  # type: ignore[arg-type]
+        current_season="Winter 2024",
+        advisory_year="2024-2025",
+        enrollment_year=2021,
+    )
+    academic.transcript("2022-2023")
+
+    snapshot = academic.transcript_snapshot()
+
+    assert snapshot is not None
+    assert snapshot["loaded_years"] == ["2022-2023"]
+    assert snapshot["courses"][0]["academic_year"] == "2022-2023"
 
 
 def test_giu_semesters_are_ordered_spring_summer_winter() -> None:

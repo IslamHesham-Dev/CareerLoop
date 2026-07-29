@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from types import SimpleNamespace
+from datetime import UTC, datetime
 
 import pytest
 
@@ -128,44 +128,85 @@ def test_profile_aware_swelist_search_returns_gaps_and_courses() -> None:
     )
 
 
-def test_swelist_connector_uses_the_active_python_environment(
+def test_swelist_connector_filters_structured_feed_without_cli(
     monkeypatch,
 ) -> None:
-    from swelist_connector import client as client_module
+    from swelist_connector.client import SwelistConnector
 
-    captured = {}
-
-    def fake_run(command, **kwargs):
-        captured["command"] = command
-        return SimpleNamespace(
-            stdout=(
-                "Company: Example\n"
-                "Title: Software Engineer\n"
-                "Location: Berlin, Germany\n"
-                "Link: https://example.com/job\n"
-            )
-        )
-
-    monkeypatch.setattr(client_module.subprocess, "run", fake_run)
+    now = datetime.now(UTC).timestamp()
+    recent = {
+        "company_name": "Recent",
+        "title": "Software Engineer",
+        "url": "https://example.com/recent",
+        "locations": ["Berlin, Germany"],
+        "date_posted": now - 60,
+    }
+    old = {
+        "company_name": "Old",
+        "title": "Software Engineer",
+        "url": "https://example.com/old",
+        "locations": ["Berlin, Germany"],
+        "date_posted": now - 20 * 24 * 60 * 60,
+    }
+    connector = SwelistConnector()
     monkeypatch.setattr(
-        client_module.SwelistConnector,
+        connector,
         "_load_metadata",
-        lambda self, role: {},
+        lambda role: {
+            recent["url"]: recent,
+            old["url"]: old,
+        },
     )
-    jobs = client_module.SwelistConnector().get_postings(
+
+    jobs = connector.get_postings(
         role="newgrad",
         timeframe="lastweek",
     )
 
-    assert captured["command"][:4] == [
-        client_module.sys.executable,
-        "-m",
-        "swelist.main",
-        "run",
-    ]
     assert len(jobs) == 1
-    assert jobs[0].link == "https://example.com/job"
+    assert jobs[0].link == recent["url"]
     assert jobs[0].company_logo_url
+
+
+def test_opportunity_search_caps_expensive_candidate_evaluation() -> None:
+    class LargeConnector:
+        def get_postings(self, **_kwargs):
+            return [
+                JobPosting(
+                    company=f"Company {index}",
+                    title="Backend Software Engineer",
+                    location="Global",
+                    link=f"https://example.com/{index}",
+                )
+                for index in range(500)
+            ]
+
+    service = OpportunityService(connector=LargeConnector())  # type: ignore[arg-type]
+    original_match = service._match_job  # noqa: SLF001
+    evaluated = 0
+
+    def tracked_match(posting, **kwargs):
+        nonlocal evaluated
+        evaluated += 1
+        return original_match(posting, **kwargs)
+
+    service._match_job = tracked_match  # type: ignore[method-assign]  # noqa: SLF001
+    result = service.search(
+        role_type="newgrad",
+        timeframe="all",
+        target_market="global",
+        locations=[],
+        keywords=["backend"],
+        work_modes=[],
+        transcript=None,
+        linkedin_profile=None,
+        github_profile=None,
+        resume_profile=None,
+        limit=24,
+    )
+
+    assert len(result["jobs"]) == 24
+    assert evaluated == 96
 
 
 def test_resume_evidence_participates_in_matching() -> None:

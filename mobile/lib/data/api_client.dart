@@ -131,6 +131,7 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     bool authenticated = true,
+    Duration timeout = const Duration(minutes: 4),
   }) async {
     final response = await _client
         .post(
@@ -138,7 +139,7 @@ class ApiClient {
           headers: _headers(authenticated: authenticated),
           body: jsonEncode(body ?? const {}),
         )
-        .timeout(const Duration(minutes: 4));
+        .timeout(timeout);
     return _decode(response);
   }
 

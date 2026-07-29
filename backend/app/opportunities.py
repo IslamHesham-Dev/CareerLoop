@@ -374,7 +374,7 @@ class OpportunityService:
         connector: SwelistConnector | None = None,
         catalog: CourseCatalog | None = None,
     ) -> None:
-        self.connector = connector or SwelistConnector(timeout=60)
+        self.connector = connector or SwelistConnector(timeout=20)
         self.catalog = catalog or CourseCatalog()
 
     def search(
@@ -420,6 +420,11 @@ class OpportunityService:
             for value in keywords
             if value.strip()
         ]
+        postings = self._prefilter_postings(
+            postings,
+            normalized_keywords,
+            limit=max(96, limit * 4),
+        )
 
         matches = [
             self._match_job(
@@ -531,6 +536,51 @@ class OpportunityService:
                 ),
             ],
         }
+
+    @staticmethod
+    def _prefilter_postings(
+        postings: list[Any],
+        keywords: list[str],
+        *,
+        limit: int,
+    ) -> list[Any]:
+        """Bound expensive evidence scoring while preserving useful results.
+
+        Swelist can contain thousands of global openings. Company/title/category
+        filtering is intentionally cheap and happens before role inference,
+        evidence citation generation, and course mapping.
+        """
+        active = [
+            posting
+            for posting in postings
+            if getattr(posting, "active", True)
+        ]
+        if keywords:
+            preferred = []
+            for posting in active:
+                searchable = _normalized_text(
+                    " ".join(
+                        str(value or "")
+                        for value in (
+                            getattr(posting, "title", ""),
+                            getattr(posting, "category", ""),
+                            getattr(posting, "company", ""),
+                        )
+                    )
+                )
+                if any(keyword in searchable for keyword in keywords):
+                    preferred.append(posting)
+            if preferred:
+                active = preferred
+
+        active.sort(
+            key=lambda posting: (
+                str(getattr(posting, "posted_at", "") or ""),
+                str(getattr(posting, "updated_at", "") or ""),
+            ),
+            reverse=True,
+        )
+        return active[:limit]
 
     @staticmethod
     def _location_filter(

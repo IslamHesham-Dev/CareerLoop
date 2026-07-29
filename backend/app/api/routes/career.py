@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import io
+import logging
 import time
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
@@ -56,6 +57,7 @@ from app.tone import ONBOARDING_QUESTIONS
 from app.sessions.models import StudentSession
 
 router = APIRouter(prefix="/career", tags=["career evidence"])
+logger = logging.getLogger(__name__)
 opportunity_service = OpportunityService()
 MAX_RESUME_PDF_BYTES = 10 * 1024 * 1024
 
@@ -469,11 +471,9 @@ async def search_opportunities(
         student.career_preferences = preferences
 
     def search() -> dict:
-        try:
-            transcript = student.academic.full_transcript()
-        except Exception:
-            transcript = None
-        return opportunity_service.search(
+        started = time.perf_counter()
+        transcript = student.academic.transcript_snapshot()
+        result = opportunity_service.search(
             **preferences,
             transcript=transcript,
             linkedin_profile=student.linkedin_profile,
@@ -481,6 +481,14 @@ async def search_opportunities(
             resume_profile=student.resume_profile,
             limit=payload.limit,
         )
+        logger.info(
+            "opportunity_search completed seconds=%.3f jobs=%d "
+            "transcript_years=%d",
+            time.perf_counter() - started,
+            len(result["jobs"]),
+            len((transcript or {}).get("loaded_years", [])),
+        )
+        return result
 
     try:
         return await run_in_threadpool(search)

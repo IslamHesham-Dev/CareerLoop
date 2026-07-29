@@ -1,8 +1,7 @@
-"""The one object you talk to: `SwelistConnector`.
+"""Fast structured access to the public listing feed used by Swelist.
 
-Since `swelist` is a CLI tool and does not expose a native Python API for importing,
-this connector acts as a wrapper that invokes the CLI via subprocess and parses
-its text output into structured Python objects (`JobPosting`).
+The connector reads, caches, and filters the underlying JSON feed directly,
+then exposes stable `JobPosting` objects without spawning a CLI subprocess.
 
     from swelist_connector import SwelistConnector
 
@@ -14,11 +13,10 @@ its text output into structured Python objects (`JobPosting`).
 
 from __future__ import annotations
 
-import os
 import json
 import re
-import subprocess
-import sys
+import threading
+import time
 from dataclasses import replace
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -29,7 +27,13 @@ from .models import JobPosting
 
 
 class SwelistConnector:
-    """A programmatic wrapper around the swelist CLI tool."""
+    """Cached programmatic access to Swelist's underlying listing feed."""
+
+    _TIMEFRAME_SECONDS = {
+        "lastday": 24 * 60 * 60,
+        "lastweek": 7 * 24 * 60 * 60,
+        "lastmonth": 30 * 24 * 60 * 60,
+    }
 
     FEEDS = {
         "internship": (
@@ -42,8 +46,14 @@ class SwelistConnector:
         ),
     }
 
-    def __init__(self, timeout: int = 45) -> None:
+    def __init__(self, timeout: int = 20, cache_ttl: int = 10 * 60) -> None:
         self.timeout = timeout
+        self.cache_ttl = cache_ttl
+        self._metadata_cache: dict[
+            str,
+            tuple[float, dict[str, dict[str, Any]]],
+        ] = {}
+        self._cache_lock = threading.RLock()
 
     def get_postings(
         self,
@@ -53,101 +63,29 @@ class SwelistConnector:
         ] = "lastday",
         location: str | None = None,
     ) -> list[JobPosting]:
-        """Fetch Swelist jobs, retaining the full structured listing metadata."""
+        """Fetch and filter the structured feed used by Swelist.
+
+        The feed is cached because downloading it and launching the Swelist
+        CLI for every request made interactive searches unnecessarily slow.
+        """
         metadata = self._load_metadata(role)
-        if timeframe == "all":
-            return self._structured_postings(metadata, location=location)
-
-        # Use the active interpreter instead of relying on PATH. Render starts
-        # Uvicorn from ``.venv/bin`` without activating the virtualenv, so a
-        # bare ``swelist`` subprocess is not reliably discoverable there.
-        cmd = [
-            sys.executable,
-            "-m",
-            "swelist.main",
-            "run",
-            "--role",
-            role,
-            "--timeframe",
-            timeframe,
-        ]
-        if location:
-            cmd.extend(["--location", location])
-
-        try:
-            # We use capture_output=True and text=True to get stdout as a string.
-            # swelist uses rich, so we strip out ANSI sequences implicitly if possible,
-            # but usually redirecting stdout makes it fall back to plain text.
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                timeout=self.timeout,
-                check=True,
-                env={**os.environ, "NO_COLOR": "1"},
-            )
-        except FileNotFoundError:
-            raise RuntimeError(
-                "Swelist is not installed in the backend environment."
-            ) from None
-        except subprocess.TimeoutExpired:
-            raise RuntimeError("The swelist command timed out.") from None
-        except subprocess.CalledProcessError as exc:
-            detail = (exc.stderr or exc.stdout or "").strip()
-            raise RuntimeError(
-                f"The swelist command failed: {detail or 'unknown error'}"
-            ) from None
-
-        jobs: list[JobPosting] = []
-        current_job: dict[str, str] = {}
-        parsing_link = False
-        ansi = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
-
-        # Parse the block format output from swelist
-        for raw_line in result.stdout.splitlines():
-            line = ansi.sub("", raw_line).strip()
-            if not line:
-                if "company" in current_job and "title" in current_job:
-                    self._append_job(jobs, current_job)
-                    current_job = {}
-                parsing_link = False
-                continue
-
-            if line.startswith("Company:"):
-                current_job = {"company": line.split(":", 1)[1].strip()}
-                parsing_link = False
-            elif line.startswith("Title:") and "company" in current_job:
-                current_job["title"] = line.split(":", 1)[1].strip()
-            elif line.lower().startswith("location") and "company" in current_job:
-                loc_str = line.split(":", 1)[1].strip()
-                if loc_str.startswith("['") and loc_str.endswith("']"):
-                    loc_str = loc_str[2:-2]
-                current_job["location"] = loc_str
-            elif line.startswith("Link:") and "company" in current_job:
-                parsing_link = True
-                val = line.split(":", 1)[1].strip()
-                if val:
-                    current_job["link"] = val
-            elif parsing_link and "company" in current_job:
-                current_job["link"] = current_job.get("link", "") + line
-
-        # Catch trailing job if output didn't end with a newline
-        if "company" in current_job and "title" in current_job:
-            self._append_job(jobs, current_job)
-
-        unique = {job.link: job for job in jobs if job.link}
-        return [
-            self._enrich(job, metadata.get(self._normalized_url(job.link)))
-            for job in unique.values()
-        ]
+        return self._structured_postings(
+            metadata,
+            location=location,
+            timeframe=timeframe,
+        )
 
     def _load_metadata(
         self,
         role: Literal["internship", "newgrad"],
     ) -> dict[str, dict[str, Any]]:
-        """Read the same JSON feed used by Swelist and index it by apply URL."""
+        """Read and cache the JSON feed used by Swelist."""
+        now = time.monotonic()
+        with self._cache_lock:
+            cached = self._metadata_cache.get(role)
+            if cached and now - cached[0] < self.cache_ttl:
+                return cached[1]
+
         try:
             request = Request(
                 self.FEEDS[role],
@@ -156,20 +94,36 @@ class SwelistConnector:
             with urlopen(request, timeout=self.timeout) as response:
                 payload = json.load(response)
         except Exception:
+            # A stale feed is better than blocking or returning nothing during
+            # a temporary GitHub/raw-content outage.
+            if cached:
+                with self._cache_lock:
+                    self._metadata_cache[role] = (now, cached[1])
+                return cached[1]
             return {}
         if not isinstance(payload, list):
+            if cached:
+                with self._cache_lock:
+                    self._metadata_cache[role] = (now, cached[1])
+                return cached[1]
             return {}
-        return {
+        indexed = {
             self._normalized_url(str(item.get("url", ""))): item
             for item in payload
             if isinstance(item, dict) and item.get("url")
         }
+        with self._cache_lock:
+            self._metadata_cache[role] = (now, indexed)
+        return indexed
 
     def _structured_postings(
         self,
         metadata: dict[str, dict[str, Any]],
         *,
         location: str | None,
+        timeframe: Literal[
+            "all", "lastday", "lastweek", "lastmonth"
+        ] = "all",
     ) -> list[JobPosting]:
         requested = [
             value.strip().casefold()
@@ -177,9 +131,20 @@ class SwelistConnector:
             if value.strip()
         ]
         postings: list[JobPosting] = []
+        cutoff = None
+        if timeframe != "all":
+            cutoff = datetime.now(UTC).timestamp() - self._TIMEFRAME_SECONDS[
+                timeframe
+            ]
         for item in metadata.values():
             if item.get("active") is False or item.get("is_visible") is False:
                 continue
+            if cutoff is not None:
+                try:
+                    if float(item.get("date_posted")) < cutoff:
+                        continue
+                except (TypeError, ValueError):
+                    continue
             locations = [
                 str(value).strip()
                 for value in item.get("locations", [])
@@ -289,22 +254,4 @@ class SwelistConnector:
         return (
             "https://www.google.com/s2/favicons?"
             f"domain_url={quote(f'https://{domain}', safe='')}&sz=128"
-        )
-
-    @staticmethod
-    def _append_job(
-        jobs: list[JobPosting],
-        value: dict[str, str],
-    ) -> None:
-        link = value.get("link", "").replace(" ", "")
-        parsed = urlparse(link)
-        if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-            return
-        jobs.append(
-            JobPosting(
-                company=value.get("company", ""),
-                title=value.get("title", ""),
-                location=value.get("location", ""),
-                link=link,
-            )
         )

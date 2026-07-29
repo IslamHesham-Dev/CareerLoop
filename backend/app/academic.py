@@ -299,6 +299,67 @@ class AcademicService:
             ],
         }
 
+    def transcript_snapshot(self) -> dict[str, Any] | None:
+        """Return already-loaded transcript evidence without portal I/O.
+
+        Login and dashboard loading usually cache at least one transcript year.
+        Interactive career searches should use that snapshot immediately
+        instead of waiting behind a slow or retrying portal request.
+        """
+        with self.portal_lock:
+            complete = self.cache.get("full_transcript")
+            if complete is not None:
+                return complete
+            cached_years = [
+                value
+                for key, value in self.cache.items()
+                if isinstance(key, tuple)
+                and len(key) == 2
+                and key[0] == "transcript"
+                and isinstance(value, dict)
+            ]
+        if not cached_years:
+            return None
+
+        requested = {
+            year.casefold() for year in self.transcript_window_years
+        }
+        cached_years = [
+            value
+            for value in cached_years
+            if str(value.get("year", "")).casefold() in requested
+        ]
+        cached_years.sort(
+            key=lambda value: self._academic_year_start(
+                str(value.get("year", ""))
+            )
+        )
+        if not cached_years:
+            return None
+
+        loaded_years = [str(value["year"]) for value in cached_years]
+        courses = [
+            {"academic_year": str(value["year"]), **row}
+            for value in cached_years
+            for row in value.get("courses", [])
+        ]
+        cumulative_gpa = next(
+            (
+                str(value["cumulative_gpa"])
+                for value in reversed(cached_years)
+                if value.get("cumulative_gpa")
+            ),
+            None,
+        )
+        return {
+            "enrollment_year": self.enrollment_year,
+            "requested_years": self.transcript_window_years,
+            "loaded_years": loaded_years,
+            "failed_years": [],
+            "cumulative_gpa": cumulative_gpa,
+            "courses": courses,
+        }
+
     def full_transcript(self) -> dict[str, Any]:
         """Load every available transcript year beginning at enrollment."""
         with self.portal_lock:
@@ -339,9 +400,11 @@ class AcademicService:
             "cumulative_gpa": cumulative_gpa,
             "courses": courses,
         }
-        if not failed_years:
-            with self.portal_lock:
-                self.cache["full_transcript"] = result
+        # Preserve a usable partial snapshot as well. Failed years can be
+        # retried explicitly after clearing the portal cache; they should not
+        # impose another 60-second retry on every career or document request.
+        with self.portal_lock:
+            self.cache["full_transcript"] = result
         return result
 
     def clear_cache(self) -> None:

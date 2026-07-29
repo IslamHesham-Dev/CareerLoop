@@ -152,9 +152,10 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
             ],
             if (opportunities.loading) ...[
               const SizedBox(height: 20),
-              const LensCard(
+              LensCard(
                 child: LensLoading(
-                  label: 'Finding roles and checking profile fit…',
+                  label: opportunities.loadingStage ??
+                      'Finding roles and checking profile fit…',
                 ),
               ),
             ] else if (result == null) ...[
