@@ -202,12 +202,13 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
     });
     _scrollToEnd();
 
-    final advisor = context.read<AdvisorRepository>();
+    AdvisorRepository? advisor;
     ChatMessage? response;
     try {
       if (widget.onSend != null) {
         response = await widget.onSend!(trimmed);
       } else {
+        advisor = context.read<AdvisorRepository>();
         response = await advisor.sendContextual(
           visibleText: trimmed,
           agentText: '${widget.contextInstruction}\n\n'
@@ -231,7 +232,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
         _messageToRevealKey = GlobalKey();
       } else {
         _error = widget.onSend == null
-            ? advisor.error ?? 'The assistant could not respond right now.'
+            ? advisor?.error ?? 'The assistant could not respond right now.'
             : 'The requested refinement could not be applied.';
       }
       _sending = false;

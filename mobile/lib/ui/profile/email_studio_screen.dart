@@ -275,7 +275,7 @@ class _EmailReadiness extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
-              ReadinessPill(ready: gmail.gmailConnected),
+              if (gmail.gmailConnected) const ReadinessPill(ready: true),
             ],
           ),
           const SizedBox(height: 13),
@@ -582,7 +582,7 @@ class _EmailReview extends StatelessWidget {
                   ),
                 ),
               ),
-              ReadinessPill(ready: ready),
+              if (ready) const ReadinessPill(ready: true),
             ],
           ),
           Align(

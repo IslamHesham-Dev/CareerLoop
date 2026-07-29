@@ -8,7 +8,7 @@ import '../../app/theme.dart';
 import '../../data/api_client.dart';
 import '../../data/career_document_repository.dart';
 import '../../data/models.dart';
-import '../../data/repositories.dart';
+import '../core/content_ai_overlay.dart';
 import '../core/lens_components.dart';
 import 'career_document_viewer_screen.dart';
 
@@ -66,11 +66,20 @@ class CompanyLogo extends StatelessWidget {
   }
 }
 
-class OpportunityDetailScreen extends StatelessWidget {
+class OpportunityDetailScreen extends StatefulWidget {
   final OpportunityDetailArgs args;
 
   const OpportunityDetailScreen({super.key, required this.args});
 
+  @override
+  State<OpportunityDetailScreen> createState() =>
+      _OpportunityDetailScreenState();
+}
+
+class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
+  final _copilot = ContentAiOverlayController();
+
+  OpportunityDetailArgs get args => widget.args;
   JobOpportunity get job => args.job;
 
   @override
@@ -92,47 +101,120 @@ class OpportunityDetailScreen extends StatelessWidget {
         title: const Text('Job match'),
       ),
       bottomNavigationBar: _ActionBar(
-        onAskAi: () => _askAi(context),
+        onAskAi: _copilot.open,
         onApply: () => _open(job.url),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
-        children: [
-          _PositionHeader(job: job),
-          const SizedBox(height: 14),
-          _ListingFacts(job: job),
-          const SizedBox(height: 24),
-          const _SectionTitle(title: 'Why this role matches'),
-          const SizedBox(height: 11),
-          _FitCard(
-            job: job,
-            evidence: args.evidence,
-            limitations: args.limitations,
+      body: ContentAiOverlay(
+        key: ValueKey('job-copilot-${job.id}'),
+        controller: _copilot,
+        title: 'CareerLoop Copilot',
+        subtitle: '${job.title} · ${job.company}',
+        contextInstruction: _jobContext(courses),
+        quickActions: [
+          ContentAiQuickAction(
+            icon: Icons.fact_check_outlined,
+            label: 'Explain my match',
+            prompt:
+                'Explain why this role matches my verified profile. Cite the '
+                'academic and career evidence behind each important claim.',
           ),
-          const SizedBox(height: 24),
-          _ApplicationDocuments(job: job),
-          const SizedBox(height: 24),
-          _QualificationPath(courses: courses),
+          ContentAiQuickAction(
+            icon: Icons.balance_rounded,
+            label: 'Challenge the evaluation',
+            prompt:
+                'Evaluate me brutally and without bias for this role. Identify '
+                'unsupported assumptions and the strongest evidence against '
+                'my readiness.',
+          ),
+          ContentAiQuickAction(
+            icon: Icons.route_outlined,
+            label: 'Build my qualification plan',
+            prompt:
+                'Build a focused qualification plan for this exact role using '
+                'the suggested courses shown on this page and my verified '
+                'profile evidence.',
+          ),
+          ContentAiQuickAction(
+            icon: Icons.description_outlined,
+            label: 'Plan the application',
+            prompt: 'Give me a tailored application strategy for this opening, '
+                'including which verified projects, courses, and experience '
+                'to emphasize.',
+          ),
         ],
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 10, 16, 40),
+          children: [
+            _PositionHeader(job: job),
+            const SizedBox(height: 14),
+            _ListingFacts(job: job),
+            const SizedBox(height: 24),
+            const _SectionTitle(title: 'Why this role matches'),
+            const SizedBox(height: 11),
+            _FitCard(
+              job: job,
+              evidence: args.evidence,
+              limitations: args.limitations,
+            ),
+            const SizedBox(height: 24),
+            _ApplicationDocuments(job: job),
+            const SizedBox(height: 24),
+            _QualificationPath(courses: courses),
+          ],
+        ),
       ),
     );
   }
 
-  void _askAi(BuildContext context) {
-    context.read<AdvisorRepository>().send(
-          'Deep-evaluate my fit for ${job.title} at ${job.company}. Use my '
-          'full transcript, imported LinkedIn PDF, and connected GitHub '
-          'project evidence. The live application page is ${job.url}. '
-          'Known listing metadata: category ${job.category ?? 'not supplied'}, '
-          'locations ${job.location}, sponsorship '
-          '${job.sponsorship ?? 'not supplied'}, and degrees '
-          '${job.degrees.isEmpty ? 'not supplied' : job.degrees.join(', ')}. '
-          'Validate the current inferred gaps '
-          '(${job.inferredSkillGaps.join(', ')}) against my evidence, clearly '
-          'separate facts from inferences, and build a focused qualification '
-          'and application plan.',
-        );
-    context.go('/advisor');
+  String _jobContext(List<CareerCourseRecommendation> courses) {
+    final evidence = [
+      if (args.evidence.academicTranscript) 'complete academic transcript',
+      if (args.evidence.linkedInPdf) 'imported LinkedIn profile PDF',
+      if (args.evidence.resume) 'imported resume evidence',
+      if (args.evidence.github) 'connected GitHub project evidence',
+    ];
+    final courseContext = courses.isEmpty
+        ? 'No course recommendation is currently displayed.'
+        : courses
+            .map(
+              (course) => '${course.title} by ${course.provider} on '
+                  '${course.platform}; level ${course.level}; duration '
+                  '${course.duration}; skills '
+                  '${course.skills.join(', ')}; strengthens '
+                  '${course.addressesSkills.join(', ')}; URL ${course.url}',
+            )
+            .join('\n- ');
+    return '''
+You are the in-page CareerLoop job copilot for one specific opening. Keep every
+answer anchored to this opening and the student's verified evidence.
+
+OPENING
+- Role: ${job.title}
+- Company: ${job.company}
+- Location: ${job.location}
+- Role family: ${job.roleFamily}
+- Category: ${job.category ?? 'not supplied'}
+- Sponsorship: ${job.sponsorship ?? 'not supplied'}
+- Degrees: ${job.degrees.isEmpty ? 'not supplied' : job.degrees.join(', ')}
+- Application URL: ${job.url}
+- Current match reasons: ${job.matchReasons.join('; ')}
+- Keyword matches: ${job.keywordMatches.join(', ')}
+- Profile skill matches: ${job.profileSkillMatches.join(', ')}
+- Inferred skill gaps: ${job.inferredSkillGaps.join(', ')}
+
+AVAILABLE PROFILE EVIDENCE
+${evidence.isEmpty ? 'No profile source is marked available.' : evidence.join(', ')}
+
+SUGGESTED COURSES ON THIS PAGE
+- $courseContext
+
+For personalized answers, inspect the complete transcript and every available
+career-profile source using the appropriate tools. Treat the opening metadata,
+match reasons, and skill gaps as prior inferences to verify rather than facts.
+Use the suggested courses as concrete options even when the student is already
+qualified. Clearly separate job facts, profile evidence, inference, and advice.
+Known source limitations: ${args.limitations.join('; ')}
+''';
   }
 
   static Future<void> _open(Uri uri) async {

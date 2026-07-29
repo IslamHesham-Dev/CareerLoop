@@ -81,12 +81,26 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
         title: course.code,
         onBack: () => context.pop(),
         actions: [
-          IconButton(
-            tooltip: 'Study assist',
-            onPressed: () => _openCourseAssist(course, resources),
-            icon: const Icon(Icons.auto_awesome_outlined),
+          Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: FilledButton.tonalIcon(
+              onPressed: () => _openCourseAssist(course, resources),
+              icon: const Icon(Icons.school_outlined, size: 17),
+              label: const Text('Prep'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 38),
+                padding: const EdgeInsets.symmetric(horizontal: 11),
+                visualDensity: VisualDensity.compact,
+                textStyle: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 4),
         ],
       ),
       body: RefreshIndicator(
@@ -395,7 +409,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
     if (pdfs.isEmpty) {
       await showAiAssistSheet(
         context,
-        title: '${course.code} Study Assist',
+        title: '${course.code} Prep',
         subtitle: 'No readable PDFs are available yet',
         actions: [
           AiAssistAction(
@@ -452,7 +466,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '${course.code} Study Assist',
+                              '${course.code} Prep',
                               style: Theme.of(context).textTheme.titleLarge,
                             ),
                             const Text(

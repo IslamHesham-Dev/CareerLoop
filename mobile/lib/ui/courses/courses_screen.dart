@@ -102,9 +102,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
     }
     final courseEntries = mergedCourses.values.toList()
       ..sort((a, b) => a.code.compareTo(b.code));
-    final coursesLoading = (academic.loadingDashboard &&
-            academic.courses.isEmpty) ||
-        (cmsConnected && cms.loadingCourses && cms.courses.isEmpty);
+    final coursesLoading =
+        (academic.loadingDashboard && academic.courses.isEmpty) ||
+            (cmsConnected && cms.loadingCourses && cms.courses.isEmpty);
 
     return SafeArea(
       bottom: false,
@@ -140,27 +140,6 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   tooltip: 'Saved quizzes',
                   onPressed: () => context.push('/practice'),
                   icon: const Icon(Icons.quiz_outlined),
-                ),
-                FilledButton.tonalIcon(
-                  onPressed: () => context.go('/advisor'),
-                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
-                  label: const Text('Prep'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor:
-                        Theme.of(context).colorScheme.secondaryContainer,
-                    foregroundColor:
-                        Theme.of(context).colorScheme.onSecondaryContainer,
-                    minimumSize: const Size(0, 40),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    visualDensity: VisualDensity.compact,
-                    textStyle: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                 ),
               ],
             ),
