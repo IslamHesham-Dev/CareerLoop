@@ -76,15 +76,10 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
         hasVideos ? _section : _CourseContentSection.materials;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        surfaceTintColor: Colors.transparent,
-        title: Text(
-          course.code,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: course.code,
+        onBack: () => context.pop(),
         actions: [
           IconButton(
             tooltip: 'Study assist',
@@ -963,7 +958,8 @@ class _WeekNavigator extends StatelessWidget {
     int? highestWeek;
     for (final label in labels) {
       final weekNumber = _CmsCourseScreenState._weekNumber(label);
-      if (weekNumber != null && (highestWeek == null || weekNumber > highestWeek)) {
+      if (weekNumber != null &&
+          (highestWeek == null || weekNumber > highestWeek)) {
         highestWeek = weekNumber;
         newestWeek = label;
       }

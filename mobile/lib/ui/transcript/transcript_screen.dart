@@ -29,14 +29,10 @@ class _TranscriptScreenState extends State<TranscriptScreen> {
     final history = academic.fullTranscript;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Academic record'),
-        leading: IconButton(
-          tooltip: 'Back to profile',
-          onPressed: () =>
-              context.canPop() ? context.pop() : context.go('/profile'),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'Academic record',
+        onBack: () => context.canPop() ? context.pop() : context.go('/profile'),
       ),
       body: RefreshIndicator(
         onRefresh: () => academic.loadDashboard(force: true),

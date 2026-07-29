@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:simple_icons/simple_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/theme.dart';
@@ -11,8 +11,21 @@ import '../../data/email_repository.dart';
 import '../../data/models.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/tone_profile_repository.dart';
+import '../core/brand_marks.dart';
 import '../core/capability_footer.dart';
 import '../core/lens_components.dart';
+
+class _EmailPurpose {
+  final String label;
+  final String prompt;
+  final IconData icon;
+
+  const _EmailPurpose({
+    required this.label,
+    required this.prompt,
+    required this.icon,
+  });
+}
 
 class EmailStudioScreen extends StatefulWidget {
   const EmailStudioScreen({super.key});
@@ -32,12 +45,36 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
   bool _attachResume = false;
 
   static const _purposes = [
-    'Ask a professor for a recommendation letter',
-    'Request an appointment with an academic advisor',
-    'Ask a lecturer about a course or grade',
-    'Follow up on an internship or job application',
-    'Introduce myself to a recruiter',
-    'Send a professional thank-you note',
+    _EmailPurpose(
+      label: 'Recommendation',
+      prompt: 'Ask a professor for a recommendation letter',
+      icon: Icons.workspace_premium_outlined,
+    ),
+    _EmailPurpose(
+      label: 'Advisor meeting',
+      prompt: 'Request an appointment with an academic advisor',
+      icon: Icons.event_available_outlined,
+    ),
+    _EmailPurpose(
+      label: 'Course or grade',
+      prompt: 'Ask a lecturer about a course or grade',
+      icon: Icons.school_outlined,
+    ),
+    _EmailPurpose(
+      label: 'Application follow-up',
+      prompt: 'Follow up on an internship or job application',
+      icon: Icons.update_rounded,
+    ),
+    _EmailPurpose(
+      label: 'Recruiter introduction',
+      prompt: 'Introduce myself to a recruiter',
+      icon: Icons.handshake_outlined,
+    ),
+    _EmailPurpose(
+      label: 'Thank-you note',
+      prompt: 'Send a professional thank-you note',
+      icon: Icons.favorite_border_rounded,
+    ),
   ];
 
   @override
@@ -151,23 +188,17 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
     final cv = context.watch<CurrentCvRepository>();
     final tone = context.watch<ToneProfileRepository>();
     return Scaffold(
-      appBar: AppBar(title: const Text('Write email')),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'Email composer',
+        onBack: () => context.pop(),
+      ),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
           children: [
-            Text(
-              'Draft a contextual email',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'CareerLoop prepares the message. You review it before Gmail sends anything.',
-              style: TextStyle(color: LensColors.muted, height: 1.45),
-            ),
-            const SizedBox(height: 16),
             _EmailReadiness(
               gmail: gmail,
               cv: cv,
@@ -249,7 +280,7 @@ class _EmailReadiness extends StatelessWidget {
           ),
           const SizedBox(height: 13),
           _ReadyRow(
-            icon: SimpleIcons.gmail,
+            leading: const GmailBrandMark(size: 20),
             title: gmail.gmailConnected
                 ? gmail.gmailEmail ?? 'Gmail connected'
                 : 'Connect Gmail',
@@ -280,7 +311,8 @@ class _EmailReadiness extends StatelessWidget {
 }
 
 class _ReadyRow extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final Widget? leading;
   final String title;
   final String? detail;
   final bool ready;
@@ -288,19 +320,20 @@ class _ReadyRow extends StatelessWidget {
   final String? actionLabel;
 
   const _ReadyRow({
-    required this.icon,
+    this.icon,
+    this.leading,
     required this.title,
     this.detail,
     required this.ready,
     this.action,
     this.actionLabel,
-  });
+  }) : assert(icon != null || leading != null);
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: LensColors.indigo, size: 20),
+        leading ?? Icon(icon, color: LensColors.indigo, size: 20),
         const SizedBox(width: 11),
         Expanded(
           child: Column(
@@ -349,7 +382,7 @@ class _EmailIntake extends StatelessWidget {
   final TextEditingController nameController;
   final TextEditingController purposeController;
   final TextEditingController instructionsController;
-  final List<String> purposes;
+  final List<_EmailPurpose> purposes;
   final bool drafting;
   final VoidCallback onChanged;
   final VoidCallback onPreview;
@@ -367,6 +400,11 @@ class _EmailIntake extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedPurpose = purposes.any(
+      (purpose) => purpose.prompt == purposeController.text,
+    )
+        ? purposeController.text
+        : null;
     final canDraft = recipientController.text.trim().contains('@') &&
         nameController.text.trim().length >= 2 &&
         purposeController.text.trim().length >= 5;
@@ -401,39 +439,51 @@ class _EmailIntake extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
-            'Common purposes',
-            style: TextStyle(
-              color: LensColors.muted,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+          DropdownButtonFormField<String>(
+            value: selectedPurpose,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'Email purpose',
+              prefixIcon: Icon(Icons.route_outlined),
             ),
-          ),
-          const SizedBox(height: 9),
-          Wrap(
-            spacing: 7,
-            runSpacing: 7,
-            children: purposes
+            hint: const Text('Choose a starting point'),
+            items: purposes
                 .map(
-                  (purpose) => ActionChip(
-                    avatar: const Icon(Icons.bolt_rounded, size: 15),
-                    label: Text(purpose),
-                    onPressed: () {
-                      purposeController.text = purpose;
-                      onChanged();
-                    },
+                  (purpose) => DropdownMenuItem(
+                    value: purpose.prompt,
+                    child: Row(
+                      children: [
+                        Icon(
+                          purpose.icon,
+                          size: 18,
+                          color: LensColors.indigo,
+                        ),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            purpose.label,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
                 .toList(),
+            onChanged: (purpose) {
+              if (purpose == null) return;
+              purposeController.text = purpose;
+              onChanged();
+            },
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           TextField(
             controller: purposeController,
-            minLines: 3,
-            maxLines: 6,
+            minLines: 2,
+            maxLines: 4,
             onChanged: (_) => onChanged(),
             decoration: const InputDecoration(
-              labelText: 'Purpose and context',
+              labelText: 'Details',
               hintText:
                   'Explain what you need, relevant dates, and the outcome you want.',
               alignLabelWithHint: true,
@@ -594,7 +644,7 @@ class _EmailReview extends StatelessWidget {
                       dimension: 17,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(SimpleIcons.gmail),
+                  : const GmailBrandMark(size: 20),
               label: Text(
                 repository.sending
                     ? 'Sending through Gmail…'

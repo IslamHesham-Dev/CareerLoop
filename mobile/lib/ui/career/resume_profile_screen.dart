@@ -21,12 +21,10 @@ class _ResumeProfileScreenState extends State<ResumeProfileScreen> {
   Widget build(BuildContext context) {
     final repository = context.watch<CurrentCvRepository>();
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: const Text('Resume'),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'Resume evidence',
+        onBack: () => context.pop(),
       ),
       body: SafeArea(
         top: false,

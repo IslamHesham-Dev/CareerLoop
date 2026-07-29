@@ -33,12 +33,9 @@ class _LinkedInImportScreenState extends State<LinkedInImportScreen> {
     final repository = context.watch<CareerProfileRepository>();
     return Scaffold(
       backgroundColor: LensColors.canvas,
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: const Text('LinkedIn profile'),
+      appBar: LensPageAppBar(
+        title: 'LinkedIn profile',
+        onBack: () => context.pop(),
       ),
       body: SafeArea(
         top: false,

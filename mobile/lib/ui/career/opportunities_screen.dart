@@ -104,16 +104,9 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
     final result = opportunities.result;
     return Scaffold(
       backgroundColor: LensColors.canvas,
-      appBar: AppBar(
-        backgroundColor: LensColors.canvas,
-        surfaceTintColor: Colors.white,
-        scrolledUnderElevation: 1,
-        leading: IconButton(
-          tooltip: 'Back',
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: const Text('Opportunities'),
+      appBar: LensPageAppBar(
+        title: 'Opportunities',
+        onBack: () => context.pop(),
         actions: [
           IconButton(
             tooltip: 'Edit filters',

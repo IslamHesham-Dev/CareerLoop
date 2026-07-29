@@ -41,12 +41,10 @@ class _GithubProfileScreenState extends State<GithubProfileScreen> {
   Widget build(BuildContext context) {
     final repository = context.watch<GithubProfileRepository>();
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: const Text('GitHub'),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'GitHub',
+        onBack: () => context.pop(),
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: 18),

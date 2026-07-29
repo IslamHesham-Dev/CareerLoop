@@ -2,6 +2,40 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 
+class LensPageAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String title;
+  final VoidCallback onBack;
+  final List<Widget>? actions;
+
+  const LensPageAppBar({
+    super.key,
+    required this.title,
+    required this.onBack,
+    this.actions,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: LensColors.canvas,
+      foregroundColor: LensColors.ink,
+      surfaceTintColor: LensColors.canvas,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      leading: IconButton(
+        tooltip: 'Back',
+        onPressed: onBack,
+        icon: const Icon(Icons.arrow_back_rounded),
+      ),
+      title: Text(title),
+      actions: actions,
+    );
+  }
+}
+
 class LensLogo extends StatelessWidget {
   final double size;
   final bool showWordmark;

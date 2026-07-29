@@ -174,7 +174,11 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
     final transcriptReady = transcript != null && transcript.courses.isNotEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Master resume')),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'Master resume',
+        onBack: () => context.pop(),
+      ),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: ListView(

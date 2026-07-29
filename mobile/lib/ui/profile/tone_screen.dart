@@ -39,12 +39,10 @@ class _ToneScreenState extends State<ToneScreen> {
     final repository = context.watch<ToneProfileRepository>();
     final showOnboarding = _editing || !repository.configured;
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          onPressed: () => context.pop(),
-          icon: const Icon(Icons.arrow_back_rounded),
-        ),
-        title: const Text('Writing voice'),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'Add your tone',
+        onBack: () => context.pop(),
       ),
       body: SafeArea(
         top: false,

@@ -133,20 +133,17 @@ class _QuickApplyScreenState extends State<QuickApplyScreen>
     final repository = context.watch<ApplicationRepository>();
     final cvRepository = context.watch<CurrentCvRepository>();
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Post to Application'),
+      backgroundColor: LensColors.canvas,
+      appBar: LensPageAppBar(
+        title: 'Apply from a LinkedIn post',
+        onBack: () => context.pop(),
       ),
       body: GestureDetector(
         onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
         child: ListView(
           keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 40),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 40),
           children: [
-            Text(
-              'Apply from a LinkedIn post',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 16),
             _ReadinessCard(
               gmailConnected: repository.gmailConnected,
               gmailAvailable: repository.gmailAvailable,
