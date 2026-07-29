@@ -26,7 +26,7 @@ class PdfViewerScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEEF0F7),
+      backgroundColor: context.lens.canvas,
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.surface,
         foregroundColor: Theme.of(context).colorScheme.onSurface,
@@ -49,8 +49,8 @@ class PdfViewerScreen extends StatelessWidget {
               args.courseTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: LensColors.muted,
+              style: TextStyle(
+                color: context.lens.muted,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),

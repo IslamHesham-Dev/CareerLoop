@@ -45,7 +45,7 @@ class _CareerDocumentViewerScreenState
   Widget build(BuildContext context) {
     final label = _document.kind == 'resume' ? 'Resume' : 'Cover letter';
     return Scaffold(
-      backgroundColor: LensColors.canvas,
+      backgroundColor: context.lens.canvas,
       appBar: AppBar(
         titleSpacing: 4,
         title: Column(
@@ -59,8 +59,8 @@ class _CareerDocumentViewerScreenState
               '${widget.args.job.company} · Version ${_document.version}',
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: LensColors.muted,
+              style: TextStyle(
+                color: context.lens.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -109,7 +109,7 @@ class _CareerDocumentViewerScreenState
           autoSpacing: true,
           pageFling: true,
           fitPolicy: FitPolicy.WIDTH,
-          backgroundColor: LensColors.canvas,
+          backgroundColor: context.lens.canvas,
         ),
       ),
     );

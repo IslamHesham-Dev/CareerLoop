@@ -16,6 +16,7 @@ import 'data/opportunity_repository.dart';
 import 'data/repositories.dart';
 import 'data/practice_repository.dart';
 import 'data/session_storage.dart';
+import 'data/theme_controller.dart';
 import 'data/tone_profile_repository.dart';
 
 Future<void> main() async {
@@ -26,6 +27,8 @@ Future<void> main() async {
     baseUrl: Environment.apiBaseUrl,
     storage: storage,
   );
+  final themeController = ThemeController();
+  await themeController.load();
   final auth = AuthRepository(api: api, storage: storage);
   final academic = AcademicRepository(api: api);
   final cms = CmsRepository(api: api);
@@ -85,6 +88,7 @@ Future<void> main() async {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: themeController),
         ChangeNotifierProvider.value(value: auth),
         ChangeNotifierProvider.value(value: academic),
         ChangeNotifierProvider.value(value: cms),

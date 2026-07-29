@@ -53,7 +53,7 @@ class CompanyLogo extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(size * .25),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: url.isEmpty
           ? fallback
@@ -79,9 +79,9 @@ class OpportunityDetailScreen extends StatelessWidget {
         .where((course) => job.recommendedCourseIds.contains(course.id))
         .toList();
     return Scaffold(
-      backgroundColor: LensColors.canvas,
+      backgroundColor: context.lens.canvas,
       appBar: AppBar(
-        backgroundColor: LensColors.canvas,
+        backgroundColor: context.lens.canvas,
         surfaceTintColor: Colors.white,
         scrolledUnderElevation: 1,
         leading: IconButton(
@@ -153,7 +153,7 @@ class _PositionHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,8 +173,8 @@ class _PositionHeader extends StatelessWidget {
                   children: [
                     Text(
                       job.company,
-                      style: const TextStyle(
-                        color: LensColors.muted,
+                      style: TextStyle(
+                        color: context.lens.muted,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -182,8 +182,8 @@ class _PositionHeader extends StatelessWidget {
                     const SizedBox(height: 5),
                     Text(
                       job.title,
-                      style: const TextStyle(
-                        color: LensColors.ink,
+                      style: TextStyle(
+                        color: context.lens.ink,
                         fontSize: 21,
                         height: 1.18,
                         fontWeight: FontWeight.w800,
@@ -197,10 +197,10 @@ class _PositionHeader extends StatelessWidget {
           const SizedBox(height: 18),
           Row(
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on_outlined,
                 size: 17,
-                color: LensColors.muted,
+                color: context.lens.muted,
               ),
               const SizedBox(width: 7),
               Expanded(
@@ -208,8 +208,8 @@ class _PositionHeader extends StatelessWidget {
                   job.location,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: context.lens.muted,
                     fontSize: 12,
                     height: 1.35,
                   ),
@@ -290,7 +290,7 @@ class _ListingFacts extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Column(
         children: [
@@ -310,8 +310,8 @@ class _ListingFacts extends StatelessWidget {
                     width: 88,
                     child: Text(
                       facts[index].label,
-                      style: const TextStyle(
-                        color: LensColors.muted,
+                      style: TextStyle(
+                        color: context.lens.muted,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -376,11 +376,11 @@ class _FitCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (job.matchReasons.isEmpty)
-            const Align(
+            Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'No specific match reasons were returned for this role.',
-                style: TextStyle(color: LensColors.muted, fontSize: 12),
+                style: TextStyle(color: context.lens.muted, fontSize: 12),
               ),
             )
           else
@@ -427,14 +427,14 @@ class _FitCard extends StatelessWidget {
             children: [
               Text(
                 used.isEmpty ? 'Preference signals only' : used.join(' · '),
-                style: const TextStyle(color: LensColors.muted, fontSize: 12),
+                style: TextStyle(color: context.lens.muted, fontSize: 12),
               ),
               if (limitations.isNotEmpty) ...[
                 const SizedBox(height: 14),
                 ...limitations.map(
                   (item) => _ReasonRow(
                     icon: Icons.info_outline_rounded,
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     text: item,
                   ),
                 ),
@@ -506,7 +506,7 @@ class _ApplicationDocuments extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: LensColors.line),
+                border: Border.all(color: context.lens.line),
               ),
               child: Column(
                 children: [
@@ -627,7 +627,7 @@ class _DocumentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: LensColors.canvas,
+      color: context.lens.canvas,
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
         onTap: loading ? null : onTap,
@@ -660,8 +660,8 @@ class _DocumentRow extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: LensColors.muted,
+                      style: TextStyle(
+                        color: context.lens.muted,
                         fontSize: 11,
                         height: 1.3,
                       ),
@@ -706,10 +706,10 @@ class _QualificationPath extends StatelessWidget {
         const _SectionTitle(title: 'Recommended learning'),
         const SizedBox(height: 11),
         if (courses.isEmpty)
-          const LensCard(
+          LensCard(
             child: Text(
               'No catalogue course maps strongly to this role yet. Ask AI for a focused preparation plan.',
-              style: TextStyle(color: LensColors.muted, height: 1.4),
+              style: TextStyle(color: context.lens.muted, height: 1.4),
             ),
           )
         else
@@ -766,7 +766,7 @@ class _CourseStep extends StatelessWidget {
                 top: -5,
                 child: CircleAvatar(
                   radius: 9,
-                  backgroundColor: LensColors.ink,
+                  backgroundColor: context.lens.ink,
                   child: Text(
                     '$number',
                     style: const TextStyle(
@@ -804,8 +804,8 @@ class _CourseStep extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   '${course.level} · ${course.duration}',
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),
@@ -853,9 +853,9 @@ class _ActionBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: LensColors.line)),
+        border: Border(top: BorderSide(color: context.lens.line)),
       ),
       child: SafeArea(
         minimum: const EdgeInsets.fromLTRB(16, 10, 16, 12),

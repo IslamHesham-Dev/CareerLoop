@@ -5,6 +5,7 @@ import '../../data/repositories.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
 import '../../data/github_profile_repository.dart';
+import '../../data/theme_controller.dart';
 import '../../data/tone_profile_repository.dart';
 import '../core/lens_components.dart';
 
@@ -24,7 +25,8 @@ class _LoginScreenState extends State<LoginScreen> {
   String _institution = 'giu';
   bool _obscure = true;
   int _step = 0;
-  bool _isDark = true;
+
+  bool get _isDark => context.watch<ThemeController>().isDark;
 
   // Dark palette
   static const _bgDark = Color(0xFF0B0D14);
@@ -314,7 +316,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: IconButton(
                   tooltip:
                       _isDark ? 'Switch to light mode' : 'Switch to dark mode',
-                  onPressed: () => setState(() => _isDark = !_isDark),
+                  onPressed: () =>
+                      context.read<ThemeController>().toggle(),
                   icon: Icon(
                     _isDark
                         ? Icons.light_mode_outlined

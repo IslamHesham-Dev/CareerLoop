@@ -81,7 +81,7 @@ Future<void> showAiAssistSheet(
                 child: Material(
                   color: action.enabled
                       ? LensColors.indigo.withValues(alpha: .045)
-                      : LensColors.line.withValues(alpha: .35),
+                      : context.lens.line.withValues(alpha: .35),
                   borderRadius: BorderRadius.circular(18),
                   child: InkWell(
                     onTap: action.enabled
@@ -98,7 +98,7 @@ Future<void> showAiAssistSheet(
                             decoration: BoxDecoration(
                               color: (action.enabled
                                       ? LensColors.violet
-                                      : LensColors.muted)
+                                      : context.lens.muted)
                                   .withValues(alpha: .10),
                               borderRadius: BorderRadius.circular(13),
                             ),
@@ -107,7 +107,7 @@ Future<void> showAiAssistSheet(
                               size: 19,
                               color: action.enabled
                                   ? LensColors.violet
-                                  : LensColors.muted,
+                                  : context.lens.muted,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -119,8 +119,8 @@ Future<void> showAiAssistSheet(
                                   action.title,
                                   style: TextStyle(
                                     color: action.enabled
-                                        ? LensColors.ink
-                                        : LensColors.muted,
+                                        ? context.lens.ink
+                                        : context.lens.muted,
                                     fontWeight: FontWeight.w800,
                                   ),
                                 ),
@@ -140,7 +140,7 @@ Future<void> showAiAssistSheet(
                             action.enabled
                                 ? Icons.arrow_forward_rounded
                                 : Icons.lock_outline_rounded,
-                            color: LensColors.muted,
+                            color: context.lens.muted,
                             size: 18,
                           ),
                         ],

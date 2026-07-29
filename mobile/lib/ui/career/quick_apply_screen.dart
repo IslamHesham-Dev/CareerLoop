@@ -511,7 +511,7 @@ class _ApplicationReview extends StatelessWidget {
                 const SizedBox(height: 5),
                 Text(
                   draft.company!,
-                  style: const TextStyle(color: LensColors.muted),
+                  style: TextStyle(color: context.lens.muted),
                 ),
               ],
               const SizedBox(height: 16),
@@ -606,14 +606,14 @@ class _ApplicationReview extends StatelessWidget {
                   onPressed: ready && !repository.sending ? onSend : null,
                   style: FilledButton.styleFrom(
                     backgroundColor: LensColors.aqua,
-                    foregroundColor: LensColors.ink,
+                    foregroundColor: context.lens.ink,
                   ),
                   icon: repository.sending
-                      ? const SizedBox.square(
+                      ? SizedBox.square(
                           dimension: 17,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: LensColors.ink,
+                            color: context.lens.ink,
                           ),
                         )
                       : const Icon(Icons.send_rounded),
@@ -660,10 +660,10 @@ class _QuickApplyDocumentStudio extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Generate or open the tailored files that will be attached after approval.',
             style: TextStyle(
-              color: LensColors.muted,
+              color: context.lens.muted,
               fontSize: 12,
               height: 1.4,
             ),
@@ -776,7 +776,7 @@ class _QuickApplyDocumentAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: LensColors.canvas,
+      color: context.lens.canvas,
       borderRadius: BorderRadius.circular(17),
       child: InkWell(
         onTap: loading ? null : onTap,
@@ -815,16 +815,16 @@ class _QuickApplyDocumentAction extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: LensColors.ink,
+                      style: TextStyle(
+                        color: context.lens.ink,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 3),
                     Text(
                       loading ? 'Generating and compiling PDF…' : subtitle,
-                      style: const TextStyle(
-                        color: LensColors.muted,
+                      style: TextStyle(
+                        color: context.lens.muted,
                         fontSize: 11,
                       ),
                     ),
@@ -864,8 +864,8 @@ class _EnvelopeLine extends StatelessWidget {
           width: 43,
           child: Text(
             label,
-            style: const TextStyle(
-              color: LensColors.muted,
+            style: TextStyle(
+              color: context.lens.muted,
               fontSize: 11,
               letterSpacing: .8,
               fontWeight: FontWeight.w900,
@@ -875,15 +875,15 @@ class _EnvelopeLine extends StatelessWidget {
         Expanded(
           child: Text(
             value,
-            style: const TextStyle(
-              color: LensColors.ink,
+            style: TextStyle(
+              color: context.lens.ink,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
         ),
         if (locked)
-          const Icon(Icons.lock_rounded, color: LensColors.muted, size: 14),
+          Icon(Icons.lock_rounded, color: context.lens.muted, size: 14),
       ],
     );
   }
@@ -926,14 +926,14 @@ class _SentReceipt extends StatelessWidget {
           Text(
             '${result.sender} → ${result.recipient}',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: LensColors.muted),
+            style: TextStyle(color: context.lens.muted),
           ),
           const SizedBox(height: 17),
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: LensColors.canvas,
+              color: context.lens.canvas,
               borderRadius: BorderRadius.circular(16),
             ),
             child: Column(
@@ -947,8 +947,8 @@ class _SentReceipt extends StatelessWidget {
                 Text(
                   '${result.attachmentNames.join(' + ')} · '
                   'Gmail message ${result.messageId}',
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),

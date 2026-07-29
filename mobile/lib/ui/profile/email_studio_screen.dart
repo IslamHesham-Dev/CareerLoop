@@ -165,7 +165,7 @@ class _EmailStudioScreenState extends State<EmailStudioScreen>
             const SizedBox(height: 6),
             const Text(
               'CareerLoop prepares the message. You review it before Gmail sends anything.',
-              style: TextStyle(color: LensColors.muted, height: 1.45),
+              style: TextStyle(color: context.lens.muted, height: 1.45),
             ),
             const SizedBox(height: 16),
             _EmailReadiness(
@@ -311,7 +311,7 @@ class _ReadyRow extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -319,7 +319,7 @@ class _ReadyRow extends StatelessWidget {
                 Text(
                   detail!,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 12,
                   ),
                 ),
@@ -336,7 +336,7 @@ class _ReadyRow extends StatelessWidget {
             ready
                 ? Icons.check_circle_rounded
                 : Icons.remove_circle_outline_rounded,
-            color: ready ? LensColors.aqua : LensColors.muted,
+            color: ready ? LensColors.aqua : context.lens.muted,
             size: 18,
           ),
       ],
@@ -404,7 +404,7 @@ class _EmailIntake extends StatelessWidget {
           const Text(
             'Common purposes',
             style: TextStyle(
-              color: LensColors.muted,
+              color: context.lens.muted,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -587,7 +587,7 @@ class _EmailReview extends StatelessWidget {
               onPressed: ready && !repository.sending ? onSend : null,
               style: FilledButton.styleFrom(
                 backgroundColor: LensColors.aqua,
-                foregroundColor: LensColors.ink,
+                foregroundColor: context.lens.ink,
               ),
               icon: repository.sending
                   ? const SizedBox.square(
@@ -646,7 +646,7 @@ class _SentEmailReceipt extends StatelessWidget {
           Text(
             '${result.sender} → ${result.recipient}',
             textAlign: TextAlign.center,
-            style: const TextStyle(color: LensColors.muted),
+            style: const TextStyle(color: context.lens.muted),
           ),
           if (result.attachmentName != null) ...[
             const SizedBox(height: 7),

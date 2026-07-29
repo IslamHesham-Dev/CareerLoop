@@ -103,9 +103,9 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
     final opportunities = context.watch<OpportunityRepository>();
     final result = opportunities.result;
     return Scaffold(
-      backgroundColor: LensColors.canvas,
+      backgroundColor: context.lens.canvas,
       appBar: AppBar(
-        backgroundColor: LensColors.canvas,
+        backgroundColor: context.lens.canvas,
         surfaceTintColor: Colors.white,
         scrolledUnderElevation: 1,
         leading: IconButton(
@@ -238,22 +238,22 @@ class _OpportunitiesScreenState extends State<OpportunitiesScreen> {
                     padding: const EdgeInsets.fromLTRB(20, 0, 8, 10),
                     child: Row(
                       children: [
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
+                              const Text(
                                 'Search filters',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
-                              SizedBox(height: 2),
+                              const SizedBox(height: 2),
                               Text(
                                 'Choose what matters for your next role.',
                                 style: TextStyle(
-                                  color: LensColors.muted,
+                                  color: context.lens.muted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -429,7 +429,7 @@ class _FilterSummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,8 +462,8 @@ class _FilterSummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               '+${filters.length - 5} more filters',
-              style: const TextStyle(
-                color: LensColors.muted,
+              style: TextStyle(
+                color: context.lens.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),
@@ -491,13 +491,13 @@ class _SummaryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: LensColors.canvas,
+        color: context.lens.canvas,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Text(
         label,
-        style: const TextStyle(
-          color: LensColors.ink,
+        style: TextStyle(
+          color: context.lens.ink,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
@@ -536,12 +536,12 @@ class _SearchEmptyState extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 7),
-          const Text(
+          Text(
             'Set your role, market, and work preferences. CareerLoop will '
             'rank openings against your connected profile.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: LensColors.muted,
+              color: context.lens.muted,
               fontSize: 12,
               height: 1.45,
             ),
@@ -791,18 +791,18 @@ class _ResultHeader extends StatelessWidget {
             style: Theme.of(context).textTheme.titleLarge,
           ),
         ),
-        const Row(
+        Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.swap_vert_rounded,
               size: 17,
-              color: LensColors.muted,
+              color: context.lens.muted,
             ),
-            SizedBox(width: 4),
+            const SizedBox(width: 4),
             Text(
               'Best fit first',
-              style: TextStyle(color: LensColors.muted, fontSize: 11),
+              style: TextStyle(color: context.lens.muted, fontSize: 11),
             ),
           ],
         ),
@@ -843,8 +843,8 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text(
                       job.company,
-                      style: const TextStyle(
-                        color: LensColors.muted,
+                      style: TextStyle(
+                        color: context.lens.muted,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -967,21 +967,21 @@ class _JobFact extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 230),
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       decoration: BoxDecoration(
-        color: LensColors.canvas,
+        color: context.lens.canvas,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: LensColors.muted),
+          Icon(icon, size: 14, color: context.lens.muted),
           const SizedBox(width: 5),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: LensColors.muted,
+              style: TextStyle(
+                color: context.lens.muted,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
               ),

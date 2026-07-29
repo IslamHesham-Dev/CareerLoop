@@ -234,7 +234,7 @@ class _QuestionPage extends StatelessWidget {
               Text(
                 question,
                 style: const TextStyle(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   fontSize: 20,
                   height: 1.3,
                   fontWeight: FontWeight.w700,
@@ -310,7 +310,7 @@ class _ToneFooter extends StatelessWidget {
       ),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: LensColors.line)),
+        border: Border(top: BorderSide(color: context.lens.line)),
       ),
       child: Column(
         children: [
@@ -324,7 +324,7 @@ class _ToneFooter extends StatelessWidget {
                 height: 7,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
-                  color: index == page ? LensColors.indigo : LensColors.line,
+                  color: index == page ? LensColors.indigo : context.lens.line,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -425,7 +425,7 @@ class _ToneSummary extends StatelessWidget {
                         Text(
                           'Applied to new drafts',
                           style: TextStyle(
-                            color: LensColors.muted,
+                            color: context.lens.muted,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -440,7 +440,7 @@ class _ToneSummary extends StatelessWidget {
                 '${entries.length} writing sample${entries.length == 1 ? '' : 's'} '
                 'saved in your own words.',
                 style: TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   height: 1.4,
                 ),
               ),
@@ -469,7 +469,7 @@ class _ToneSummary extends StatelessWidget {
                       'CareerLoop Copilot chat reply now aim for your voice, '
                       'not a generic one.',
                       style: TextStyle(
-                        color: LensColors.muted,
+                        color: context.lens.muted,
                         fontSize: 11,
                         height: 1.45,
                       ),
@@ -497,7 +497,7 @@ class _ToneSummary extends StatelessWidget {
                 Text(
                   entry.value,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     height: 1.5,
                     fontSize: 12.5,
                   ),

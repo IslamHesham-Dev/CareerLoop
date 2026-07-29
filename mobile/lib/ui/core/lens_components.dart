@@ -34,7 +34,7 @@ class LensLogo extends StatelessWidget {
           Text(
             'CareerLoop',
             style: TextStyle(
-              color: wordmarkColor ?? LensColors.ink,
+              color: wordmarkColor ?? context.lens.ink,
               fontWeight: FontWeight.w900,
               letterSpacing: -.55,
               fontSize: size * .46,
@@ -48,16 +48,13 @@ class LensLogo extends StatelessWidget {
 
 class AuroraBackground extends StatelessWidget {
   final Widget child;
-  final bool dark;
 
-  const AuroraBackground({super.key, required this.child, this.dark = false});
+  const AuroraBackground({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: dark ? LensColors.ink : LensColors.canvas,
-      ),
+      decoration: BoxDecoration(color: context.lens.canvas),
       child: child,
     );
   }
@@ -82,12 +79,12 @@ class LensCard extends StatelessWidget {
     final content = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: color ?? LensColors.card,
+        color: color ?? context.lens.card,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
         boxShadow: [
           BoxShadow(
-            color: LensColors.ink.withValues(alpha: .025),
+            color: context.lens.ink.withValues(alpha: .025),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -124,10 +121,14 @@ class GradientPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: dark ? Colors.white.withValues(alpha: .08) : LensColors.canvas,
+        color: dark
+            ? Colors.white.withValues(alpha: .08)
+            : context.lens.canvas,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
-          color: dark ? Colors.white.withValues(alpha: .16) : LensColors.line,
+          color: dark
+              ? Colors.white.withValues(alpha: .16)
+              : context.lens.line,
         ),
       ),
       child: Row(
@@ -344,10 +345,10 @@ class CmsAccessNotice extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'CMS access is unavailable',
                   style: TextStyle(
-                    color: LensColors.ink,
+                    color: context.lens.ink,
                     fontWeight: FontWeight.w800,
                   ),
                 ),

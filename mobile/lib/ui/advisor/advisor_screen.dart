@@ -128,7 +128,7 @@ class _AdvisorScreenState extends State<AdvisorScreen> {
               ],
             ),
           ),
-          const Divider(height: 1, color: LensColors.line),
+          Divider(height: 1, color: context.lens.line),
           Expanded(
             child: advisor.messages.isEmpty
                 ? _AdvisorWelcome(onPrompt: _send)
@@ -234,7 +234,7 @@ class _AdvisorWelcome extends StatelessWidget {
         Text(
           'Ask about your academic record, course progress, or career profile.',
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: LensColors.muted,
+                color: context.lens.muted,
               ),
         ),
         const SizedBox(height: 24),
@@ -244,7 +244,7 @@ class _AdvisorWelcome extends StatelessWidget {
             child: Material(
               color: Colors.white,
               shape: RoundedRectangleBorder(
-                side: const BorderSide(color: LensColors.line),
+                side: BorderSide(color: context.lens.line),
                 borderRadius: BorderRadius.circular(14),
               ),
               clipBehavior: Clip.antiAlias,
@@ -258,16 +258,16 @@ class _AdvisorWelcome extends StatelessWidget {
                       Expanded(
                         child: Text(
                           suggestion,
-                          style: const TextStyle(
-                            color: LensColors.ink,
+                          style: TextStyle(
+                            color: context.lens.ink,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Icon(
+                      Icon(
                         Icons.arrow_forward_rounded,
-                        color: LensColors.muted,
+                        color: context.lens.muted,
                         size: 18,
                       ),
                     ],
@@ -318,18 +318,18 @@ class _MessageBubble extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.auto_awesome_rounded,
                 size: 16,
                 color: LensColors.indigo,
               ),
-              SizedBox(width: 7),
+              const SizedBox(width: 7),
               Text(
                 'CareerLoop',
                 style: TextStyle(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -342,13 +342,13 @@ class _MessageBubble extends StatelessWidget {
             selectable: true,
             styleSheet: MarkdownStyleSheet(
               p: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: LensColors.ink,
+                    color: context.lens.ink,
                     fontSize: 14,
                   ),
               h2: Theme.of(context).textTheme.titleLarge,
               h3: Theme.of(context).textTheme.titleMedium,
               listBullet: const TextStyle(color: LensColors.indigo),
-              tableBorder: TableBorder.all(color: LensColors.line),
+              tableBorder: TableBorder.all(color: context.lens.line),
               tableCellsPadding: const EdgeInsets.all(8),
             ),
           ),
@@ -367,7 +367,7 @@ class _MessageBubble extends StatelessWidget {
             sources: message.sources,
           ),
           const SizedBox(height: 2),
-          const Divider(height: 1, color: LensColors.line),
+          Divider(height: 1, color: context.lens.line),
         ],
       ),
     );
@@ -379,19 +379,19 @@ class _ThinkingBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(bottom: 22),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22),
       child: Row(
         children: [
-          SizedBox(
+          const SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
-          SizedBox(width: 10),
+          const SizedBox(width: 10),
           Text(
             'Working on your answer...',
-            style: TextStyle(fontSize: 12, color: LensColors.muted),
+            style: TextStyle(fontSize: 12, color: context.lens.muted),
           ),
         ],
       ),
@@ -438,9 +438,9 @@ class _Composer extends StatelessWidget {
         12,
         MediaQuery.paddingOf(context).bottom + 8,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: LensColors.line)),
+        border: Border(top: BorderSide(color: context.lens.line)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -454,7 +454,7 @@ class _Composer extends StatelessWidget {
               style: IconButton.styleFrom(
                 backgroundColor: LensColors.indigo.withValues(alpha: .09),
                 foregroundColor: LensColors.indigo,
-                disabledBackgroundColor: LensColors.line,
+                disabledBackgroundColor: context.lens.line,
                 minimumSize: const Size(42, 42),
                 maximumSize: const Size(42, 42),
                 padding: EdgeInsets.zero,
@@ -475,22 +475,22 @@ class _Composer extends StatelessWidget {
               decoration: InputDecoration(
                 isDense: true,
                 hintText: 'Ask CareerLoop...',
-                hintStyle: const TextStyle(
-                  color: LensColors.muted,
+                hintStyle: TextStyle(
+                  color: context.lens.muted,
                   fontSize: 14,
                 ),
-                fillColor: LensColors.canvas,
+                fillColor: context.lens.canvas,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 14,
                   vertical: 11,
                 ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: LensColors.line),
+                  borderSide: BorderSide(color: context.lens.line),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
-                  borderSide: const BorderSide(color: LensColors.line),
+                  borderSide: BorderSide(color: context.lens.line),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -540,7 +540,7 @@ class _Composer extends StatelessWidget {
       isScrollControlled: true,
       useSafeArea: true,
       showDragHandle: true,
-      backgroundColor: LensColors.canvas,
+      backgroundColor: context.lens.canvas,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -553,23 +553,23 @@ class _Composer extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 8, 14),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           'Quick prompts',
                           style: TextStyle(
-                            color: LensColors.ink,
+                            color: context.lens.ink,
                             fontSize: 19,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 3),
+                        const SizedBox(height: 3),
                         Text(
                           'Choose a focused starting point.',
                           style: TextStyle(
-                            color: LensColors.muted,
+                            color: context.lens.muted,
                             fontSize: 12,
                           ),
                         ),
@@ -584,7 +584,7 @@ class _Composer extends StatelessWidget {
                 ],
               ),
             ),
-            const Divider(height: 1, color: LensColors.line),
+            Divider(height: 1, color: context.lens.line),
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -595,7 +595,7 @@ class _Composer extends StatelessWidget {
                   final color = _promptColors[index % _promptColors.length];
                   final icon = _promptIcons[index % _promptIcons.length];
                   return Material(
-                    color: LensColors.card,
+                    color: context.lens.card,
                     borderRadius: BorderRadius.circular(17),
                     clipBehavior: Clip.antiAlias,
                     child: InkWell(
@@ -604,7 +604,7 @@ class _Composer extends StatelessWidget {
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(17),
-                          border: Border.all(color: LensColors.line),
+                          border: Border.all(color: context.lens.line),
                         ),
                         child: Row(
                           children: [
@@ -621,8 +621,8 @@ class _Composer extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 prompt,
-                                style: const TextStyle(
-                                  color: LensColors.ink,
+                                style: TextStyle(
+                                  color: context.lens.ink,
                                   fontSize: 13.5,
                                   height: 1.35,
                                   fontWeight: FontWeight.w700,
@@ -630,9 +630,9 @@ class _Composer extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_rounded,
-                              color: LensColors.muted,
+                              color: context.lens.muted,
                               size: 18,
                             ),
                           ],

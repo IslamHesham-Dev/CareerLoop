@@ -158,8 +158,8 @@ class _GradeScaleCard extends StatelessWidget {
                       width: 76,
                       child: Text(
                         '${band.percentageRange}%',
-                        style: const TextStyle(
-                          color: LensColors.muted,
+                        style: TextStyle(
+                          color: context.lens.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -168,8 +168,8 @@ class _GradeScaleCard extends StatelessWidget {
                       width: 42,
                       child: Text(
                         band.letter,
-                        style: const TextStyle(
-                          color: LensColors.ink,
+                        style: TextStyle(
+                          color: context.lens.ink,
                           fontWeight: FontWeight.w800,
                           fontSize: 12,
                         ),
@@ -179,8 +179,8 @@ class _GradeScaleCard extends StatelessWidget {
                       child: Text(
                         'GPA ${band.gpaRange}',
                         textAlign: TextAlign.end,
-                        style: const TextStyle(
-                          color: LensColors.muted,
+                        style: TextStyle(
+                          color: context.lens.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -210,10 +210,10 @@ class _GpaHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Cumulative GPA',
                   style: TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontWeight: FontWeight.w700,
                     fontSize: 12,
                   ),
@@ -221,8 +221,8 @@ class _GpaHero extends StatelessWidget {
                 const SizedBox(height: 7),
                 Text(
                   transcript.cumulativeGpaWithGrade,
-                  style: const TextStyle(
-                    color: LensColors.ink,
+                  style: TextStyle(
+                    color: context.lens.ink,
                     fontWeight: FontWeight.w800,
                     fontSize: 32,
                     letterSpacing: -1,
@@ -231,8 +231,8 @@ class _GpaHero extends StatelessWidget {
                 const SizedBox(height: 7),
                 Text(
                   '${transcript.courses.length} courses in ${transcript.year}',
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: context.lens.muted,
                     fontSize: 12,
                   ),
                 ),
@@ -342,8 +342,8 @@ class _SemesterSection extends StatelessWidget {
                           if (course.numeric.isNotEmpty)
                             Text(
                               course.gpaWithGrade,
-                              style: const TextStyle(
-                                color: LensColors.ink,
+                              style: TextStyle(
+                                color: context.lens.ink,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
                               ),

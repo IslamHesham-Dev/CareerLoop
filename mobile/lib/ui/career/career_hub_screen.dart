@@ -80,10 +80,10 @@ class _CareerAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: LensColors.card,
+      color: context.lens.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: LensColors.line),
+        side: BorderSide(color: context.lens.line),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
@@ -109,9 +109,9 @@ class _CareerAction extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_rounded,
-                color: LensColors.muted,
+                color: context.lens.muted,
                 size: 21,
               ),
             ],
@@ -142,9 +142,9 @@ class _ReadinessCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(17, 17, 13, 14),
       decoration: BoxDecoration(
-        color: LensColors.card,
+        color: context.lens.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -184,7 +184,7 @@ class _ReadinessCard extends StatelessWidget {
               value: ready / sources.length,
               minHeight: 6,
               color: LensColors.aqua,
-              backgroundColor: LensColors.line,
+              backgroundColor: context.lens.line,
             ),
           ),
           const SizedBox(height: 14),
@@ -198,14 +198,14 @@ class _ReadinessCard extends StatelessWidget {
                         ? Icons.check_circle_rounded
                         : Icons.circle_outlined,
                     size: 18,
-                    color: source.ready ? LensColors.aqua : LensColors.muted,
+                    color: source.ready ? LensColors.aqua : context.lens.muted,
                   ),
                   const SizedBox(width: 9),
                   Expanded(
                     child: Text(
                       source.name,
                       style: TextStyle(
-                        color: source.ready ? LensColors.ink : LensColors.muted,
+                        color: source.ready ? context.lens.ink : context.lens.muted,
                         fontSize: 13,
                         fontWeight:
                             source.ready ? FontWeight.w600 : FontWeight.w400,
@@ -215,7 +215,7 @@ class _ReadinessCard extends StatelessWidget {
                   Text(
                     source.ready ? 'Ready' : 'Not added',
                     style: TextStyle(
-                      color: source.ready ? LensColors.aqua : LensColors.muted,
+                      color: source.ready ? LensColors.aqua : context.lens.muted,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),

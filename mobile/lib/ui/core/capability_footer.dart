@@ -67,7 +67,7 @@ class _CapabilityFooterState extends State<CapabilityFooter> {
       padding: EdgeInsets.only(top: widget.compact ? 7 : 10),
       decoration: const BoxDecoration(
         border: Border(
-          top: BorderSide(color: LensColors.line),
+          top: BorderSide(color: context.lens.line),
         ),
       ),
       child: Column(
@@ -87,14 +87,14 @@ class _CapabilityFooterState extends State<CapabilityFooter> {
                     Icon(
                       Icons.account_tree_outlined,
                       size: widget.compact ? 14 : 16,
-                      color: LensColors.muted,
+                      color: context.lens.muted,
                     ),
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
                         'Sources & tools (${items.length})',
                         style: TextStyle(
-                          color: LensColors.muted,
+                          color: context.lens.muted,
                           fontSize: widget.compact ? 10 : 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -106,7 +106,7 @@ class _CapabilityFooterState extends State<CapabilityFooter> {
                       child: Icon(
                         Icons.keyboard_arrow_down_rounded,
                         size: widget.compact ? 18 : 20,
-                        color: LensColors.muted,
+                        color: context.lens.muted,
                       ),
                     ),
                   ],
@@ -287,7 +287,7 @@ class _CapabilityChip extends StatelessWidget {
           Text(
             '${item.kind} \u00B7 ${item.label}${item.failed ? ' failed' : ''}',
             style: TextStyle(
-              color: item.failed ? LensColors.rose : LensColors.ink,
+              color: item.failed ? LensColors.rose : context.lens.ink,
               fontSize: compact ? 9 : 9.5,
               fontWeight: FontWeight.w700,
             ),

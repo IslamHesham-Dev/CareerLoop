@@ -252,9 +252,9 @@ class _CmsStatus extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
       decoration: BoxDecoration(
-        color: LensColors.card,
+        color: context.lens.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Row(
         children: [

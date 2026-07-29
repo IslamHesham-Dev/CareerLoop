@@ -56,7 +56,7 @@ class PracticeLaunchCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: LensColors.muted,
+                        color: context.lens.muted,
                         fontSize: 11,
                       ),
                     ),

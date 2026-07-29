@@ -188,7 +188,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
             const SizedBox(height: 6),
             const Text(
               'Build a one-page resume from your academic history and connected profile sources.',
-              style: TextStyle(color: LensColors.muted, height: 1.45),
+              style: TextStyle(color: context.lens.muted, height: 1.45),
             ),
             const SizedBox(height: 16),
             LensCard(
@@ -324,7 +324,7 @@ class _MasterResumeScreenState extends State<MasterResumeScreen> {
               'is automatically saved as your active resume for matching and '
               'email attachments.',
               style: TextStyle(
-                color: LensColors.muted,
+                color: context.lens.muted,
                 fontSize: 11,
                 height: 1.4,
               ),
@@ -364,7 +364,7 @@ class _EvidenceLine extends StatelessWidget {
               Text(
                 title,
                 style: const TextStyle(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -372,7 +372,7 @@ class _EvidenceLine extends StatelessWidget {
               Text(
                 value,
                 style: const TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   fontSize: 12,
                 ),
               ),
@@ -385,7 +385,7 @@ class _EvidenceLine extends StatelessWidget {
               : optional
                   ? Icons.remove_circle_outline_rounded
                   : Icons.sync_rounded,
-          color: ready ? LensColors.aqua : LensColors.muted,
+          color: ready ? LensColors.aqua : context.lens.muted,
           size: 18,
         ),
       ],

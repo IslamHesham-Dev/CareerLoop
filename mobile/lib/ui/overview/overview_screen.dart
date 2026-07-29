@@ -80,7 +80,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                       gpa: academic.transcript?.cumulativeGpaWithGrade,
                     ),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: LensColors.muted,
+                          color: context.lens.muted,
                           height: 1.4,
                         ),
                   ),
@@ -233,10 +233,10 @@ class _SeasonChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = academic.context?.currentSeason ?? fallback;
     return Material(
-      color: LensColors.card,
+      color: context.lens.card,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(999),
-        side: const BorderSide(color: LensColors.line),
+        side: const BorderSide(color: context.lens.line),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(999),
@@ -276,7 +276,7 @@ class _SeasonChip extends StatelessWidget {
               const Icon(
                 Icons.expand_more_rounded,
                 size: 16,
-                color: LensColors.muted,
+                color: context.lens.muted,
               ),
             ],
           ),
@@ -500,7 +500,7 @@ class _SnapshotValue extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              color: LensColors.ink,
+              color: context.lens.ink,
               fontSize: 17,
               fontWeight: FontWeight.w800,
             ),
@@ -509,7 +509,7 @@ class _SnapshotValue extends StatelessWidget {
           Text(
             label,
             style: const TextStyle(
-              color: LensColors.muted,
+              color: context.lens.muted,
               fontSize: 12,
             ),
           ),
@@ -526,7 +526,7 @@ class _MetricDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SizedBox(
       height: 38,
-      child: VerticalDivider(width: 1, color: LensColors.line),
+      child: VerticalDivider(width: 1, color: context.lens.line),
     );
   }
 }
@@ -593,7 +593,7 @@ class _ActionRow extends StatelessWidget {
           const SizedBox(width: 8),
           const Icon(
             Icons.chevron_right_rounded,
-            color: LensColors.muted,
+            color: context.lens.muted,
           ),
         ],
       ),
@@ -617,9 +617,9 @@ class _Surface extends StatelessWidget {
     final surface = Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: LensColors.card,
+        color: context.lens.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: child,
     );

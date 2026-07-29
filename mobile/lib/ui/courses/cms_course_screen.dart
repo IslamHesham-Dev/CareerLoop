@@ -463,7 +463,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                             const Text(
                               'Choose an assessment and the exact PDFs to use',
                               style: TextStyle(
-                                color: LensColors.muted,
+                                color: context.lens.muted,
                                 fontSize: 11,
                               ),
                             ),
@@ -524,7 +524,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                   ),
                   const Text(
                     'CareerLoop will read these PDFs securely before answering.',
-                    style: TextStyle(color: LensColors.muted, fontSize: 11),
+                    style: TextStyle(color: context.lens.muted, fontSize: 11),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -733,7 +733,7 @@ class _CourseSummary extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Row(
         children: [
@@ -747,7 +747,7 @@ class _CourseSummary extends StatelessWidget {
           Container(
             width: 1,
             height: 36,
-            color: LensColors.line,
+            color: context.lens.line,
           ),
           Expanded(
             child: _SummaryMetric(
@@ -782,7 +782,7 @@ class _CourseContentTabs extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Row(
         children: [
@@ -850,7 +850,7 @@ class _CourseContentTab extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: selected ? accent : LensColors.muted,
+                color: selected ? accent : context.lens.muted,
               ),
               const SizedBox(width: 7),
               Flexible(
@@ -858,7 +858,7 @@ class _CourseContentTab extends StatelessWidget {
                   label,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selected ? LensColors.ink : LensColors.muted,
+                    color: selected ? context.lens.ink : context.lens.muted,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -869,13 +869,13 @@ class _CourseContentTab extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected
                       ? accent.withValues(alpha: .13)
-                      : LensColors.line.withValues(alpha: .7),
+                      : context.lens.line.withValues(alpha: .7),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
                   '$count',
                   style: TextStyle(
-                    color: selected ? accent : LensColors.muted,
+                    color: selected ? accent : context.lens.muted,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
@@ -1223,7 +1223,7 @@ class _VideoCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: (transcriptReady
                                 ? LensColors.aqua
-                                : LensColors.muted)
+                                : context.lens.muted)
                             .withValues(alpha: .10),
                         borderRadius: BorderRadius.circular(999),
                       ),
@@ -1237,7 +1237,7 @@ class _VideoCard extends StatelessWidget {
                             size: 11,
                             color: transcriptReady
                                 ? LensColors.aqua
-                                : LensColors.muted,
+                                : context.lens.muted,
                           ),
                           const SizedBox(width: 4),
                           Text(
@@ -1245,7 +1245,7 @@ class _VideoCard extends StatelessWidget {
                             style: TextStyle(
                               color: transcriptReady
                                   ? LensColors.aqua
-                                  : LensColors.muted,
+                                  : context.lens.muted,
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
                             ),
@@ -1265,12 +1265,12 @@ class _VideoCard extends StatelessWidget {
             onPressed: onAskAi,
             icon: Icon(
               Icons.auto_awesome_rounded,
-              color: transcriptReady ? LensColors.violet : LensColors.muted,
+              color: transcriptReady ? LensColors.violet : context.lens.muted,
               size: 18,
             ),
           ),
           const SizedBox(width: 4),
-          const Icon(Icons.play_circle_outline, color: LensColors.muted),
+          const Icon(Icons.play_circle_outline, color: context.lens.muted),
         ],
       ),
     );

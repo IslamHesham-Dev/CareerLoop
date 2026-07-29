@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../data/models.dart';
 import '../data/repositories.dart';
+import '../data/theme_controller.dart';
 import '../ui/advisor/advisor_screen.dart';
 import '../ui/auth/login_screen.dart';
 import '../ui/career/career_hub_screen.dart';
@@ -236,10 +237,13 @@ class _CareerLoopAppState extends State<CareerLoopApp> {
 
   @override
   Widget build(BuildContext context) {
+    final themeMode = context.watch<ThemeController>().themeMode;
     return MaterialApp.router(
       title: 'CareerLoop',
       debugShowCheckedModeBanner: false,
       theme: CareerLoopTheme.light(),
+      darkTheme: CareerLoopTheme.dark(),
+      themeMode: themeMode,
       routerConfig: _router,
     );
   }

@@ -47,7 +47,7 @@ class PracticeLibraryScreen extends StatelessWidget {
                     Text(
                       'Ask CareerLoop to prepare you for a quiz, midterm, or final.',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: LensColors.muted),
+                      style: TextStyle(color: context.lens.muted),
                     ),
                   ],
                 ),
@@ -109,7 +109,7 @@ class PracticeLibraryScreen extends StatelessWidget {
                                 '${set.questions.length} MCQs · '
                                 '${DateFormat.MMMd().format(set.createdAt)}',
                                 style: const TextStyle(
-                                  color: LensColors.muted,
+                                  color: context.lens.muted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -118,7 +118,7 @@ class PracticeLibraryScreen extends StatelessWidget {
                         ),
                         const Icon(
                           Icons.chevron_right_rounded,
-                          color: LensColors.muted,
+                          color: context.lens.muted,
                         ),
                       ],
                     ),
@@ -175,7 +175,7 @@ class _PracticeSessionScreenState extends State<PracticeSessionScreen> {
             Text(
               widget.practiceSet.course,
               style: const TextStyle(
-                color: LensColors.muted,
+                color: context.lens.muted,
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
@@ -334,7 +334,7 @@ class _QuestionView extends StatelessWidget {
               Text(
                 '${index + 1}/$total',
                 style: const TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -468,7 +468,7 @@ class _OptionTile extends StatelessWidget {
           padding: const EdgeInsets.all(15),
           decoration: BoxDecoration(
             border: Border.all(
-              color: isCorrect || isSelected ? color : LensColors.line,
+              color: isCorrect || isSelected ? color : context.lens.line,
               width: isCorrect || isSelected ? 1.5 : 1,
             ),
             borderRadius: BorderRadius.circular(14),
@@ -547,7 +547,7 @@ class _CompletionView extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 '$score of $total correct · $percentage%',
-                style: const TextStyle(color: LensColors.muted),
+                style: const TextStyle(color: context.lens.muted),
               ),
               const SizedBox(height: 22),
               SizedBox(

@@ -189,24 +189,24 @@ class _ConnectionExperience extends StatelessWidget {
       children: [
         LensCard(
           padding: const EdgeInsets.all(20),
-          child: const Column(
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(SimpleIcons.github, size: 36, color: LensColors.ink),
-              SizedBox(height: 18),
+              Icon(SimpleIcons.github, size: 36, color: context.lens.ink),
+              const SizedBox(height: 18),
               Text(
                 'Connect your GitHub profile',
                 style: TextStyle(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   fontSize: 23,
                   fontWeight: FontWeight.w800,
                 ),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 8),
               Text(
                 'CareerLoop reads public repositories and uses verified project details when matching roles.',
                 style: TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   fontSize: 14,
                   height: 1.5,
                 ),
@@ -215,10 +215,10 @@ class _ConnectionExperience extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 22),
-        const Text(
+        Text(
           'What is imported',
           style: TextStyle(
-            color: LensColors.ink,
+            color: context.lens.ink,
             fontSize: 15,
             fontWeight: FontWeight.w700,
           ),
@@ -245,12 +245,12 @@ class _ConnectionExperience extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'This build requests GitHub identity access and analyzes only '
                 'public, non-fork, non-archived repositories. It does not ask '
                 'for private-repository access or modify your account.',
                 style: TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   fontSize: 11,
                   height: 1.45,
                 ),
@@ -274,10 +274,10 @@ class _ConnectionExperience extends StatelessWidget {
                 const SizedBox(height: 18),
                 const Divider(),
                 const SizedBox(height: 10),
-                const Text(
+                Text(
                   'One-time code',
                   style: TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -300,7 +300,7 @@ class _ConnectionExperience extends StatelessWidget {
                     width: double.infinity,
                     padding: const EdgeInsets.fromLTRB(16, 6, 7, 6),
                     decoration: BoxDecoration(
-                      color: LensColors.canvas,
+                      color: context.lens.canvas,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
@@ -354,12 +354,12 @@ class _ConnectionExperience extends StatelessWidget {
                         color: LensColors.indigo,
                       ),
                     const SizedBox(width: 8),
-                    const Expanded(
+                    Expanded(
                       child: Text(
                         'Waiting for approval. Repository analysis starts '
                         'automatically after authorization.',
                         style: TextStyle(
-                          color: LensColors.muted,
+                          color: context.lens.muted,
                           fontSize: 12,
                         ),
                       ),
@@ -456,7 +456,7 @@ class _ExtractionGrid extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: .9),
             borderRadius: BorderRadius.circular(19),
-            border: Border.all(color: LensColors.line),
+            border: Border.all(color: context.lens.line),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -473,8 +473,8 @@ class _ExtractionGrid extends StatelessWidget {
                 item.$3,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: LensColors.muted,
+                style: TextStyle(
+                  color: context.lens.muted,
                   fontSize: 11,
                   height: 1.25,
                 ),
@@ -527,8 +527,8 @@ class _ConnectedProfile extends StatelessWidget {
                       children: [
                         Text(
                           profile.name ?? profile.login,
-                          style: const TextStyle(
-                            color: LensColors.ink,
+                          style: TextStyle(
+                            color: context.lens.ink,
                             fontSize: 20,
                             fontWeight: FontWeight.w900,
                           ),
@@ -548,8 +548,8 @@ class _ConnectedProfile extends StatelessWidget {
                             profile.bio!,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: LensColors.muted,
+                            style: TextStyle(
+                              color: context.lens.muted,
                               fontSize: 12,
                               height: 1.35,
                             ),
@@ -738,17 +738,17 @@ class _ConnectedProfile extends StatelessWidget {
               const SizedBox(height: 3),
               Text(
                 skill.category,
-                style: const TextStyle(
-                  color: LensColors.muted,
+                style: TextStyle(
+                  color: context.lens.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Supported by',
                 style: TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -762,9 +762,9 @@ class _ConnectedProfile extends StatelessWidget {
                     .toList(),
               ),
               const SizedBox(height: 14),
-              const Text(
+              Text(
                 'CareerLoop treats this as evidence of use, not a claim of mastery.',
-                style: TextStyle(color: LensColors.muted, fontSize: 12),
+                style: TextStyle(color: context.lens.muted, fontSize: 12),
               ),
             ],
           ),
@@ -787,18 +787,18 @@ class _GithubAvatar extends StatelessWidget {
       height: 62,
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: LensColors.canvas,
+        color: context.lens.canvas,
         shape: BoxShape.circle,
-        border: Border.all(color: LensColors.line, width: 2),
+        border: Border.all(color: context.lens.line, width: 2),
       ),
       child: url.isEmpty
-          ? const Icon(SimpleIcons.github, color: LensColors.ink, size: 30)
+          ? Icon(SimpleIcons.github, color: context.lens.ink, size: 30)
           : Image.network(
               url,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => const Icon(
+              errorBuilder: (_, __, ___) => Icon(
                 SimpleIcons.github,
-                color: LensColors.ink,
+                color: context.lens.ink,
                 size: 30,
               ),
             ),
@@ -820,15 +820,15 @@ class _ProfileMetric extends StatelessWidget {
         children: [
           Text(
             value,
-            style: const TextStyle(
-              color: LensColors.ink,
+            style: TextStyle(
+              color: context.lens.ink,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
           Text(
             label,
-            style: const TextStyle(color: LensColors.muted, fontSize: 11),
+            style: TextStyle(color: context.lens.muted, fontSize: 11),
           ),
         ],
       ),
@@ -858,7 +858,7 @@ class _LanguageBar extends StatelessWidget {
             Text(
               '${(ratio * 100).toStringAsFixed(1)}%',
               style: const TextStyle(
-                color: LensColors.muted,
+                color: context.lens.muted,
                 fontSize: 11,
               ),
             ),
@@ -870,7 +870,7 @@ class _LanguageBar extends StatelessWidget {
           child: LinearProgressIndicator(
             minHeight: 7,
             value: ratio.clamp(0, 1),
-            backgroundColor: LensColors.line,
+            backgroundColor: context.lens.line,
             color: LensColors.indigo,
           ),
         ),
@@ -899,7 +899,7 @@ class _RepositoryCard extends StatelessWidget {
                 height: 39,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
@@ -940,8 +940,8 @@ class _RepositoryCard extends StatelessWidget {
               repository.description!,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: LensColors.muted,
+              style: TextStyle(
+                color: context.lens.muted,
                 fontSize: 12,
                 height: 1.35,
               ),
@@ -961,7 +961,7 @@ class _RepositoryCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: LensColors.canvas,
+                        color: context.lens.canvas,
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
@@ -1000,7 +1000,7 @@ class _RepositoryCard extends StatelessWidget {
               const SizedBox(height: 5),
               Text(
                 repository.fullName,
-                style: const TextStyle(color: LensColors.muted),
+                style: TextStyle(color: context.lens.muted),
               ),
               if ((repository.description ?? '').isNotEmpty) ...[
                 const SizedBox(height: 16),
@@ -1010,10 +1010,10 @@ class _RepositoryCard extends StatelessWidget {
                 ),
               ],
               const SizedBox(height: 18),
-              const Text(
+              Text(
                 'Technologies found',
                 style: TextStyle(
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
                 ),
@@ -1028,10 +1028,10 @@ class _RepositoryCard extends StatelessWidget {
               ),
               if ((repository.readmeExcerpt ?? '').isNotEmpty) ...[
                 const SizedBox(height: 18),
-                const Text(
+                Text(
                   'README excerpt',
                   style: TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -1040,7 +1040,7 @@ class _RepositoryCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: LensColors.canvas,
+                    color: context.lens.canvas,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Text(
@@ -1112,8 +1112,8 @@ class _SectionHeading extends StatelessWidget {
       children: [
         Text(
           eyebrow,
-          style: const TextStyle(
-            color: LensColors.muted,
+          style: TextStyle(
+            color: context.lens.muted,
             fontSize: 12,
             fontWeight: FontWeight.w700,
           ),
@@ -1123,8 +1123,8 @@ class _SectionHeading extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           subtitle,
-          style: const TextStyle(
-            color: LensColors.muted,
+          style: TextStyle(
+            color: context.lens.muted,
             fontSize: 12,
             height: 1.35,
           ),

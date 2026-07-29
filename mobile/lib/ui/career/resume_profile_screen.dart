@@ -85,18 +85,18 @@ class _ResumeImport extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              const Text(
+              Text(
                 'Import your resume',
                 style: TextStyle(
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   fontSize: 23,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'CareerLoop reads the information in your PDF and makes it available for job matching and tailored documents.',
-                style: TextStyle(color: LensColors.muted, height: 1.5),
+                style: TextStyle(color: context.lens.muted, height: 1.5),
               ),
             ],
           ),
@@ -213,11 +213,11 @@ class _ExtractedProfile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 13),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Resume imported',
                           style: TextStyle(
                             color: LensColors.indigo,
@@ -225,11 +225,11 @@ class _ExtractedProfile extends StatelessWidget {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 3),
+                        const SizedBox(height: 3),
                         Text(
                           'Available to CareerLoop',
                           style: TextStyle(
-                            color: LensColors.muted,
+                            color: context.lens.muted,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -245,8 +245,8 @@ class _ExtractedProfile extends StatelessWidget {
               const SizedBox(height: 20),
               Text(
                 profile.name ?? 'Current resume',
-                style: const TextStyle(
-                  color: LensColors.ink,
+                style: TextStyle(
+                  color: context.lens.ink,
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
                 ),
@@ -256,7 +256,7 @@ class _ExtractedProfile extends StatelessWidget {
                 Text(
                   profile.headline!,
                   style: TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     height: 1.35,
                   ),
                 ),
@@ -442,8 +442,8 @@ class _EvidenceCoverage extends StatelessWidget {
                     const SizedBox(height: 3),
                     Text(
                       item.$1,
-                      style: const TextStyle(
-                        color: LensColors.muted,
+                      style: TextStyle(
+                        color: context.lens.muted,
                         fontSize: 11,
                       ),
                     ),
@@ -552,8 +552,8 @@ class _ImportCapability extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   text,
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: context.lens.muted,
                     fontSize: 11,
                     height: 1.4,
                   ),
@@ -574,26 +574,26 @@ class _AgentContextCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return LensCard(
       color: LensColors.indigo.withValues(alpha: .08),
-      child: const Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.hub_outlined, color: LensColors.indigo),
-          SizedBox(width: 12),
+          const Icon(Icons.hub_outlined, color: LensColors.indigo),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Available to CareerLoop Copilot',
                   style: TextStyle(fontWeight: FontWeight.w900),
                 ),
-                SizedBox(height: 5),
+                const SizedBox(height: 5),
                 Text(
                   'For relevant career tasks, the agent can combine this '
                   'resume with your complete academic record, LinkedIn PDF, '
                   'and GitHub projects while keeping each source traceable.',
                   style: TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 11,
                     height: 1.45,
                   ),
@@ -662,22 +662,22 @@ class _DarkFact extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 220),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: LensColors.canvas,
+        color: context.lens.canvas,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: LensColors.muted, size: 13),
+          Icon(icon, color: context.lens.muted, size: 13),
           const SizedBox(width: 6),
           Flexible(
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: LensColors.muted,
+              style: TextStyle(
+                color: context.lens.muted,
                 fontSize: 11,
               ),
             ),

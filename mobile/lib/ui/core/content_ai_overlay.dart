@@ -139,7 +139,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                     label: 'Open ${widget.title}',
                     child: Material(
                       elevation: 4,
-                      shadowColor: LensColors.ink.withValues(alpha: .18),
+                      shadowColor: context.lens.ink.withValues(alpha: .18),
                       shape: const CircleBorder(),
                       clipBehavior: Clip.antiAlias,
                       child: InkWell(
@@ -331,7 +331,7 @@ class _ChatPanel extends StatelessWidget {
                     decoration: const BoxDecoration(
                       color: Colors.white,
                       border: Border(
-                        bottom: BorderSide(color: LensColors.line),
+                        bottom: BorderSide(color: context.lens.line),
                       ),
                     ),
                     child: Row(
@@ -368,7 +368,7 @@ class _ChatPanel extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: LensColors.muted,
+                                  color: context.lens.muted,
                                   fontSize: 11,
                                 ),
                               ),
@@ -428,7 +428,7 @@ class _ChatPanel extends StatelessWidget {
                     padding: const EdgeInsets.all(10),
                     decoration: const BoxDecoration(
                       color: Colors.white,
-                      border: Border(top: BorderSide(color: LensColors.line)),
+                      border: Border(top: BorderSide(color: context.lens.line)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -520,7 +520,7 @@ class _ChatWelcome extends StatelessWidget {
         const SizedBox(height: 7),
         const Text(
           'Choose a starting action or ask your own question. The response is grounded in the open content.',
-          style: TextStyle(color: LensColors.muted, height: 1.4),
+          style: TextStyle(color: context.lens.muted, height: 1.4),
         ),
         const SizedBox(height: 20),
         ...quickActions.map(
@@ -546,7 +546,7 @@ class _ChatWelcome extends StatelessWidget {
                       ),
                       const Icon(
                         Icons.arrow_forward_rounded,
-                        color: LensColors.muted,
+                        color: context.lens.muted,
                         size: 18,
                       ),
                     ],
@@ -580,7 +580,7 @@ class _ContentMessageBubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
         decoration: BoxDecoration(
           color: message.isUser ? LensColors.indigo : Colors.white,
-          border: message.isUser ? null : Border.all(color: LensColors.line),
+          border: message.isUser ? null : Border.all(color: context.lens.line),
           borderRadius: BorderRadius.circular(18),
         ),
         child: message.isUser
@@ -596,12 +596,12 @@ class _ContentMessageBubble extends StatelessWidget {
                     selectable: true,
                     styleSheet: MarkdownStyleSheet(
                       p: const TextStyle(
-                        color: LensColors.ink,
+                        color: context.lens.ink,
                         fontSize: 13,
                         height: 1.4,
                       ),
                       listBullet: const TextStyle(color: LensColors.indigo),
-                      tableBorder: TableBorder.all(color: LensColors.line),
+                      tableBorder: TableBorder.all(color: context.lens.line),
                       tableCellsPadding: const EdgeInsets.all(6),
                     ),
                   ),
@@ -650,7 +650,7 @@ class _ContentThinkingBubble extends StatelessWidget {
             SizedBox(width: 9),
             Text(
               'Reading the open content...',
-              style: TextStyle(color: LensColors.muted, fontSize: 11),
+              style: TextStyle(color: context.lens.muted, fontSize: 11),
             ),
           ],
         ),

@@ -32,7 +32,7 @@ class _LinkedInImportScreenState extends State<LinkedInImportScreen> {
   Widget build(BuildContext context) {
     final repository = context.watch<CareerProfileRepository>();
     return Scaffold(
-      backgroundColor: LensColors.canvas,
+      backgroundColor: context.lens.canvas,
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => context.pop(),
@@ -157,11 +157,11 @@ class _GuidePage extends StatelessWidget {
           children: [
             const LinkedInBrandMark(size: 46),
             const SizedBox(width: 12),
-            const Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
+                  const Text(
                     'Import from LinkedIn',
                     style: TextStyle(
                       color: _linkedInBlue,
@@ -169,11 +169,11 @@ class _GuidePage extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
                     'Three quick steps',
                     style: TextStyle(
-                      color: LensColors.muted,
+                      color: context.lens.muted,
                       fontSize: 12,
                     ),
                   ),
@@ -182,8 +182,8 @@ class _GuidePage extends StatelessWidget {
             ),
             Text(
               step,
-              style: const TextStyle(
-                color: LensColors.line,
+              style: TextStyle(
+                color: context.lens.line,
                 fontSize: 36,
                 fontWeight: FontWeight.w900,
               ),
@@ -207,7 +207,7 @@ class _GuidePage extends StatelessWidget {
         Text(
           message,
           style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: LensColors.muted,
+                color: context.lens.muted,
               ),
         ),
         const SizedBox(height: 24),
@@ -216,7 +216,7 @@ class _GuidePage extends StatelessWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: LensColors.line),
+            border: Border.all(color: context.lens.line),
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,8 +230,8 @@ class _GuidePage extends StatelessWidget {
               Expanded(
                 child: Text(
                   note,
-                  style: const TextStyle(
-                    color: LensColors.muted,
+                  style: TextStyle(
+                    color: context.lens.muted,
                     fontSize: 11,
                     height: 1.4,
                   ),
@@ -267,9 +267,9 @@ class _GuideFooter extends StatelessWidget {
         22,
         MediaQuery.paddingOf(context).bottom + 14,
       ),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: LensColors.line)),
+        border: Border(top: BorderSide(color: context.lens.line)),
       ),
       child: Column(
         children: [
@@ -283,7 +283,7 @@ class _GuideFooter extends StatelessWidget {
                 height: 7,
                 margin: const EdgeInsets.symmetric(horizontal: 3),
                 decoration: BoxDecoration(
-                  color: index == page ? _linkedInBlue : LensColors.line,
+                  color: index == page ? _linkedInBlue : context.lens.line,
                   borderRadius: BorderRadius.circular(99),
                 ),
               ),
@@ -474,12 +474,12 @@ class _ConnectedProfile extends StatelessWidget {
           label: const Text('Remove imported profile'),
         ),
         const SizedBox(height: 10),
-        const Text(
+        Text(
           'This is a user-imported snapshot, not a live LinkedIn connection. '
           'CareerLoop never logs into or scrapes your LinkedIn account.',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: LensColors.muted,
+            color: context.lens.muted,
             fontSize: 11,
             height: 1.4,
           ),
@@ -534,7 +534,7 @@ class _MetadataRow extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(color: LensColors.muted, fontSize: 11),
+            style: TextStyle(color: context.lens.muted, fontSize: 11),
           ),
         ),
         Flexible(

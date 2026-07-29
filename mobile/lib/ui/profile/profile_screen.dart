@@ -10,6 +10,7 @@ import '../../data/current_cv_repository.dart';
 import '../../data/email_repository.dart';
 import '../../data/github_profile_repository.dart';
 import '../../data/repositories.dart';
+import '../../data/theme_controller.dart';
 import '../../data/tone_profile_repository.dart';
 import '../core/brand_marks.dart';
 import '../core/lens_components.dart';
@@ -124,7 +125,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
             onTap: () => context.push('/email-studio'),
           ),
           const SizedBox(height: 26),
+          const _Header(title: 'Appearance', detail: ''),
+          const SizedBox(height: 12),
+          _ThemeToggleCard(controller: context.watch<ThemeController>()),
+          const SizedBox(height: 26),
           _SignOutButton(auth: context.watch<AuthRepository>()),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThemeToggleCard extends StatelessWidget {
+  final ThemeController controller;
+
+  const _ThemeToggleCard({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = controller.isDark;
+    return LensCard(
+      padding: const EdgeInsets.all(15),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: LensColors.indigo.withValues(alpha: .09),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+              color: LensColors.indigo,
+              size: 21,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isDark ? 'Dark mode' : 'Light mode',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Switch how CareerLoop looks on this device',
+                  style: TextStyle(
+                    color: context.lens.muted,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: isDark,
+            onChanged: (value) => controller.setDark(value),
+          ),
         ],
       ),
     );
@@ -207,7 +271,7 @@ class _ProfileHero extends StatelessWidget {
                   child: CircularProgressIndicator(
                     value: progress,
                     strokeWidth: 6,
-                    backgroundColor: LensColors.line,
+                    backgroundColor: context.lens.line,
                     color: LensColors.aqua,
                   ),
                 ),
@@ -237,7 +301,7 @@ class _ProfileHero extends StatelessWidget {
                 Text(
                   'Current GPA $gpa',
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 12,
                   ),
                 ),
@@ -302,7 +366,7 @@ class _EvidenceSource extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),
@@ -324,7 +388,7 @@ class _EvidenceSource extends StatelessWidget {
               if (onTap != null)
                 const Icon(
                   Icons.chevron_right_rounded,
-                  color: LensColors.muted,
+                  color: context.lens.muted,
                   size: 19,
                 ),
             ],
@@ -375,7 +439,7 @@ class _LinkedInConnectorCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),
@@ -435,7 +499,7 @@ class _GithubConnectorCard extends StatelessWidget {
             height: 46,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: LensColors.ink,
+              color: context.lens.ink,
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -461,7 +525,7 @@ class _GithubConnectorCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),
@@ -478,14 +542,14 @@ class _GithubConnectorCard extends StatelessWidget {
                 Text(
                   'Connect',
                   style: TextStyle(
-                    color: LensColors.ink,
+                    color: context.lens.ink,
                     fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: LensColors.ink,
+                  color: context.lens.ink,
                   size: 19,
                 ),
               ],
@@ -578,7 +642,7 @@ class _ResumeConnectorCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: connected ? LensColors.ink : LensColors.muted,
+                    color: connected ? context.lens.ink : context.lens.muted,
                     fontSize: 11,
                     fontWeight: connected ? FontWeight.w700 : FontWeight.w400,
                   ),
@@ -588,7 +652,7 @@ class _ResumeConnectorCard extends StatelessWidget {
                   Text(
                     'PDF uploaded · $skillCount skills extracted',
                     style: const TextStyle(
-                      color: LensColors.muted,
+                      color: context.lens.muted,
                       fontSize: 11,
                     ),
                   ),
@@ -683,7 +747,7 @@ class _ToneConnectorCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),
@@ -733,7 +797,7 @@ class _Header extends StatelessWidget {
         ),
         Text(
           detail,
-          style: const TextStyle(color: LensColors.muted, fontSize: 11),
+          style: const TextStyle(color: context.lens.muted, fontSize: 11),
         ),
       ],
     );

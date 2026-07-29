@@ -40,7 +40,7 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
     );
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(LensColors.ink)
+      ..setBackgroundColor(const Color(0xFF101828))
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (progress) {
@@ -62,9 +62,9 @@ class _DriveVideoScreenState extends State<DriveVideoScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: LensColors.ink,
+      backgroundColor: const Color(0xFF101828),
       appBar: AppBar(
-        backgroundColor: LensColors.ink,
+        backgroundColor: const Color(0xFF101828),
         foregroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         toolbarHeight: 64,

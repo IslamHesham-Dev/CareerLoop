@@ -23,7 +23,7 @@ class AppShell extends StatelessWidget {
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(
           color: Colors.white,
-          border: const Border(top: BorderSide(color: LensColors.line)),
+          border: const Border(top: BorderSide(color: context.lens.line)),
         ),
         child: SafeArea(
           top: false,

@@ -45,7 +45,7 @@ class _NotionExportActionState extends State<NotionExportAction> {
           : const Icon(
               SimpleIcons.notion,
               size: 15,
-              color: LensColors.ink,
+              color: context.lens.ink,
             ),
       label: Text(
         'Export to Notion',
@@ -220,7 +220,7 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: LensColors.line),
+        border: Border.all(color: context.lens.line),
       ),
       child: Row(
         children: [
@@ -228,7 +228,7 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: LensColors.ink.withValues(alpha: .07),
+              color: context.lens.ink.withValues(alpha: .07),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Icon(SimpleIcons.notion, size: 22),
@@ -248,7 +248,7 @@ class _NotionConnectionCardState extends State<NotionConnectionCard> {
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: LensColors.muted,
+                    color: context.lens.muted,
                     fontSize: 11,
                   ),
                 ),
