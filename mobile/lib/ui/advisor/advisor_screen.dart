@@ -405,6 +405,22 @@ class _Composer extends StatelessWidget {
   final VoidCallback onSend;
   final List<String> quickPrompts;
 
+  static const _promptIcons = [
+    Icons.badge_outlined,
+    Icons.analytics_outlined,
+    Icons.account_circle_outlined,
+    Icons.fact_check_outlined,
+    Icons.quiz_outlined,
+  ];
+
+  static const _promptColors = [
+    LensColors.indigo,
+    LensColors.rose,
+    LensColors.aqua,
+    LensColors.violet,
+    LensColors.amber,
+  ];
+
   const _Composer({
     required this.controller,
     required this.isSending,
@@ -432,23 +448,21 @@ class _Composer extends StatelessWidget {
           SizedBox(
             width: 42,
             height: 42,
-            child: PopupMenuButton<String>(
+            child: IconButton.filledTonal(
               tooltip: 'Quick prompts',
-              enabled: !isSending,
-              padding: EdgeInsets.zero,
+              onPressed: isSending ? null : () => _showQuickPrompts(context),
+              style: IconButton.styleFrom(
+                backgroundColor: LensColors.indigo.withValues(alpha: .09),
+                foregroundColor: LensColors.indigo,
+                disabledBackgroundColor: LensColors.line,
+                minimumSize: const Size(42, 42),
+                maximumSize: const Size(42, 42),
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(13),
+                ),
+              ),
               icon: const Icon(Icons.add_rounded),
-              onSelected: (value) {
-                controller.text = value;
-                onSend();
-              },
-              itemBuilder: (context) => quickPrompts
-                  .map(
-                    (prompt) => PopupMenuItem(
-                      value: prompt,
-                      child: Text(prompt),
-                    ),
-                  )
-                  .toList(),
             ),
           ),
           const SizedBox(width: 6),
@@ -517,5 +531,124 @@ class _Composer extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showQuickPrompts(BuildContext context) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: LensColors.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .72,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 8, 14),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quick prompts',
+                          style: TextStyle(
+                            color: LensColors.ink,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          'Choose a focused starting point.',
+                          style: TextStyle(
+                            color: LensColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: LensColors.line),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                itemCount: quickPrompts.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final prompt = quickPrompts[index];
+                  final color = _promptColors[index % _promptColors.length];
+                  final icon = _promptIcons[index % _promptIcons.length];
+                  return Material(
+                    color: LensColors.card,
+                    borderRadius: BorderRadius.circular(17),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => Navigator.of(sheetContext).pop(prompt),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(17),
+                          border: Border.all(color: LensColors.line),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: .1),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: Icon(icon, color: color, size: 21),
+                            ),
+                            const SizedBox(width: 13),
+                            Expanded(
+                              child: Text(
+                                prompt,
+                                style: const TextStyle(
+                                  color: LensColors.ink,
+                                  fontSize: 13.5,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: LensColors.muted,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    controller.text = selected;
+    onSend();
   }
 }
