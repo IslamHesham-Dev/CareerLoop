@@ -121,7 +121,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.fromLTRB(22, 24, 22, 120),
+          padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
           children: [
             Row(
               children: [

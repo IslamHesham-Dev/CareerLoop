@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 abstract final class LensColors {
-  // Calmer application variants of the light login palette.
+  // CareerLoop's interactive palette follows the purple-to-aqua brand mark.
   static const ink = Color(0xFF14171F);
   static const midnight = Color(0xFF252938);
   static const indigo = Color(0xFF6D61E4);
@@ -152,7 +152,14 @@ abstract final class CareerLoopTheme {
         height: 68,
         elevation: 0,
         backgroundColor: const Color(0xFFFCFCFF),
-        indicatorColor: LensColors.indigo.withValues(alpha: .12),
+        indicatorColor: LensColors.violet.withValues(alpha: .13),
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? LensColors.violet
+                : LensColors.muted,
+          ),
+        ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 11,
@@ -160,7 +167,7 @@ abstract final class CareerLoopTheme {
                 ? FontWeight.w800
                 : FontWeight.w600,
             color: states.contains(WidgetState.selected)
-                ? LensColors.indigo
+                ? LensColors.violet
                 : LensColors.muted,
           ),
         ),

@@ -221,215 +221,237 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Scaffold(
           extendBody: true,
-          resizeToAvoidBottomInset: false,
+          resizeToAvoidBottomInset: true,
           backgroundColor: _bg,
-          body: Stack(
-            children: [
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: _bg,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        _accentA.withValues(
-                          alpha: _isDark ? .10 : .055,
-                        ),
-                        _bg,
-                        _accentB.withValues(
-                          alpha: _isDark ? .08 : .05,
-                        ),
-                      ],
-                      stops: const [0, .48, 1],
+          body: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: _bg,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          _accentA.withValues(
+                            alpha: _isDark ? .10 : .055,
+                          ),
+                          _bg,
+                          _accentB.withValues(
+                            alpha: _isDark ? .08 : .05,
+                          ),
+                        ],
+                        stops: const [0, .48, 1],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Builder(
-                builder: (context) {
-                  final size = MediaQuery.of(context).size;
-                  final glowSize = size.shortestSide * 0.55;
-                  return Positioned(
-                    top: -glowSize * 0.35,
-                    left: -glowSize * 0.3,
-                    child: _glow(_accentA, glowSize),
-                  );
-                },
-              ),
-              Builder(
-                builder: (context) {
-                  final size = MediaQuery.of(context).size;
-                  final glowSize = size.shortestSide * 0.6;
-                  return Positioned(
-                    bottom: -glowSize * 0.4,
-                    right: -glowSize * 0.35,
-                    child: _glow(_accentB, glowSize),
-                  );
-                },
-              ),
-              SafeArea(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final compact = constraints.maxHeight < 760;
-                    return Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: compact ? 10 : 18,
-                      ),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 420),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        // Crop LensLogo down to just its icon
-                                        // mark — its built-in wordmark text is
-                                        // hardcoded and doesn't adapt to dark
-                                        // mode, so we hide it and use our own
-                                        // theme-aware label instead.
-                                        ClipRect(
-                                          child: SizedBox(
-                                            width: 68,
-                                            height: 68,
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: LensLogo(
-                                                size: 68,
-                                                showWordmark: false,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Text(
-                                          'Career Loop',
-                                          style: TextStyle(
-                                            fontSize: 22,
-                                            fontWeight: FontWeight.w700,
-                                            color: _textPrimary,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  IconButton(
-                                    tooltip: _isDark
-                                        ? 'Switch to light mode'
-                                        : 'Switch to dark mode',
-                                    onPressed: () =>
-                                        setState(() => _isDark = !_isDark),
-                                    icon: Icon(
-                                      _isDark
-                                          ? Icons.light_mode_outlined
-                                          : Icons.dark_mode_outlined,
-                                      color: _textPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: compact ? 16 : 26),
-                              ShaderMask(
-                                shaderCallback: (rect) => const LinearGradient(
-                                  colors: [_accentA, _accentB],
-                                ).createShader(rect),
-                                child: const Text(
-                                  'Your Work \nTells Your Story.',
-                                  style: TextStyle(
-                                    fontSize: 34,
-                                    fontWeight: FontWeight.w800,
-                                    height: 1.15,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                              // const SizedBox(height: 16),
-                              // Text(
-                              //   _subtitleFor(university),
-                              //   style: TextStyle(
-                              //     color: _textMuted,
-                              //     fontSize: 15,
-                              //     height: 1.6,
-                              //     letterSpacing: 0.1,
-                              //   ),
-                              // ),
-                              SizedBox(height: compact ? 16 : 22),
-                              Container(
-                                padding: EdgeInsets.all(compact ? 18 : 22),
-                                decoration: BoxDecoration(
-                                  color: _card,
-                                  borderRadius: BorderRadius.circular(24),
-                                  border: Border.all(color: _cardBorder),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: _accentA.withValues(
-                                        alpha: _isDark ? .12 : .10,
-                                      ),
-                                      blurRadius: 40,
-                                      offset: const Offset(0, 20),
-                                    ),
-                                  ],
-                                ),
-                                child: AnimatedSwitcher(
-                                  duration: const Duration(milliseconds: 220),
-                                  child: _step == 0
-                                      ? KeyedSubtree(
-                                          key: const ValueKey('step-one'),
-                                          child:
-                                              _buildStepOne(auth, university),
-                                        )
-                                      : KeyedSubtree(
-                                          key: const ValueKey('step-two'),
-                                          child: _buildStepTwo(auth),
-                                        ),
-                                ),
-                              ),
-                              SizedBox(height: compact ? 12 : 16),
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Icon(Icons.lock_outline_rounded,
-                                      size: 18, color: _textMuted),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      _enableFaceId || _hasQuickLogin
-                                          ? "Face ID quick login keeps your university credentials encrypted in this iPhone's Keychain. Face ID is required before Career Loop can use them."
-                                          : 'Your credentials are used only to start a read-only portal session. Career Loop does not store your password unless you enable Face ID quick login.',
-                                      style: TextStyle(
-                                        color: _textMuted,
-                                        fontSize: 12.5,
-                                        height: 1.45,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: compact ? 12 : 16),
-                              Divider(color: _cardBorder),
-                              SizedBox(height: compact ? 8 : 10),
-                              Text(
-                                'Your Career Loop journey begins with your university Student Portal.',
-                                textAlign: TextAlign.center,
-                                style:
-                                    TextStyle(color: _textMuted, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
+                Builder(
+                  builder: (context) {
+                    final size = MediaQuery.of(context).size;
+                    final glowSize = size.shortestSide * 0.55;
+                    return Positioned(
+                      top: -glowSize * 0.35,
+                      left: -glowSize * 0.3,
+                      child: _glow(_accentA, glowSize),
                     );
                   },
                 ),
-              ),
-            ],
+                Builder(
+                  builder: (context) {
+                    final size = MediaQuery.of(context).size;
+                    final glowSize = size.shortestSide * 0.6;
+                    return Positioned(
+                      bottom: -glowSize * 0.4,
+                      right: -glowSize * 0.35,
+                      child: _glow(_accentB, glowSize),
+                    );
+                  },
+                ),
+                SafeArea(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final compact = constraints.maxHeight < 760;
+                      final keyboardVisible =
+                          MediaQuery.viewInsetsOf(context).bottom > 0;
+                      final verticalPadding = compact ? 10.0 : 18.0;
+                      return SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        physics: keyboardVisible
+                            ? const ClampingScrollPhysics()
+                            : const NeverScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: verticalPadding,
+                        ),
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight:
+                                constraints.maxHeight - (verticalPadding * 2),
+                          ),
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 420),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            // Crop LensLogo down to just its icon
+                                            // mark — its built-in wordmark text is
+                                            // hardcoded and doesn't adapt to dark
+                                            // mode, so we hide it and use our own
+                                            // theme-aware label instead.
+                                            ClipRect(
+                                              child: SizedBox(
+                                                width: 68,
+                                                height: 68,
+                                                child: Align(
+                                                  alignment:
+                                                      Alignment.centerLeft,
+                                                  child: LensLogo(
+                                                    size: 68,
+                                                    showWordmark: false,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Text(
+                                              'Career Loop',
+                                              style: TextStyle(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.w700,
+                                                color: _textPrimary,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      IconButton(
+                                        tooltip: _isDark
+                                            ? 'Switch to light mode'
+                                            : 'Switch to dark mode',
+                                        onPressed: () =>
+                                            setState(() => _isDark = !_isDark),
+                                        icon: Icon(
+                                          _isDark
+                                              ? Icons.light_mode_outlined
+                                              : Icons.dark_mode_outlined,
+                                          color: _textPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: compact ? 16 : 26),
+                                  ShaderMask(
+                                    shaderCallback: (rect) =>
+                                        const LinearGradient(
+                                      colors: [_accentA, _accentB],
+                                    ).createShader(rect),
+                                    child: const Text(
+                                      'Your Work \nTells Your Story.',
+                                      style: TextStyle(
+                                        fontSize: 34,
+                                        fontWeight: FontWeight.w800,
+                                        height: 1.15,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  // const SizedBox(height: 16),
+                                  // Text(
+                                  //   _subtitleFor(university),
+                                  //   style: TextStyle(
+                                  //     color: _textMuted,
+                                  //     fontSize: 15,
+                                  //     height: 1.6,
+                                  //     letterSpacing: 0.1,
+                                  //   ),
+                                  // ),
+                                  SizedBox(height: compact ? 16 : 22),
+                                  Container(
+                                    padding: EdgeInsets.all(compact ? 18 : 22),
+                                    decoration: BoxDecoration(
+                                      color: _card,
+                                      borderRadius: BorderRadius.circular(24),
+                                      border: Border.all(color: _cardBorder),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: _accentA.withValues(
+                                            alpha: _isDark ? .12 : .10,
+                                          ),
+                                          blurRadius: 40,
+                                          offset: const Offset(0, 20),
+                                        ),
+                                      ],
+                                    ),
+                                    child: AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 220),
+                                      child: _step == 0
+                                          ? KeyedSubtree(
+                                              key: const ValueKey('step-one'),
+                                              child: _buildStepOne(
+                                                  auth, university),
+                                            )
+                                          : KeyedSubtree(
+                                              key: const ValueKey('step-two'),
+                                              child: _buildStepTwo(auth),
+                                            ),
+                                    ),
+                                  ),
+                                  SizedBox(height: compact ? 12 : 16),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(Icons.lock_outline_rounded,
+                                          size: 18, color: _textMuted),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          _enableFaceId || _hasQuickLogin
+                                              ? "Face ID quick login keeps your university credentials encrypted in this iPhone's Keychain. Face ID is required before Career Loop can use them."
+                                              : 'Your credentials are used only to start a read-only portal session. Career Loop does not store your password unless you enable Face ID quick login.',
+                                          style: TextStyle(
+                                            color: _textMuted,
+                                            fontSize: 12.5,
+                                            height: 1.45,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(height: compact ? 12 : 16),
+                                  Divider(color: _cardBorder),
+                                  SizedBox(height: compact ? 8 : 10),
+                                  Text(
+                                    'Your Career Loop journey begins with your university Student Portal.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: _textMuted, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -565,6 +587,8 @@ class _LoginScreenState extends State<LoginScreen> {
               style: TextStyle(color: _textPrimary),
               autofillHints: const [AutofillHints.username],
               textInputAction: TextInputAction.next,
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
               decoration: _fieldDecoration(
                 label: 'Username',
                 icon: Icons.person_outline_rounded,
@@ -580,6 +604,8 @@ class _LoginScreenState extends State<LoginScreen> {
               obscureText: _obscure,
               autofillHints: const [AutofillHints.password],
               textInputAction: TextInputAction.done,
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
               onFieldSubmitted: (_) => _goToStepTwo(),
               decoration: _fieldDecoration(
                 label: 'Password',

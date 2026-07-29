@@ -317,7 +317,7 @@ class _QuestionView extends StatelessWidget {
     final correct = selected == question.correctIndex;
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 100),
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
         children: [
           Row(
             children: [

@@ -180,7 +180,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
               ),
               if (resources.isEmpty)
                 const SliverPadding(
-                  padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
+                  padding: EdgeInsets.fromLTRB(22, 0, 22, 24),
                   sliver: SliverToBoxAdapter(
                     child: LensCard(
                       child: Text(
@@ -204,7 +204,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                   ),
                 ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 102),
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
                   sliver: SliverList.list(
                     children: visibleGroups
                         .map(
@@ -277,7 +277,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                 ),
               if (videos.isEmpty)
                 const SliverPadding(
-                  padding: EdgeInsets.fromLTRB(22, 0, 22, 120),
+                  padding: EdgeInsets.fromLTRB(22, 0, 22, 24),
                   sliver: SliverToBoxAdapter(
                     child: LensCard(
                       child: Text(
@@ -289,7 +289,7 @@ class _CmsCourseScreenState extends State<CmsCourseScreen> {
                 )
               else
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 120),
+                  padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
                   sliver: SliverList.separated(
                     itemCount: videos.length,
                     separatorBuilder: (_, __) => const SizedBox(height: 10),

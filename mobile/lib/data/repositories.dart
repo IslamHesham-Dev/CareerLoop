@@ -133,16 +133,39 @@ class AuthRepository extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    try {
-      await api.post('/v1/auth/logout');
-    } catch (_) {
-      // A local logout must still succeed if the server session already expired.
-    }
-    await storage.clearToken();
+    if (isBusy) return;
+    isBusy = true;
+    error = null;
+    notifyListeners();
+
+    // Start the authenticated server cleanup while the access token is still
+    // available, but never make navigation back to login depend on the
+    // network or a sleeping deployment.
+    final remoteLogout = _notifyServerLogout();
     api.accessToken = null;
     isAuthenticated = false;
     session = null;
+    isBusy = false;
     notifyListeners();
+
+    try {
+      await storage.clearToken();
+    } catch (_) {
+      // The in-memory session is already cleared. Secure storage can be
+      // retried during the next authentication lifecycle.
+    }
+    await remoteLogout;
+  }
+
+  Future<void> _notifyServerLogout() async {
+    try {
+      await api.post(
+        '/v1/auth/logout',
+        timeout: const Duration(seconds: 4),
+      );
+    } catch (_) {
+      // Local logout must succeed when the backend is asleep or expired.
+    }
   }
 }
 

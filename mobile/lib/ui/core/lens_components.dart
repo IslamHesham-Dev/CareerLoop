@@ -135,7 +135,7 @@ class LensCard extends StatelessWidget {
                 end: Alignment.bottomRight,
                 colors: [
                   LensColors.card,
-                  Color(0xFFFCFBFF),
+                  Color(0xFFF8FAFD),
                   Color(0xFFFAFDFC),
                 ],
               )

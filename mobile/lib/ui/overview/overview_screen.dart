@@ -69,7 +69,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               ),
             ),
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
               sliver: SliverList.list(
                 children: [
                   Text(

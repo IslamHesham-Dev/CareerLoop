@@ -28,7 +28,7 @@ class CareerHubScreen extends StatelessWidget {
     return SafeArea(
       bottom: false,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 120),
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
         children: [
           Text(
             'Career',
