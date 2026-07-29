@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../app/theme.dart';
 import '../../data/repositories.dart';
 import '../../data/career_profile_repository.dart';
 import '../../data/current_cv_repository.dart';
@@ -25,14 +24,34 @@ class _LoginScreenState extends State<LoginScreen> {
   String _institution = 'giu';
   bool _obscure = true;
   int _step = 0;
+  bool _isDark = true;
 
-  static const _bg = LensColors.canvas;
-  static const _card = LensColors.card;
-  static const _cardBorder = LensColors.line;
-  static const _fieldFill = Color(0xFFFBFCFD);
-  static const _textPrimary = LensColors.ink;
-  static const _textMuted = LensColors.muted;
-  static const _accentA = LensColors.indigo;
+  // Dark palette
+  static const _bgDark = Color(0xFF0B0D14);
+  static const _cardDark = Color(0xFF14171F);
+  static const _cardBorderDark = Color(0xFF262B38);
+  static const _fieldFillDark = Color(0xFF1B1F29);
+  static const _textPrimaryDark = Color(0xFFF3F4F8);
+  static const _textMutedDark = Color(0xFF9298AA);
+
+  // Light palette (same accent family, brightened surfaces)
+  static const _bgLight = Color(0xFFF6F7FC);
+  static const _cardLight = Color(0xFFFFFFFF);
+  static const _cardBorderLight = Color(0xFFE3E5EF);
+  static const _fieldFillLight = Color(0xFFF2F3F9);
+  static const _textPrimaryLight = Color(0xFF14171F);
+  static const _textMutedLight = Color(0xFF6B7080);
+
+  // Shared accents (work on both backgrounds)
+  static const _accentA = Color(0xFF7C6CFF);
+  static const _accentB = Color(0xFF4FD6C6);
+
+  Color get _bg => _isDark ? _bgDark : _bgLight;
+  Color get _card => _isDark ? _cardDark : _cardLight;
+  Color get _cardBorder => _isDark ? _cardBorderDark : _cardBorderLight;
+  Color get _fieldFill => _isDark ? _fieldFillDark : _fieldFillLight;
+  Color get _textPrimary => _isDark ? _textPrimaryDark : _textPrimaryLight;
+  Color get _textMuted => _isDark ? _textMutedDark : _textMutedLight;
 
   @override
   void dispose() {
@@ -112,116 +131,217 @@ class _LoginScreenState extends State<LoginScreen> {
     final auth = context.watch<AuthRepository>();
     final university = _institution.toUpperCase();
 
-    return Scaffold(
-      backgroundColor: _bg,
-      body: SafeArea(
-        child: GestureDetector(
-          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-              child: ConstrainedBox(
-                constraints:
-                    BoxConstraints(minHeight: constraints.maxHeight - 48),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 420),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: LensLogo(size: 46),
-                        ),
-                        const SizedBox(height: 40),
-                        Text(
-                          _step == 0
-                              ? 'Sign in to your university'
-                              : 'Complete your academic context',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _step == 0
-                              ? 'Use the same account you use for the '
-                                  '$university student portal.'
-                              : 'Your enrollment year lets CareerLoop load '
-                                  'the correct transcript history.',
-                          style:
-                              Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: _textMuted,
-                                  ),
-                        ),
-                        const SizedBox(height: 20),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _StepIndicator(
-                                active: true,
-                                label: 'University account',
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _StepIndicator(
-                                active: _step == 1,
-                                label: 'Enrollment year',
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 18),
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: _card,
-                            borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: _cardBorder),
-                          ),
-                          child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 180),
-                            child: _step == 0
-                                ? KeyedSubtree(
-                                    key: const ValueKey('step-one'),
-                                    child: _buildStepOne(auth, university),
-                                  )
-                                : KeyedSubtree(
-                                    key: const ValueKey('step-two'),
-                                    child: _buildStepTwo(auth),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-                        const Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.lock_outline_rounded,
-                              size: 18,
-                              color: _textMuted,
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                'Credentials establish a read-only portal '
-                                'session and are never sent to the AI.',
-                                style: TextStyle(
-                                  color: _textMuted,
-                                  fontSize: 12.5,
-                                  height: 1.45,
+    return Theme(
+      data: (_isDark ? ThemeData.dark() : ThemeData.light()).copyWith(
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: _accentA,
+          selectionColor: Color(0x557C6CFF),
+          selectionHandleColor: _accentA,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: _bg,
+        body: SafeArea(
+          child: Stack(
+            children: [
+          Builder(
+                builder: (context) {
+                  final size = MediaQuery.of(context).size;
+                  final glowSize = size.shortestSide * 0.55;
+                  return Positioned(
+                    top: -glowSize * 0.35,
+                    left: -glowSize * 0.3,
+                    child: _glow(_accentA, glowSize),
+                  );
+                },
+              ),
+              Builder(
+                builder: (context) {
+                  final size = MediaQuery.of(context).size;
+                  final glowSize = size.shortestSide * 0.6;
+                  return Positioned(
+                    bottom: -glowSize * 0.4,
+                    right: -glowSize * 0.35,
+                    child: _glow(_accentB, glowSize),
+                  );
+                },
+              ),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 24),
+                    child: ConstrainedBox(
+                      constraints:
+                          BoxConstraints(minHeight: constraints.maxHeight - 48),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 420),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Crop LensLogo down to just its icon
+                                    // mark — its built-in wordmark text is
+                                    // hardcoded and doesn't adapt to dark
+                                    // mode, so we hide it and use our own
+                                    // theme-aware label instead.
+                                    ClipRect(
+                                      child: SizedBox(
+                                        width: 52,
+                                        height: 52,
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: LensLogo(size: 52),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      'Career Loop',
+                                      style: TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w700,
+                                        color: _textPrimary,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 48),
+                              ShaderMask(
+                                shaderCallback: (rect) => const LinearGradient(
+                                  colors: [_accentA, _accentB],
+                                ).createShader(rect),
+                                child: const Text(
+                                  'Your Work \nTells Your Story.',
+                                  style: TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.15,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                              // const SizedBox(height: 16),
+                              // Text(
+                              //   _subtitleFor(university),
+                              //   style: TextStyle(
+                              //     color: _textMuted,
+                              //     fontSize: 15,
+                              //     height: 1.6,
+                              //     letterSpacing: 0.1,
+                              //   ),
+                              // ),
+                              const SizedBox(height: 28),
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: _card,
+                                  borderRadius: BorderRadius.circular(24),
+                                  border: Border.all(color: _cardBorder),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _accentA.withValues(
+                                        alpha: _isDark ? .12 : .10,
+                                      ),
+                                      blurRadius: 40,
+                                      offset: const Offset(0, 20),
+                                    ),
+                                  ],
+                                ),
+                                child: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 220),
+                                  child: _step == 0
+                                      ? KeyedSubtree(
+                                          key: const ValueKey('step-one'),
+                                          child:
+                                              _buildStepOne(auth, university),
+                                        )
+                                      : KeyedSubtree(
+                                          key: const ValueKey('step-two'),
+                                          child: _buildStepTwo(auth),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Icon(Icons.lock_outline_rounded,
+                                      size: 18, color: _textMuted),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Your credentials are used only to start a read only portal session. Career Loop does not store your password.',
+                                      style: TextStyle(
+                                        color: _textMuted,
+                                        fontSize: 12.5,
+                                        height: 1.45,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                              Divider(color: _cardBorder),
+                              const SizedBox(height: 14),
+                              Text(
+                                'Your Career Loop journey begins with your university Student Portal.',
+                                textAlign: TextAlign.center,
+                                style:
+                                    TextStyle(color: _textMuted, fontSize: 12),
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
+                      ),
                     ),
+                  );
+                },
+              ),
+              // Kept as the LAST Stack child so it renders on top and
+              // actually receives taps — it was being covered by the
+              // scroll view before.
+              Positioned(
+                top: 8,
+                right: 8,
+                child: IconButton(
+                  tooltip:
+                      _isDark ? 'Switch to light mode' : 'Switch to dark mode',
+                  onPressed: () => setState(() => _isDark = !_isDark),
+                  icon: Icon(
+                    _isDark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                    color: _textPrimary,
                   ),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+Widget _glow(Color color, double size) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withValues(alpha: _isDark ? .30 : .12),
+              color.withValues(alpha: 0),
+            ],
           ),
         ),
       ),
@@ -320,7 +440,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   : null,
             ),
             const SizedBox(height: 20),
-            _primaryButton(
+            _gradientButton(
                 label: 'Continue', busy: false, onPressed: _goToStepTwo),
           ],
         ),
@@ -406,7 +526,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ],
           const SizedBox(height: 20),
-          _primaryButton(
+          _gradientButton(
             label: 'Continue',
             busy: auth.isBusy,
             onPressed: auth.isBusy ? null : _submit,
@@ -416,7 +536,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _primaryButton({
+  Widget _gradientButton({
     required String label,
     required bool busy,
     required VoidCallback? onPressed,
@@ -425,7 +545,19 @@ class _LoginScreenState extends State<LoginScreen> {
       height: 52,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: busy || onPressed != null ? _accentA : _fieldFill,
+        gradient: onPressed == null
+            ? null
+            : const LinearGradient(colors: [_accentA, _accentB]),
+        color: onPressed == null ? _fieldFill : null,
+        boxShadow: onPressed == null
+            ? null
+            : [
+                BoxShadow(
+                  color: _accentA.withValues(alpha: .35),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -444,8 +576,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   )
                 : Text(
                     label,
-                    style: TextStyle(
-                      color: onPressed == null ? _textMuted : Colors.white,
+                    style: const TextStyle(
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
@@ -453,38 +585,6 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _StepIndicator extends StatelessWidget {
-  final bool active;
-  final String label;
-
-  const _StepIndicator({required this.active, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 3,
-          decoration: BoxDecoration(
-            color: active ? LensColors.indigo : LensColors.line,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ),
-        const SizedBox(height: 7),
-        Text(
-          label,
-          style: TextStyle(
-            color: active ? LensColors.ink : LensColors.muted,
-            fontSize: 11,
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-      ],
     );
   }
 }
