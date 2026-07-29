@@ -144,10 +144,11 @@ class _SignOutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: TextButton.icon(
-        style: TextButton.styleFrom(
-          foregroundColor: LensColors.rose,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+      child: FilledButton.icon(
+        style: FilledButton.styleFrom(
+          backgroundColor: LensColors.rose,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         ),
         onPressed: auth.isBusy ? null : () => _signOut(context),
         icon: const Icon(Icons.logout_rounded, size: 18),
