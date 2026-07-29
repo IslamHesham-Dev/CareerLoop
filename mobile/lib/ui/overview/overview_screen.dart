@@ -29,7 +29,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
   @override
   Widget build(BuildContext context) {
     final academic = context.watch<AcademicRepository>();
-    final session = context.watch<AuthRepository>().session;
+    final auth = context.watch<AuthRepository>();
+    final session = auth.session;
     final careerProfile = context.watch<CareerProfileRepository>();
     final linkedInReady = careerProfile.hasProfile;
     final githubReady = context.watch<GithubProfileRepository>().hasProfile;
@@ -41,9 +42,8 @@ class _OverviewScreenState extends State<OverviewScreen> {
         .length;
     final currentSeason =
         academic.context?.currentSeason ?? session?.currentSeason ?? 'Current';
-    final firstName = _firstName(
-      careerProfile.profile?.name ?? resume.profile?.name,
-    );
+    final firstName = auth.firstName ??
+        _firstName(careerProfile.profile?.name ?? resume.profile?.name);
     final matchCount = opportunities.result?.jobs.length;
 
     return SafeArea(
@@ -100,8 +100,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
                     ),
                   ] else ...[
                     _Snapshot(
-                      gpa: academic.transcript?.cumulativeGpaWithGrade ??
-                          '—',
+                      gpa: academic.transcript?.cumulativeGpaWithGrade ?? '—',
                       courseCount: academic.courses.length,
                       professionalSources: professionalSources,
                     ),
@@ -152,15 +151,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   }
 
   static String _greeting(String? firstName) {
-    final hour = DateTime.now().hour;
-    final timeOfDay = hour < 12
-        ? 'morning'
-        : hour < 17
-            ? 'afternoon'
-            : 'evening';
-    return firstName == null
-        ? 'Good $timeOfDay'
-        : 'Good $timeOfDay, $firstName';
+    return firstName == null ? 'Welcome back' : 'Welcome back, $firstName';
   }
 
   static String _insight({

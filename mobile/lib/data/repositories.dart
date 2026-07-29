@@ -18,10 +18,14 @@ class AuthRepository extends ChangeNotifier {
   bool isBusy = false;
   String? error;
   SessionInfo? session;
+  String? username;
 
   AuthRepository({required this.api, required this.storage});
 
+  String? get firstName => firstNameFromPortalUsername(username);
+
   Future<void> restoreSession() async {
+    username = await storage.readUsername();
     final token = await storage.readToken();
     if (token != null) {
       api.accessToken = token;
@@ -41,8 +45,9 @@ class AuthRepository extends ChangeNotifier {
     String username,
     String password,
     int enrollmentYear,
-    String institution,
-  ) async {
+    String institution, {
+    bool? quickLoginEnabled,
+  }) async {
     isBusy = true;
     error = null;
     notifyListeners();
@@ -60,6 +65,23 @@ class AuthRepository extends ChangeNotifier {
       final token = json['access_token'] as String;
       api.accessToken = token;
       await storage.saveToken(token);
+      this.username = username.trim();
+      await storage.saveUsername(this.username!);
+      try {
+        if (quickLoginEnabled == true) {
+          await saveQuickLogin(
+            username: username,
+            password: password,
+            enrollmentYear: enrollmentYear,
+            institution: institution,
+          );
+        } else if (quickLoginEnabled == false) {
+          await clearQuickLogin();
+        }
+      } catch (_) {
+        // Keychain quick-login setup must never invalidate a successful
+        // university session. Password login remains the fallback.
+      }
       session = SessionInfo.fromJson(json);
       isAuthenticated = true;
       return true;
@@ -74,6 +96,40 @@ class AuthRepository extends ChangeNotifier {
       isBusy = false;
       notifyListeners();
     }
+  }
+
+  Future<bool> hasQuickLogin() => storage.hasQuickLogin();
+
+  Future<void> saveQuickLogin({
+    required String username,
+    required String password,
+    required int enrollmentYear,
+    required String institution,
+  }) =>
+      storage.saveQuickLogin(
+        QuickLoginCredentials(
+          username: username.trim(),
+          password: password,
+          enrollmentYear: enrollmentYear,
+          institution: institution,
+        ),
+      );
+
+  Future<void> clearQuickLogin() => storage.clearQuickLogin();
+
+  Future<bool> signInWithQuickLogin() async {
+    final credentials = await storage.readQuickLogin();
+    if (credentials == null) {
+      error = 'Saved Face ID login details are unavailable.';
+      notifyListeners();
+      return false;
+    }
+    return signIn(
+      credentials.username,
+      credentials.password,
+      credentials.enrollmentYear,
+      credentials.institution,
+    );
   }
 
   Future<void> logout() async {

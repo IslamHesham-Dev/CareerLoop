@@ -2,6 +2,12 @@ import 'package:careerloop/data/models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('derives a capitalized first name from the portal username', () {
+    expect(firstNameFromPortalUsername('islam.ismail'), 'Islam');
+    expect(firstNameFromPortalUsername('  ADA.lovelace  '), 'Ada');
+    expect(firstNameFromPortalUsername(''), isNull);
+  });
+
   test('loads the professional evidence extracted from a LinkedIn PDF', () {
     final profile = LinkedInPdfProfile.fromJson({
       'file_name': 'LinkedIn.pdf',

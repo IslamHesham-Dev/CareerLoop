@@ -1,3 +1,12 @@
+String? firstNameFromPortalUsername(String? username) {
+  final normalized = username?.trim();
+  if (normalized == null || normalized.isEmpty) return null;
+  final firstPart = normalized.split('.').first.trim();
+  if (firstPart.isEmpty) return null;
+  final lower = firstPart.toLowerCase();
+  return '${lower[0].toUpperCase()}${lower.substring(1)}';
+}
+
 class SessionInfo {
   final String institution;
   final String currentSeason;
