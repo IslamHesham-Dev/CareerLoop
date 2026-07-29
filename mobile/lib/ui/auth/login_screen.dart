@@ -193,11 +193,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                     // theme-aware label instead.
                                     ClipRect(
                                       child: SizedBox(
-                                        width: 52,
-                                        height: 52,
+                                        width: 60,
+                                        height: 60,
                                         child: Align(
                                           alignment: Alignment.centerLeft,
-                                          child: LensLogo(size: 52),
+                                          child: LensLogo(size: 60),
                                         ),
                                       ),
                                     ),
