@@ -11,11 +11,12 @@ void main() {
         home: Scaffold(
           body: ContentAiOverlay(
             controller: controller,
-            title: 'CareerLoop Copilot',
+            title: 'Ask CareerLoop',
             subtitle: 'Software Engineer · Example',
             contextInstruction: 'Stay grounded in this job.',
             quickActions: const [],
             onSend: (_) async => null,
+            showLauncher: false,
             child: const ColoredBox(color: Colors.white),
           ),
         ),
@@ -31,6 +32,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Minimize assistant'));
     await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('Open Ask CareerLoop'), findsNothing);
+
     controller.open();
     await tester.pumpAndSettle();
 

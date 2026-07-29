@@ -126,6 +126,16 @@ class _OverviewScreenState extends State<OverviewScreen> {
                         );
                       },
                     ),
+                    const SizedBox(height: 10),
+                    _ActionRow(
+                      icon: Icons.auto_awesome_rounded,
+                      iconColor: LensColors.indigo,
+                      title: 'Master resume',
+                      subtitle: resumeReady
+                          ? 'Build or refine from your complete profile'
+                          : 'Create a resume from your connected evidence',
+                      onTap: () => context.push('/master-resume'),
+                    ),
                   ],
                 ],
               ),
@@ -366,12 +376,12 @@ class _CopilotSpotlight extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [LensColors.indigo, LensColors.violet],
+              colors: [Color(0xFF7C6CFF), Color(0xFF4FD6C6)],
             ),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: LensColors.indigo.withValues(alpha: .28),
+                color: const Color(0xFF7C6CFF).withValues(alpha: .28),
                 blurRadius: 18,
                 offset: const Offset(0, 8),
               ),
@@ -399,7 +409,7 @@ class _CopilotSpotlight extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Ask Copilot',
+                      'Ask CareerLoop',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,

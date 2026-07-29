@@ -171,6 +171,15 @@ class OpportunityEvidence(BaseModel):
     resume: bool
 
 
+class JobEvidenceCitation(BaseModel):
+    source: Literal["academic", "github", "linkedin", "resume"]
+    source_label: str
+    title: str
+    detail: str
+    skill: str
+    url: str | None = None
+
+
 class JobMatch(BaseModel):
     id: str
     company: str
@@ -194,6 +203,7 @@ class JobMatch(BaseModel):
     profile_skill_matches: list[str]
     inferred_skill_gaps: list[str]
     recommended_course_ids: list[str]
+    evidence_citations: list[JobEvidenceCitation] = Field(default_factory=list)
 
 
 class CareerCourse(BaseModel):

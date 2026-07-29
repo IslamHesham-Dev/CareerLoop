@@ -429,6 +429,10 @@ class OpportunityService:
                 locations=locations,
                 target_market=target_market,
                 work_modes=work_modes,
+                transcript=transcript,
+                linkedin_profile=linkedin_profile,
+                github_profile=github_profile,
+                resume_profile=resume_profile,
             )
             for posting in postings
         ]
@@ -657,6 +661,200 @@ class OpportunityService:
                 expected.update(skills)
         return _expand_skills(expected)
 
+    @staticmethod
+    def _evidence_citations(
+        *,
+        matched_skills: set[str],
+        transcript: dict[str, Any] | None,
+        linkedin_profile: dict[str, Any] | None,
+        github_profile: dict[str, Any] | None,
+        resume_profile: dict[str, Any] | None,
+        limit: int = 6,
+    ) -> list[dict[str, str | None]]:
+        """Return only claims that can point back to a concrete profile record."""
+
+        candidates: dict[str, list[dict[str, str | None]]] = {
+            "academic": [],
+            "github": [],
+            "linkedin": [],
+            "resume": [],
+        }
+
+        def supported_skills(value: Any) -> list[str]:
+            present = _expand_skills(_skills_in_text(value))
+            return sorted(matched_skills.intersection(present))
+
+        def add(
+            source: str,
+            source_label: str,
+            title: Any,
+            detail: Any,
+            value: Any,
+            *,
+            url: Any = None,
+        ) -> None:
+            clean_title = " ".join(str(title or "").split()).strip()
+            clean_detail = " ".join(str(detail or "").split()).strip()
+            if not clean_title:
+                return
+            for skill in supported_skills(value):
+                candidates[source].append(
+                    {
+                        "source": source,
+                        "source_label": source_label,
+                        "title": clean_title[:180],
+                        "detail": clean_detail[:320],
+                        "skill": skill,
+                        "url": str(url).strip() or None,
+                    }
+                )
+
+        for course in (transcript or {}).get("courses", []):
+            if not isinstance(course, dict):
+                continue
+            course_name = course.get("course", "")
+            grade = course.get("grade")
+            numeric = course.get("numeric")
+            period = course.get("semester") or course.get("academic_year")
+            grade_bits = [
+                value
+                for value in (
+                    f"Grade {grade}" if grade else None,
+                    f"numeric {numeric}" if numeric else None,
+                    str(period) if period else None,
+                )
+                if value
+            ]
+            add(
+                "academic",
+                "Academic transcript",
+                course_name,
+                " · ".join(grade_bits) or "Completed course on the transcript",
+                course_name,
+            )
+
+        for repository in (github_profile or {}).get("repositories", []):
+            if not isinstance(repository, dict):
+                continue
+            evidence_value = " ".join(
+                str(repository.get(field, ""))
+                for field in (
+                    "name",
+                    "description",
+                    "primary_language",
+                    "topics",
+                    "languages",
+                    "detected_skills",
+                )
+            )
+            detail_bits = [
+                str(value).strip()
+                for value in (
+                    repository.get("description"),
+                    (
+                        f"Primary language: {repository.get('primary_language')}"
+                        if repository.get("primary_language")
+                        else None
+                    ),
+                )
+                if value
+            ]
+            add(
+                "github",
+                "GitHub",
+                repository.get("name", "Repository"),
+                " · ".join(detail_bits) or "Verified public repository",
+                evidence_value,
+                url=repository.get("html_url"),
+            )
+
+        def add_profile_entries(
+            profile: dict[str, Any] | None,
+            *,
+            source: str,
+            source_label: str,
+        ) -> None:
+            labels = {
+                "certifications": "Certification",
+                "experience": "Experience",
+                "education": "Education",
+                "skills": "Skill",
+                "headline": "Profile headline",
+                "summary": "Profile summary",
+            }
+            for field in (
+                "certifications",
+                "experience",
+                "education",
+                "skills",
+                "headline",
+                "summary",
+            ):
+                raw = (profile or {}).get(field)
+                values = raw if isinstance(raw, list) else [raw]
+                for value in values:
+                    if not value:
+                        continue
+                    if isinstance(value, dict):
+                        title = (
+                            value.get("name")
+                            or value.get("title")
+                            or value.get("role")
+                            or value.get("company")
+                            or labels[field]
+                        )
+                        evidence_value = json.dumps(value, ensure_ascii=False)
+                    else:
+                        evidence_value = str(value)
+                        title = evidence_value
+                    add(
+                        source,
+                        source_label,
+                        title,
+                        f"{labels[field]} in the imported {source_label}",
+                        evidence_value,
+                    )
+
+        add_profile_entries(
+            linkedin_profile,
+            source="linkedin",
+            source_label="LinkedIn PDF",
+        )
+        add_profile_entries(
+            resume_profile,
+            source="resume",
+            source_label="Resume",
+        )
+
+        selected: list[dict[str, str | None]] = []
+        seen: set[tuple[str | None, str | None, str | None]] = set()
+        covered_skills: set[str | None] = set()
+
+        def take(candidate: dict[str, str | None]) -> None:
+            key = (
+                candidate.get("source"),
+                candidate.get("title"),
+                candidate.get("skill"),
+            )
+            if key in seen or len(selected) >= limit:
+                return
+            seen.add(key)
+            covered_skills.add(candidate.get("skill"))
+            selected.append(candidate)
+
+        # Start with source diversity, then fill remaining slots with distinct
+        # skills. This prevents a long transcript from hiding GitHub/LinkedIn.
+        for source in ("academic", "github", "linkedin", "resume"):
+            if candidates[source]:
+                take(candidates[source][0])
+        for source in ("academic", "github", "linkedin", "resume"):
+            for candidate in candidates[source]:
+                if candidate.get("skill") not in covered_skills:
+                    take(candidate)
+                if len(selected) >= limit:
+                    return selected
+        return selected
+
     def _match_job(
         self,
         posting,
@@ -666,6 +864,10 @@ class OpportunityService:
         locations: list[str],
         target_market: str,
         work_modes: list[str],
+        transcript: dict[str, Any] | None,
+        linkedin_profile: dict[str, Any] | None,
+        github_profile: dict[str, Any] | None,
+        resume_profile: dict[str, Any] | None,
     ) -> dict[str, Any]:
         role_families = self._role_families(
             posting.title,
@@ -688,6 +890,13 @@ class OpportunityService:
         )
         skill_matches = sorted(expected_skills.intersection(known_skills))
         gaps = sorted(expected_skills - known_skills)[:8]
+        evidence_citations = self._evidence_citations(
+            matched_skills=set(skill_matches),
+            transcript=transcript,
+            linkedin_profile=linkedin_profile,
+            github_profile=github_profile,
+            resume_profile=resume_profile,
+        )
         location_matches = sorted(
             location
             for location in locations
@@ -747,6 +956,7 @@ class OpportunityService:
             "profile_skill_matches": skill_matches,
             "inferred_skill_gaps": gaps,
             "recommended_course_ids": [],
+            "evidence_citations": evidence_citations,
             "_role_families": role_families,
             "_expected_skills": sorted(expected_skills),
         }

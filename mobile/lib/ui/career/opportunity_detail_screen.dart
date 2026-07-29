@@ -107,9 +107,12 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
       body: ContentAiOverlay(
         key: ValueKey('job-copilot-${job.id}'),
         controller: _copilot,
-        title: 'CareerLoop Copilot',
+        title: 'Ask CareerLoop',
         subtitle: '${job.title} · ${job.company}',
         contextInstruction: _jobContext(courses),
+        showLauncher: false,
+        welcomeDescription:
+            'Ask about this role, your profile match, or how to strengthen your application.',
         quickActions: [
           ContentAiQuickAction(
             icon: Icons.fact_check_outlined,

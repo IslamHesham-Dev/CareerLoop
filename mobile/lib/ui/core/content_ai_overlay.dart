@@ -37,6 +37,8 @@ class ContentAiOverlay extends StatefulWidget {
   final List<ContentAiQuickAction> quickActions;
   final ContentAiOverlayController? controller;
   final Future<ChatMessage?> Function(String prompt)? onSend;
+  final bool showLauncher;
+  final String welcomeDescription;
 
   const ContentAiOverlay({
     super.key,
@@ -47,6 +49,9 @@ class ContentAiOverlay extends StatefulWidget {
     required this.quickActions,
     this.controller,
     this.onSend,
+    this.showLauncher = true,
+    this.welcomeDescription =
+        'Ask about the content on this screen or choose a focused starting point.',
   });
 
   @override
@@ -108,6 +113,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                   subtitle: widget.subtitle,
                   messages: _messages,
                   quickActions: widget.quickActions,
+                  welcomeDescription: widget.welcomeDescription,
                   controller: _controller,
                   scrollController: _scrollController,
                   messageToReveal: _messageToReveal,
@@ -121,7 +127,7 @@ class _ContentAiOverlayState extends State<ContentAiOverlay> {
                   onPrompt: _send,
                 ),
               )
-            else
+            else if (widget.showLauncher)
               Positioned(
                 left: position.dx,
                 top: position.dy,
@@ -283,6 +289,7 @@ class _ChatPanel extends StatelessWidget {
   final String subtitle;
   final List<ChatMessage> messages;
   final List<ContentAiQuickAction> quickActions;
+  final String welcomeDescription;
   final TextEditingController controller;
   final ScrollController scrollController;
   final ChatMessage? messageToReveal;
@@ -297,6 +304,7 @@ class _ChatPanel extends StatelessWidget {
     required this.subtitle,
     required this.messages,
     required this.quickActions,
+    required this.welcomeDescription,
     required this.controller,
     required this.scrollController,
     required this.messageToReveal,
@@ -309,7 +317,6 @@ class _ChatPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
     return ColoredBox(
       color: Colors.black.withValues(alpha: .26),
       child: SafeArea(
@@ -318,10 +325,10 @@ class _ChatPanel extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: FractionallySizedBox(
             widthFactor: 1,
-            heightFactor: .78,
+            heightFactor: .86,
             child: Material(
               elevation: 22,
-              color: const Color(0xFFF8F9FD),
+              color: LensColors.canvas,
               shadowColor: Colors.black45,
               borderRadius: BorderRadius.circular(26),
               clipBehavior: Clip.antiAlias,
@@ -388,6 +395,7 @@ class _ChatPanel extends StatelessWidget {
                     child: messages.isEmpty
                         ? _ChatWelcome(
                             quickActions: quickActions,
+                            description: welcomeDescription,
                             onPrompt: onPrompt,
                           )
                         : ListView.builder(
@@ -425,70 +433,11 @@ class _ChatPanel extends StatelessWidget {
                         ),
                       ),
                     ),
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      border: Border(top: BorderSide(color: LensColors.line)),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: controller,
-                            minLines: 1,
-                            maxLines: 3,
-                            textCapitalization: TextCapitalization.sentences,
-                            decoration: InputDecoration(
-                              hintText: 'Ask about what you are viewing...',
-                              isDense: true,
-                              suffixIcon: keyboardVisible
-                                  ? IconButton(
-                                      tooltip: 'Hide keyboard',
-                                      onPressed: () => FocusManager
-                                          .instance.primaryFocus
-                                          ?.unfocus(),
-                                      icon: const Icon(
-                                        Icons.keyboard_hide_rounded,
-                                      ),
-                                    )
-                                  : null,
-                            ),
-                            onSubmitted: onPrompt,
-                            onTapOutside: (_) =>
-                                FocusManager.instance.primaryFocus?.unfocus(),
-                          ),
-                        ),
-                        PopupMenuButton<String>(
-                          tooltip: 'Quick prompts',
-                          enabled: !sending,
-                          icon: const Icon(Icons.bolt_rounded),
-                          onSelected: onPrompt,
-                          itemBuilder: (context) => quickActions
-                              .map(
-                                (action) => PopupMenuItem(
-                                  value: action.prompt,
-                                  child: Row(
-                                    children: [
-                                      Icon(action.icon, size: 18),
-                                      const SizedBox(width: 9),
-                                      Flexible(child: Text(action.label)),
-                                    ],
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                        const SizedBox(width: 8),
-                        IconButton.filled(
-                          tooltip: 'Send',
-                          onPressed:
-                              sending ? null : () => onPrompt(controller.text),
-                          icon: const Icon(Icons.arrow_upward_rounded),
-                        ),
-                      ],
-                    ),
+                  _OverlayComposer(
+                    controller: controller,
+                    isSending: sending,
+                    quickActions: quickActions,
+                    onPrompt: onPrompt,
                   ),
                 ],
               ),
@@ -500,12 +449,252 @@ class _ChatPanel extends StatelessWidget {
   }
 }
 
+class _OverlayComposer extends StatelessWidget {
+  final TextEditingController controller;
+  final bool isSending;
+  final List<ContentAiQuickAction> quickActions;
+  final ValueChanged<String> onPrompt;
+
+  const _OverlayComposer({
+    required this.controller,
+    required this.isSending,
+    required this.quickActions,
+    required this.onPrompt,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final keyboardVisible = MediaQuery.viewInsetsOf(context).bottom > 0;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 10),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(top: BorderSide(color: LensColors.line)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          SizedBox(
+            width: 42,
+            height: 42,
+            child: IconButton.filledTonal(
+              tooltip: 'Quick prompts',
+              onPressed: isSending ? null : () => _showQuickPrompts(context),
+              style: IconButton.styleFrom(
+                backgroundColor: LensColors.indigo.withValues(alpha: .09),
+                foregroundColor: LensColors.indigo,
+                disabledBackgroundColor: LensColors.line,
+                minimumSize: const Size(42, 42),
+                maximumSize: const Size(42, 42),
+                padding: EdgeInsets.zero,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(13),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              minLines: 1,
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Ask CareerLoop...',
+                hintStyle: const TextStyle(
+                  color: LensColors.muted,
+                  fontSize: 14,
+                ),
+                fillColor: LensColors.canvas,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: LensColors.line),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: const BorderSide(color: LensColors.line),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide:
+                      const BorderSide(color: LensColors.indigo, width: 1.4),
+                ),
+                suffixIcon: keyboardVisible
+                    ? IconButton(
+                        tooltip: 'Hide keyboard',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () =>
+                            FocusManager.instance.primaryFocus?.unfocus(),
+                        icon: const Icon(
+                          Icons.keyboard_hide_rounded,
+                          size: 19,
+                        ),
+                      )
+                    : null,
+                suffixIconConstraints:
+                    const BoxConstraints(minWidth: 40, minHeight: 40),
+              ),
+              onSubmitted: (_) => onPrompt(controller.text),
+              onTapOutside: (_) =>
+                  FocusManager.instance.primaryFocus?.unfocus(),
+            ),
+          ),
+          const SizedBox(width: 7),
+          IconButton.filled(
+            tooltip: 'Send',
+            onPressed: isSending ? null : () => onPrompt(controller.text),
+            style: IconButton.styleFrom(
+              minimumSize: const Size(42, 42),
+              maximumSize: const Size(42, 42),
+              padding: EdgeInsets.zero,
+            ),
+            icon: const Icon(Icons.arrow_upward_rounded, size: 20),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _showQuickPrompts(BuildContext context) async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final selected = await showModalBottomSheet<ContentAiQuickAction>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: LensColors.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) => FractionallySizedBox(
+        heightFactor: .68,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 8, 14),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Quick prompts',
+                          style: TextStyle(
+                            color: LensColors.ink,
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          'Choose a focused starting point.',
+                          style: TextStyle(
+                            color: LensColors.muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Close',
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1, color: LensColors.line),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                itemCount: quickActions.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final action = quickActions[index];
+                  const colors = [
+                    LensColors.indigo,
+                    LensColors.rose,
+                    LensColors.aqua,
+                    LensColors.violet,
+                    LensColors.amber,
+                  ];
+                  final color = colors[index % colors.length];
+                  return Material(
+                    color: LensColors.card,
+                    borderRadius: BorderRadius.circular(17),
+                    clipBehavior: Clip.antiAlias,
+                    child: InkWell(
+                      onTap: () => Navigator.of(sheetContext).pop(action),
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(17),
+                          border: Border.all(color: LensColors.line),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: .1),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: Icon(action.icon, color: color, size: 21),
+                            ),
+                            const SizedBox(width: 13),
+                            Expanded(
+                              child: Text(
+                                action.label,
+                                style: const TextStyle(
+                                  color: LensColors.ink,
+                                  fontSize: 13.5,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              color: LensColors.muted,
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (selected == null || !context.mounted) return;
+    onPrompt(selected.prompt);
+  }
+}
+
 class _ChatWelcome extends StatelessWidget {
   final List<ContentAiQuickAction> quickActions;
+  final String description;
   final ValueChanged<String> onPrompt;
 
   const _ChatWelcome({
     required this.quickActions,
+    required this.description,
     required this.onPrompt,
   });
 
@@ -515,13 +704,13 @@ class _ChatWelcome extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(18, 24, 18, 18),
       children: [
         const Text(
-          'Ask without leaving the content',
+          'How can I help?',
           style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 7),
-        const Text(
-          'Choose a starting action or ask your own question. The response is grounded in the open content.',
-          style: TextStyle(color: LensColors.muted, height: 1.4),
+        Text(
+          description,
+          style: const TextStyle(color: LensColors.muted, height: 1.4),
         ),
         const SizedBox(height: 20),
         ...quickActions.map(
@@ -529,10 +718,14 @@ class _ChatWelcome extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 9),
             child: Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(17),
+              shape: RoundedRectangleBorder(
+                side: const BorderSide(color: LensColors.line),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              clipBehavior: Clip.antiAlias,
               child: InkWell(
                 onTap: () => onPrompt(action.prompt),
-                borderRadius: BorderRadius.circular(17),
+                borderRadius: BorderRadius.circular(14),
                 child: Padding(
                   padding: const EdgeInsets.all(14),
                   child: Row(
@@ -569,63 +762,86 @@ class _ContentMessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: message.isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
-        margin: EdgeInsets.only(
-          left: message.isUser ? 42 : 0,
-          right: message.isUser ? 0 : 18,
-          bottom: 12,
+    if (message.isUser) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 330),
+          margin: const EdgeInsets.only(left: 44, bottom: 20),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: const BoxDecoration(
+            color: LensColors.indigo,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+              bottomLeft: Radius.circular(16),
+              bottomRight: Radius.circular(5),
+            ),
+          ),
+          child: Text(
+            message.text,
+            style: const TextStyle(color: Colors.white, height: 1.4),
+          ),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-        decoration: BoxDecoration(
-          color: message.isUser ? LensColors.indigo : Colors.white,
-          border: message.isUser ? null : Border.all(color: LensColors.line),
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: message.isUser
-            ? Text(
-                message.text,
-                style: const TextStyle(color: Colors.white, height: 1.35),
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  MarkdownBody(
-                    data: message.text,
-                    selectable: true,
-                    styleSheet: MarkdownStyleSheet(
-                      p: const TextStyle(
-                        color: LensColors.ink,
-                        fontSize: 13,
-                        height: 1.4,
-                      ),
-                      listBullet: const TextStyle(color: LensColors.indigo),
-                      tableBorder: TableBorder.all(color: LensColors.line),
-                      tableCellsPadding: const EdgeInsets.all(6),
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: NotionExportAction(
-                      message: message,
-                      compact: true,
-                    ),
-                  ),
-                  if (message.practiceSet != null) ...[
-                    const SizedBox(height: 10),
-                    PracticeLaunchCard(practiceSet: message.practiceSet!),
-                  ],
-                  const SizedBox(height: 11),
-                  CapabilityFooter(
-                    tools: message.tools,
-                    sources: message.sources,
-                    compact: true,
-                  ),
-                ],
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 22),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 16,
+                color: LensColors.indigo,
               ),
+              SizedBox(width: 7),
+              Text(
+                'CareerLoop',
+                style: TextStyle(
+                  color: LensColors.ink,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          MarkdownBody(
+            data: message.text,
+            selectable: true,
+            styleSheet: MarkdownStyleSheet(
+              p: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: LensColors.ink,
+                    fontSize: 14,
+                  ),
+              h2: Theme.of(context).textTheme.titleLarge,
+              h3: Theme.of(context).textTheme.titleMedium,
+              listBullet: const TextStyle(color: LensColors.indigo),
+              tableBorder: TableBorder.all(color: LensColors.line),
+              tableCellsPadding: const EdgeInsets.all(8),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: NotionExportAction(message: message),
+          ),
+          if (message.practiceSet != null) ...[
+            const SizedBox(height: 13),
+            PracticeLaunchCard(practiceSet: message.practiceSet!),
+          ],
+          const SizedBox(height: 14),
+          CapabilityFooter(
+            tools: message.tools,
+            sources: message.sources,
+          ),
+          const SizedBox(height: 2),
+          const Divider(height: 1, color: LensColors.line),
+        ],
       ),
     );
   }
