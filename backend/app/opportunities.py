@@ -3,11 +3,18 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from app.opportunity_taxonomy import (
+    EXTRA_ROLE_PATTERNS,
+    EXTRA_ROLE_SKILLS,
+    EXTRA_SKILL_ALIASES,
+    ROLE_COURSE_AFFINITY,
+    SKILL_IMPLICATIONS,
+    TITLE_SKILL_HINTS,
+)
 from swelist_connector import SwelistConnector
 
 
@@ -230,6 +237,62 @@ SKILL_ALIASES: dict[str, tuple[str, ...]] = {
     "project management": ("project management", "agile", "scrum"),
 }
 
+for _family, _skills in EXTRA_ROLE_SKILLS.items():
+    ROLE_SKILLS.setdefault(_family, set()).update(_skills)
+ROLE_PATTERNS = [*EXTRA_ROLE_PATTERNS, *ROLE_PATTERNS]
+for _skill, _aliases in EXTRA_SKILL_ALIASES.items():
+    SKILL_ALIASES[_skill] = tuple(
+        dict.fromkeys((*SKILL_ALIASES.get(_skill, ()), *_aliases))
+    )
+
+
+def _normalized_text(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "")).strip().casefold()
+
+
+def _contains_alias(text: str, alias: str) -> bool:
+    normalized_alias = _normalized_text(alias)
+    if not normalized_alias:
+        return False
+    return (
+        re.search(
+            rf"(?<![\w+#.]){re.escape(normalized_alias)}(?![\w+#.])",
+            text,
+        )
+        is not None
+    )
+
+
+def _canonical_skill(value: Any) -> str:
+    normalized = _normalized_text(value)
+    for skill, aliases in SKILL_ALIASES.items():
+        if normalized == skill or normalized in aliases:
+            return skill
+    return normalized
+
+
+def _skills_in_text(text: Any) -> set[str]:
+    normalized = _normalized_text(text)
+    return {
+        skill
+        for skill, aliases in SKILL_ALIASES.items()
+        if _contains_alias(normalized, skill)
+        or any(_contains_alias(normalized, alias) for alias in aliases)
+    }
+
+
+def _expand_skills(skills: set[str]) -> set[str]:
+    expanded = set(skills)
+    pending = list(skills)
+    while pending:
+        skill = pending.pop()
+        for implied in SKILL_IMPLICATIONS.get(skill, set()):
+            if implied in expanded:
+                continue
+            expanded.add(implied)
+            pending.append(implied)
+    return expanded
+
 
 class CourseCatalog:
     def __init__(self, path: Path = CATALOG_PATH) -> None:
@@ -243,25 +306,65 @@ class CourseCatalog:
         gaps: list[str],
         role_families: list[str],
         *,
+        target_skills: list[str] | set[str] | None = None,
         limit: int = 6,
     ) -> list[dict[str, Any]]:
-        gap_set = set(gaps)
+        gap_set = {_canonical_skill(skill) for skill in gaps}
+        target_set = {
+            _canonical_skill(skill) for skill in (target_skills or [])
+        }
         role_set = set(role_families)
+        affinity_ids = {
+            course_id
+            for role in role_set
+            for course_id in ROLE_COURSE_AFFINITY.get(role, ())
+        }
         ranked: list[tuple[int, dict[str, Any], list[str]]] = []
         for course in self.courses:
-            matched = sorted(gap_set.intersection(course["skills"]))
+            course_skills = {
+                _canonical_skill(skill) for skill in course["skills"]
+            }
+            course_skills.update(
+                _skills_in_text(
+                    f"{course['title']} {' '.join(course['skills'])}"
+                )
+            )
+            course_skills = _expand_skills(course_skills)
+            matched_gaps = sorted(gap_set.intersection(course_skills))
+            matched_targets = sorted(target_set.intersection(course_skills))
             role_overlap = role_set.intersection(course["roles"])
-            score = len(matched) * 4 + len(role_overlap)
+            affinity = course["id"] in affinity_ids
+            score = (
+                len(matched_gaps) * 10
+                + len(matched_targets) * 4
+                + len(role_overlap) * 6
+                + (24 if affinity else 0)
+            )
             if score:
-                ranked.append((score, course, matched))
+                addressed = list(
+                    dict.fromkeys([*matched_gaps, *matched_targets])
+                )[:6]
+                ranked.append((score, course, addressed))
         ranked.sort(key=lambda item: (-item[0], item[1]["title"]))
+
+        # Unknown titles should still receive broadly useful learning options.
+        # These are relevance fallbacks, not claims about employer requirements.
+        if not ranked:
+            fallback_ids = ROLE_COURSE_AFFINITY["general"]
+            by_id = {course["id"]: course for course in self.courses}
+            ranked = [
+                (1, by_id[course_id], [])
+                for course_id in fallback_ids
+                if course_id in by_id
+            ]
+
         return [
             {
                 **course,
-                "addresses_skills": matched,
+                "addresses_skills": addressed,
                 "catalog_source": self.source,
             }
-            for _score, course, matched in ranked[:limit]
+            for _score, course, addressed in ranked[:limit]
         ]
 
 
@@ -344,30 +447,23 @@ class OpportunityService:
         )
         matches = matches[:limit]
 
-        gap_counter: Counter[str] = Counter()
-        role_families: list[str] = []
-        for match in matches[:10]:
-            role_families.append(match["role_family"])
-            gap_counter.update(match["inferred_skill_gaps"])
-        prioritized_gaps = [
-            skill for skill, _count in gap_counter.most_common(10)
-        ]
-        courses = self.catalog.recommend(
-            prioritized_gaps,
-            role_families,
-        )
-        courses_by_skill: dict[str, list[str]] = {}
-        for course in courses:
-            for skill in course["addresses_skills"]:
-                courses_by_skill.setdefault(skill, []).append(course["id"])
+        # Recommend for each opening independently. Missing skills improve a
+        # course's rank, but role relevance alone is sufficient, so qualified
+        # candidates still receive useful adjacent/upskilling suggestions.
+        courses_by_id: dict[str, dict[str, Any]] = {}
         for match in matches:
-            match["recommended_course_ids"] = list(
-                dict.fromkeys(
-                    course_id
-                    for gap in match["inferred_skill_gaps"]
-                    for course_id in courses_by_skill.get(gap, [])
-                )
-            )[:2]
+            job_courses = self.catalog.recommend(
+                match["inferred_skill_gaps"],
+                match.pop("_role_families"),
+                target_skills=match.pop("_expected_skills"),
+                limit=3,
+            )
+            match["recommended_course_ids"] = [
+                course["id"] for course in job_courses
+            ]
+            for course in job_courses:
+                courses_by_id.setdefault(course["id"], course)
+        courses = list(courses_by_id.values())
 
         message = None
         if not matches:
@@ -518,19 +614,48 @@ class OpportunityService:
 
     @staticmethod
     def _skills_in(text: str) -> set[str]:
-        return {
-            skill
-            for skill, aliases in SKILL_ALIASES.items()
-            if any(alias in text for alias in aliases)
-        }
+        return _expand_skills(_skills_in_text(text))
+
+    @classmethod
+    def _role_families(
+        cls,
+        title: str,
+        category: str | None = None,
+    ) -> list[str]:
+        normalized = _normalized_text(f"{title} {category or ''}")
+        families: list[str] = []
+        for family, patterns in ROLE_PATTERNS:
+            if any(_contains_alias(normalized, pattern) for pattern in patterns):
+                families.append(family)
+        if not families:
+            return ["general"]
+        return list(dict.fromkeys(families))
+
+    @classmethod
+    def _role_family(
+        cls,
+        title: str,
+        category: str | None = None,
+    ) -> str:
+        return cls._role_families(title, category)[0]
 
     @staticmethod
-    def _role_family(title: str) -> str:
-        normalized = title.casefold()
-        for family, patterns in ROLE_PATTERNS:
-            if any(pattern in normalized for pattern in patterns):
-                return family
-        return "general"
+    def _expected_skills(
+        title: str,
+        category: str | None,
+        role_families: list[str],
+    ) -> set[str]:
+        normalized = _normalized_text(f"{title} {category or ''}")
+        expected = {
+            skill
+            for family in role_families
+            for skill in ROLE_SKILLS.get(family, ROLE_SKILLS["general"])
+        }
+        expected.update(_skills_in_text(normalized))
+        for patterns, skills in TITLE_SKILL_HINTS:
+            if any(_contains_alias(normalized, pattern) for pattern in patterns):
+                expected.update(skills)
+        return _expand_skills(expected)
 
     def _match_job(
         self,
@@ -542,10 +667,19 @@ class OpportunityService:
         target_market: str,
         work_modes: list[str],
     ) -> dict[str, Any]:
-        family = self._role_family(posting.title)
-        expected_skills = ROLE_SKILLS[family]
+        role_families = self._role_families(
+            posting.title,
+            posting.category,
+        )
+        family = role_families[0]
+        expected_skills = self._expected_skills(
+            posting.title,
+            posting.category,
+            role_families,
+        )
         job_text = (
-            f"{posting.title} {posting.company} {posting.location}"
+            f"{posting.title} {posting.category or ''} "
+            f"{posting.company} {posting.location}"
         ).casefold()
         keyword_matches = sorted(
             keyword
@@ -553,7 +687,7 @@ class OpportunityService:
             if keyword in job_text or keyword in expected_skills
         )
         skill_matches = sorted(expected_skills.intersection(known_skills))
-        gaps = sorted(expected_skills - known_skills)[:6]
+        gaps = sorted(expected_skills - known_skills)[:8]
         location_matches = sorted(
             location
             for location in locations
@@ -613,4 +747,6 @@ class OpportunityService:
             "profile_skill_matches": skill_matches,
             "inferred_skill_gaps": gaps,
             "recommended_course_ids": [],
+            "_role_families": role_families,
+            "_expected_skills": sorted(expected_skills),
         }

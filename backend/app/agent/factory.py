@@ -247,7 +247,8 @@ def build_agent(student: StudentSession, settings: Settings):
     ) -> dict:
         """Find and rank live Swelist internships or new-grad roles using the
         student's transcript, imported LinkedIn PDF, and stated preferences.
-        It also returns inferred skill gaps and relevant curated courses.
+        It also returns inferred role skills and relevant curated courses,
+        including adjacent upskilling options when no gap is detected.
         Arguments:
         - role: "internship" (default) or "newgrad"
         - timeframe: "all" (default), "lastday", "lastweek", or "lastmonth"
@@ -794,9 +795,11 @@ def build_agent(student: StudentSession, settings: Settings):
         "stated role, market, location, work-mode, recency, and keyword "
         "preferences. Its ranking uses the full transcript and imported "
         "LinkedIn PDF, resume, and GitHub project evidence when available. Present "
-        "skill gaps as title/role-family "
-        "inferences, not requirements from a full job description, and include "
-        "the supplied course links when recommending how to close a gap. "
+        "skill mappings and gaps as title/role-family inferences, not "
+        "requirements from a full job description. Include the supplied "
+        "course links as role-relevant strengthening options even when the "
+        "student already has evidence for the mapped skills; do not restrict "
+        "learning recommendations to detected gaps. "
         f"{cms_context} A resource or video "
         "title is metadata, not evidence of everything taught in it. "
         "For a CMS PDF, call read_cms_pdf before discussing its substance. "

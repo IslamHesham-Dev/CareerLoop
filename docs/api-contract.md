@@ -64,8 +64,11 @@ snapshot when available, and returns explainable match signals. Skill gaps are
 explicitly marked as role-family
 inferences because Swelist does not provide complete job descriptions. Course
 recommendations come from the structured catalogue derived from
-`docs/Courses resources.txt`. Imported resume evidence participates in ranking
-when connected. Adzuna remains reported as unconnected.
+`docs/Courses resources.txt`. A hidden title/role taxonomy recognizes common
+job-name variants and mixed roles, and courses are recommended for role
+relevance even when the profile already covers the inferred skills. Imported
+resume evidence participates in ranking when connected. Adzuna remains
+reported as unconnected.
 
 ## GitHub career evidence
 

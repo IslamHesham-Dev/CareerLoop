@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 
+import pytest
+
 from app.opportunities import CourseCatalog, OpportunityService
 from swelist_connector.models import JobPosting
 
@@ -25,6 +27,23 @@ class FakeSwelistConnector:
                 location="Berlin, Germany",
                 link="https://example.com/retail",
             ),
+        ]
+
+
+class SingleJobConnector:
+    def __init__(self, title: str, category: str | None = None) -> None:
+        self.title = title
+        self.category = category
+
+    def get_postings(self, **_kwargs):
+        return [
+            JobPosting(
+                company="Example",
+                title=self.title,
+                category=self.category,
+                location="Berlin, Germany",
+                link=f"https://example.com/{self.title.replace(' ', '-')}",
+            )
         ]
 
 
@@ -205,3 +224,97 @@ def test_curated_course_catalog_has_unique_secure_links() -> None:
         for course in courses
     )
     assert all(course["skills"] for course in courses)
+
+
+@pytest.mark.parametrize(
+    ("title", "expected_family", "expected_skill", "expected_course"),
+    [
+        (
+            "Computer Vision Research Engineer",
+            "machine-learning",
+            "computer vision",
+            "ibm-machine-learning",
+        ),
+        (
+            "Site Reliability Platform Engineer",
+            "devops",
+            "kubernetes",
+            "ibm-devops",
+        ),
+        (
+            "QA Automation Engineer",
+            "qa",
+            "test automation",
+            "deeplearning-generative-swd",
+        ),
+        (
+            "SAP Functional Consultant",
+            "erp",
+            "business analysis",
+            "google-business-intelligence",
+        ),
+        (
+            "Frontend React Engineer",
+            "frontend",
+            "react",
+            "microsoft-fullstack",
+        ),
+        (
+            "Cloud Security Engineer",
+            "security",
+            "cybersecurity",
+            "google-cybersecurity",
+        ),
+    ],
+)
+def test_hidden_title_taxonomy_drives_related_course_suggestions(
+    title: str,
+    expected_family: str,
+    expected_skill: str,
+    expected_course: str,
+) -> None:
+    service = OpportunityService(connector=SingleJobConnector(title))  # type: ignore[arg-type]
+    families = service._role_families(title)  # noqa: SLF001
+    skills = service._expected_skills(title, None, families)  # noqa: SLF001
+    courses = service.catalog.recommend(
+        [],
+        families,
+        target_skills=skills,
+        limit=3,
+    )
+
+    assert expected_family in families
+    assert expected_skill in skills
+    assert expected_course in {course["id"] for course in courses}
+
+
+def test_qualified_candidate_still_receives_role_related_courses() -> None:
+    title = "Backend API Engineer"
+    connector = SingleJobConnector(title, category="Software")
+    service = OpportunityService(connector=connector)  # type: ignore[arg-type]
+    families = service._role_families(title, "Software")  # noqa: SLF001
+    expected = service._expected_skills(  # noqa: SLF001
+        title,
+        "Software",
+        families,
+    )
+
+    result = service.search(
+        role_type="newgrad",
+        timeframe="all",
+        target_market="europe",
+        locations=["Berlin"],
+        keywords=[],
+        work_modes=[],
+        transcript=None,
+        linkedin_profile={"skills": sorted(expected)},
+        github_profile=None,
+        resume_profile=None,
+    )
+
+    job = result["jobs"][0]
+    assert job["inferred_skill_gaps"] == []
+    assert job["recommended_course_ids"]
+    assert set(job["recommended_course_ids"]).issubset(
+        {course["id"] for course in result["recommended_courses"]}
+    )
