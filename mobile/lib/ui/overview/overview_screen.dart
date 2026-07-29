@@ -58,7 +58,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
               sliver: SliverToBoxAdapter(
                 child: Row(
                   children: [
-                    const Expanded(child: LensLogo(size: 34)),
+                    const Expanded(child: LensLogo(size: 40)),
                     _SeasonChip(academic: academic, fallback: currentSeason),
                   ],
                 ),
