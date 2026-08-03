@@ -10,12 +10,15 @@ on:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Java (required for Android build)
+      - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -25,8 +28,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          # Optional: pin exact version
-          # flutter-version: "3.24.0"
 
       - name: Install dependencies
         run: flutter pub get
@@ -38,4 +39,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
