@@ -327,37 +327,55 @@ class _SeasonChip extends StatelessWidget {
     final selected = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.white,
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+      builder: (sheetContext) {
+        final desiredHeight = 66.0 + (options.length * 56.0);
+        final maximumHeight = MediaQuery.sizeOf(sheetContext).height * .72;
+        final sheetHeight =
+            desiredHeight < maximumHeight ? desiredHeight : maximumHeight;
+        return SizedBox(
+          height: sheetHeight,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Advisory semester',
-                style: Theme.of(sheetContext).textTheme.titleMedium,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: Text(
+                  'Advisory semester',
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
               ),
-              const SizedBox(height: 8),
-              ...options.map(
-                (season) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(season),
-                  trailing: season == current
-                      ? const Icon(
-                          Icons.check_circle_rounded,
-                          color: LensColors.aqua,
-                        )
-                      : null,
-                  onTap: () => Navigator.pop(sheetContext, season),
+              const Divider(height: 1),
+              Expanded(
+                child: Scrollbar(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(20, 6, 20, 16),
+                    itemCount: options.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: LensColors.line),
+                    itemBuilder: (context, index) {
+                      final season = options[index];
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(season),
+                        trailing: season == current
+                            ? const Icon(
+                                Icons.check_circle_rounded,
+                                color: LensColors.aqua,
+                              )
+                            : null,
+                        onTap: () => Navigator.pop(sheetContext, season),
+                      );
+                    },
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
     if (selected == null || selected == current || !context.mounted) return;
     final changed = await academic.selectAdvisorySemester(selected);

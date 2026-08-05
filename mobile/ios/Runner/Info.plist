@@ -25,7 +25,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSFaceIDUsageDescription</key>
-	<string>CareerLoop uses Face ID to unlock your saved university login for quick sign-in.</string>
+	<string>CareerLoop uses biometric authentication to unlock your saved university login for quick sign-in.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -29,11 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
   int _step = 0;
   bool _isDark = true;
   final _localAuth = LocalAuthentication();
-  bool _faceIdAvailable = false;
+  bool _quickLoginAvailable = false;
   bool _hasQuickLogin = false;
-  bool _enableFaceId = false;
+  bool _enableQuickLogin = false;
   bool _biometricBusy = false;
   String? _biometricError;
+  String _quickLoginMethod = 'Device authentication';
+  IconData _quickLoginIcon = Icons.fingerprint_rounded;
 
   // Dark palette
   static const _bgDark = Color(0xFF0B0D14);
@@ -65,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _prepareFaceId());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _prepareQuickLogin());
   }
 
   @override
@@ -94,35 +96,67 @@ class _LoginScreenState extends State<LoginScreen> {
       _password.text,
       _enrollmentYear!,
       _institution,
-      quickLoginEnabled: _faceIdAvailable ? _enableFaceId : null,
+      quickLoginEnabled: _quickLoginAvailable ? _enableQuickLogin : null,
     );
     if (signedIn && mounted) {
       _activateSession();
     }
   }
 
-  Future<void> _prepareFaceId() async {
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return;
+  Future<void> _prepareQuickLogin() async {
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.iOS &&
+            defaultTargetPlatform != TargetPlatform.android)) {
+      return;
+    }
     try {
       final supported = await _localAuth.isDeviceSupported();
       final canCheck = await _localAuth.canCheckBiometrics;
-      final available = await _localAuth.getAvailableBiometrics();
+      final available = canCheck
+          ? await _localAuth.getAvailableBiometrics()
+          : const <BiometricType>[];
       if (!mounted) return;
       final hasQuickLogin =
           await context.read<AuthRepository>().hasQuickLogin();
       if (!mounted) return;
+
+      final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
+      late final String method;
+      late final IconData icon;
+      if (isIOS && available.contains(BiometricType.face)) {
+        method = 'Face ID';
+        icon = Icons.face_retouching_natural_rounded;
+      } else if (isIOS && available.contains(BiometricType.fingerprint)) {
+        method = 'Touch ID';
+        icon = Icons.fingerprint_rounded;
+      } else if (!isIOS && available.contains(BiometricType.fingerprint)) {
+        method = 'Fingerprint';
+        icon = Icons.fingerprint_rounded;
+      } else if (!isIOS && available.contains(BiometricType.face)) {
+        method = 'Face unlock';
+        icon = Icons.face_retouching_natural_rounded;
+      } else if (isIOS) {
+        method = 'Device authentication';
+        icon = Icons.lock_outline_rounded;
+      } else {
+        method = 'Biometrics or screen lock';
+        icon = Icons.security_rounded;
+      }
+
       setState(() {
-        _faceIdAvailable =
-            supported && canCheck && available.contains(BiometricType.face);
+        _quickLoginAvailable = canCheck || supported;
         _hasQuickLogin = hasQuickLogin;
-        _enableFaceId = hasQuickLogin;
+        _enableQuickLogin = hasQuickLogin;
+        _quickLoginMethod = method;
+        _quickLoginIcon = icon;
       });
     } on PlatformException {
-      // Password sign-in remains available if iOS cannot inspect Face ID.
+      // Password sign-in remains available if the device cannot inspect its
+      // local authentication capabilities.
     }
   }
 
-  Future<void> _signInWithFaceId() async {
+  Future<void> _signInWithQuickLogin() async {
     if (_biometricBusy) return;
     setState(() {
       _biometricBusy = true;
@@ -132,7 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final authenticated = await _localAuth.authenticate(
         localizedReason: 'Unlock your saved university login for CareerLoop.',
         options: const AuthenticationOptions(
-          biometricOnly: true,
+          biometricOnly: false,
           stickyAuth: true,
           useErrorDialogs: true,
         ),
@@ -144,8 +178,8 @@ class _LoginScreenState extends State<LoginScreen> {
     } on PlatformException catch (exception) {
       if (!mounted) return;
       setState(() {
-        _biometricError =
-            exception.message ?? 'Face ID could not unlock your saved login.';
+        _biometricError = exception.message ??
+            '$_quickLoginMethod could not unlock your saved login.';
       });
     } finally {
       if (mounted) setState(() => _biometricBusy = false);
@@ -420,9 +454,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                       const SizedBox(width: 10),
                                       Expanded(
                                         child: Text(
-                                          _enableFaceId || _hasQuickLogin
-                                              ? "Face ID quick login keeps your university credentials encrypted in this iPhone's Keychain. Face ID is required before Career Loop can use them."
-                                              : 'Your credentials are used only to start a read-only portal session. Career Loop does not store your password unless you enable Face ID quick login.',
+                                          _enableQuickLogin || _hasQuickLogin
+                                              ? _quickLoginPrivacyText
+                                              : 'Your credentials are used only to start a read-only portal session. Career Loop does not store your password unless you enable quick login.',
                                           style: TextStyle(
                                             color: _textMuted,
                                             fontSize: 12.5,
@@ -492,10 +526,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            if (_faceIdAvailable && _hasQuickLogin) ...[
+            if (_quickLoginAvailable && _hasQuickLogin) ...[
               OutlinedButton.icon(
-                onPressed:
-                    auth.isBusy || _biometricBusy ? null : _signInWithFaceId,
+                onPressed: auth.isBusy || _biometricBusy
+                    ? null
+                    : _signInWithQuickLogin,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _textPrimary,
                   side: BorderSide(color: _cardBorder),
@@ -509,11 +544,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: _accentA,
                         ),
                       )
-                    : const Icon(Icons.face_retouching_natural_rounded),
+                    : Icon(_quickLoginIcon),
                 label: Text(
                   _biometricBusy
-                      ? 'Checking Face ID...'
-                      : 'Continue with Face ID',
+                      ? 'Checking $_quickLoginMethod...'
+                      : 'Continue with $_quickLoginMethod',
                 ),
               ),
               if (_biometricError != null || auth.error != null) ...[
@@ -680,28 +715,28 @@ class _LoginScreenState extends State<LoginScreen> {
             validator: (value) =>
                 value == null ? 'Select the year you enrolled' : null,
           ),
-          if (_faceIdAvailable) ...[
+          if (_quickLoginAvailable) ...[
             const SizedBox(height: 10),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              value: _enableFaceId,
+              value: _enableQuickLogin,
               activeColor: _accentA,
               onChanged: auth.isBusy
                   ? null
-                  : (enabled) => setState(() => _enableFaceId = enabled),
+                  : (enabled) => setState(() => _enableQuickLogin = enabled),
               secondary: Icon(
-                Icons.face_retouching_natural_rounded,
-                color: _enableFaceId ? _accentA : _textMuted,
+                _quickLoginIcon,
+                color: _enableQuickLogin ? _accentA : _textMuted,
               ),
               title: Text(
-                'Use Face ID next time',
+                'Use $_quickLoginMethod next time',
                 style: TextStyle(
                   color: _textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               subtitle: Text(
-                "Saved securely in this iPhone's Keychain",
+                _quickLoginStorageText,
                 style: TextStyle(color: _textMuted, fontSize: 12),
               ),
             ),
@@ -747,6 +782,16 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
   }
+
+  String get _quickLoginStorageText =>
+      defaultTargetPlatform == TargetPlatform.iOS
+          ? "Saved securely in this iPhone's Keychain"
+          : 'Saved securely in protected device storage';
+
+  String get _quickLoginPrivacyText =>
+      '$_quickLoginMethod quick login keeps your university credentials '
+      'encrypted on this device. Device authentication is required before '
+      'Career Loop can use them.';
 
   Widget _gradientButton({
     required String label,
